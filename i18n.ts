@@ -27,6 +27,14 @@ export const i18n = {
     feature3Title: "Analyze to Dominate. Visualize to Win.",
     feature3Description: "Elevate your tactical understanding with cutting-edge analysis tools. Animate drills, draw directly on video clips for instant feedback, and integrate performance data from all sources. From in-depth scouting to post-match breakdowns, turn insights into victories.",
     feature3Link: "Master Tactical Analysis →",
+    // CTA Section
+    ctaTitle: "Ready to Elevate Your Game?",
+    ctaSubtitle: "Get instant access to Down The Line and revolutionize your coaching.",
+    ctaButton: "Get Started Now",
+      // Footer Section
+      allRightsReserved: "All Rights Reserved.",
+      privacyPolicy: "Privacy Policy",
+      termsOfService: "Terms of Service",
   },
   da: {
     // Header
@@ -54,6 +62,14 @@ export const i18n = {
     feature3Title: "Analyser for at Dominere. Visualiser for at Vinde.",
     feature3Description: "Løft din taktiske forståelse med avancerede analyseværktøjer. Animer øvelser, tegn direkte på videoklip for øjeblikkelig feedback, og integrer præstationsdata fra alle kilder. Fra dybdegående scouting til kampanalyser, omsæt indsigt til sejre.",
     feature3Link: "Mestr Taktisk Analyse →",
+    // CTA Section
+    ctaTitle: "Klar til at løfte dit spil?",
+    ctaSubtitle: "Få øjeblikkelig adgang til Down The Line og revolutioner din træning.",
+    ctaButton: "Kom i gang nu",
+          // Footer Section
+      allRightsReserved: "Alle Rettigheder Forbeholdes.",
+      privacyPolicy: "Fortrolighedspolitik",
+      termsOfService: "Servicevilkår",
   },
 };
 
