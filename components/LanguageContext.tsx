@@ -1,31 +1,36 @@
-"use client"; // Skal være en Client Component
+"use client"; // VIGTIGT
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { getTranslations } from '../i18n'; // Stien skal være korrekt herfra
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { getTranslations } from '../i18n'; // <-- VIGTIGT: Importer getTranslations her
 
-// Definer typen for sprog-konteksten
+type Language = 'da' | 'en';
+type Translations = ReturnType<typeof getTranslations>; // Henter typen for oversættelsesobjektet
+
 interface LanguageContextType {
-  lang: 'en' | 'da';
-  t: ReturnType<typeof getTranslations>; // Dynamisk type for oversættelsesobjektet
-  setLang: (lang: 'en' | 'da') => void;
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: Translations; // <-- TILFØJET: Nu indeholder konteksten også oversættelserne
 }
 
-// Opret konteksten med standardværdier
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-// Opret en Provider-komponent, som vil omfatte din app
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<'en' | 'da'>('da'); // Standardsprog er dansk
-  const t = getTranslations(lang);
+export function LanguageProvider({ children, initialLang }: { children: ReactNode; initialLang: Language }) {
+  const [language, setLanguage] = useState<Language>(initialLang);
+  const [t, setT] = useState<Translations>(getTranslations(initialLang)); // <-- Initialiser t her
 
+  // Opdater oversættelser, når sproget ændres
+  useEffect(() => {
+    setT(getTranslations(language));
+  }, [language]); // Kør kun, når 'language' ændres
+
+  // Send både language, setLanguage og t ned i konteksten
   return (
-    <LanguageContext.Provider value={{ lang, t, setLang }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );
 }
 
-// Custom hook til nemt at bruge konteksten i andre komponenter
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (context === undefined) {

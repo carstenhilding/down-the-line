@@ -1,14 +1,24 @@
 "use client";
 
 import React from 'react';
-import { useLanguage } from './LanguageContext';
+import { useLanguage } from './LanguageContext'; // <-- Importer useLanguage
 
 // Importer sociale medie ikoner
 import { FaFacebookF, FaInstagram, FaYoutube } from 'react-icons/fa'; 
 
 export default function Footer() {
-  const { t } = useLanguage();
+  const { t } = useLanguage(); // <-- NU VIRKER DENNE LINJE KORREKT
   const currentYear = new Date().getFullYear();
+
+  // Sikkerheds-check, da `t` er afgørende for rendering.
+  // Dette kan hjælpe under indlæsning, hvis konteksten ikke er fuldt hydreret endnu.
+  if (!t) {
+    return (
+      <footer className="bg-black text-white py-8 text-sm text-center">
+        <p className="text-xs">&copy; {currentYear} Down The Line. Loading...</p>
+      </footer>
+    );
+  }
 
   return (
     <footer className="bg-black text-white py-8 text-sm"> {/* py-8 for større footer */}
@@ -24,7 +34,7 @@ export default function Footer() {
         {/* Fodnote Links */}
         <nav>
           <ul className="flex justify-center space-x-6">
-            {/* text-xs for mindre link tekst */}
+            {/* text-xs for mindre link tekst. VIGTIGT: Brug Next.js Link komponent her også, hvis de er interne links */}
             <li><a href="#" className="text-xs hover:text-orange-500">{t.privacyPolicy}</a></li> 
             <li><a href="#" className="text-xs hover:text-orange-500">{t.termsOfService}</a></li> 
           </ul>
