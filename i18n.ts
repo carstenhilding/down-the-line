@@ -11,21 +11,21 @@ export const i18n = {
     headerJoin: "Join",
 
     // Hero Section
-    heroTitle: "Master Your Coaching, Elevate Your Team.",
+    heroTitle: "Elevate coaching, optimize the team.",
     heroSubtitle: "The all-in-one platform for modern coaches, clubs, and academies to meticulously plan, analyze, and unleash their full potential on the pitch.",
     heroButton: "Discover Down The Line",
 
     // Features Section
-    feature1Title: "Precision Planning. Flawless Execution.",
-    feature1Description: "Transform your coaching vision into reality. Our intuitive drag-and-drop planner helps you craft detailed training sessions, build a vast library of drills, and share comprehensive playbooks with your entire staff. Master every moment on the pitch.",
+    feature1Title: "Master Every Session.",
+    feature1Description: "Bring your training ideas to life with ease. Our intuitive planner lets you design sessions, create an extensive drill library, and share structured playbooks with other coaches. Every detail counts, every session matters!",
     feature1Link: "Explore the Advanced Planner →",
 
-    feature2Title: "Unify Your Team. Maximize Potential.",
-    feature2Description: "Gain a 360-degree view of your club. From seamless member administration and team calendars to in-depth player statistics and injury tracking, manage every aspect of your organization. Empower every athlete with personalized development pathways.",
+    feature2Title: "Unite the Club. Shape the Game.",
+    feature2Description: "Bring the entire club together in one system. Plan periodized training cycles, define play style, monitor stats and development goals, and ensure all coaches and players work toward the same vision.",
     feature2Link: "Discover Your Club Hub →",
 
-    feature3Title: "Analyze to Dominate. Visualize to Win.",
-    feature3Description: "Elevate your tactical understanding with cutting-edge analysis tools. Animate drills, draw directly on video clips for instant feedback, and integrate performance data from all sources. From in-depth scouting to post-match breakdowns, turn insights into victories.",
+    feature3Title: "Data-Driven Decisions. Real Results on the pitch.",
+    feature3Description: "Turn data into development. Break down matches, analyze tactics, and visualize every detail. Track player progress and use data from training sessions, to measure if focus areas hit the mark. Use data to elevate every part of coaching.",
     feature3Link: "Master Tactical Analysis →",
     // CTA Section
     ctaTitle: "Ready to Elevate Your Game?",
@@ -46,21 +46,21 @@ export const i18n = {
     headerJoin: "Opret",
 
     // Hero Section
-    heroTitle: "Mestr Din Træning, Løft Dit Hold.",
-    heroSubtitle: "Den alt-i-én platform for moderne trænere, klubber og akademier til omhyggeligt at planlægge, analysere og frigøre deres fulde potentiale på banen.",
+    heroTitle: "Løft træningen, optimer holdet.",
+    heroSubtitle: "Den komplette platform for trænere, klubber og akademier til at gøre planlægning og analyse nemt, og maksimerer præstationer på banen.",
     heroButton: "Oplev Down The Line",
 
     // Features Section
-    feature1Title: "Præcis Planlægning. Fejlfri Udførelse.",
-    feature1Description: "Forvandl din træner-vision til virkelighed. Vores intuitive træk-og-slip planlægger hjælper dig med at skabe detaljerede træningspas, opbygge et omfattende øvelsesbibliotek og dele komplette spillerebøger med hele dit trænerteam. Mestr hvert øjeblik på banen.",
+    feature1Title: "Gør hver træning bedre",
+    feature1Description: "Bring nemt dine ideer til live. Vores intuitive træningsværktøj lader dig designe træninger, skabe et stort øvelseskatalog, og dele strukturerede spillestilsprincipper andre trænere. Alle detaljer gør en forskel, og alle træninger gør en forskel!",
     feature1Link: "Udforsk den Avancerede Planlægger →",
 
-    feature2Title: "Saml Dit Hold. Maksimer Potentialet.",
-    feature2Description: "Få et 360-graders overblik over din klub. Fra problemfri medlemsadministration og holdkalendere til dybdegående spillerstatistik og skadesporing, administrer alle aspekter af din organisation. Styrk hver atlet med personlige udviklingsforløb.",
+    feature2Title: "Foren klubben, og form spillet.",
+    feature2Description: "Bring en hel klub sammen i et system. Skab periodiseringer, definer spillestil, monitorer statistikker og udviklingsmål, og alle trænere og spillere sikres, at arbejde mod samme vision.",
     feature2Link: "Opdag Dit Klubhubs →",
 
-    feature3Title: "Analyser for at Dominere. Visualiser for at Vinde.",
-    feature3Description: "Løft din taktiske forståelse med avancerede analyseværktøjer. Animer øvelser, tegn direkte på videoklip for øjeblikkelig feedback, og integrer præstationsdata fra alle kilder. Fra dybdegående scouting til kampanalyser, omsæt indsigt til sejre.",
+    feature3Title: "Data-drevne beslutninger, reelle resultater på banen",
+    feature3Description: "Brug data i udvikling. Nedbryd kampe, analyser taktikker, og visualiser enhver detalje. Holde øje med spilleres udvikling og brug data fra træninger, til at sikre at fokuspunkterne bliver ramt i træningen. Brug data til at forbedre alle dele af træningen.",
     feature3Link: "Mestr Taktisk Analyse →",
     // CTA Section
     ctaTitle: "Klar til at løfte dit spil?",
