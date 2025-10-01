@@ -35,6 +35,23 @@ export const i18n = {
       allRightsReserved: "All Rights Reserved.",
       privacyPolicy: "Privacy Policy",
       termsOfService: "Terms of Service",
+      // ---------- NYT: About Side Tekster starter her ----------
+    aboutHeroTitle: "About Down The Line",
+    aboutHeroSubtitle: "Our story, mission, and values",
+    aboutMissionTitle: "Our Mission",
+    aboutMissionParagraph1: "At Down The Line, our mission is to transform how football coaches and clubs operate. We strive to provide the most innovative tools that enable every coach to maximize their team's potential and foster player development.",
+    aboutMissionParagraph2: "We believe in a future where all coaches have access to data-driven insights and effective planning tools that simplify complex tasks, freeing up time for what truly matters: on-field development.",
+    aboutValuesTitle: "Our Values",
+    value1Title: "Innovation",
+    value1Description: "We are driven to explore new technologies and methods to give you an edge.",
+    value2Title: "Simplicity",
+    value2Description: "Complex data and planning made easy to understand and use for everyone.",
+    value3Title: "Collaboration",
+    value3Description: "We build tools that foster teamwork among coaches, players, and management.",
+    aboutCtaTitle: 'Ready to Optimize Your Training?',
+    aboutCtaSubtitle: 'Explore our platform and take your team to the next level.',
+    aboutCtaButton: 'Get Started',
+    // ---------- NYT: About Side Tekster slutter her ----------
   },
   da: {
     // Header
@@ -70,6 +87,24 @@ export const i18n = {
       allRightsReserved: "Alle Rettigheder Forbeholdes.",
       privacyPolicy: "Fortrolighedspolitik",
       termsOfService: "Servicevilkår",
+
+      // ---------- NYT: About Side Tekster starter her ----------
+    aboutHeroTitle: 'Om Down The Line',
+    aboutHeroSubtitle: 'Vores historie, mission og værdier',
+    aboutMissionTitle: 'Vores Mission',
+    aboutMissionParagraph1: 'Hos Down The Line er vores mission at transformere den måde, fodboldtrænere og klubber arbejder på. Vi stræber efter at levere de mest innovative værktøjer, der gør det muligt for enhver træner at maksimere sit holds potentiale og fremme spillerudvikling.',
+    aboutMissionParagraph2: 'Vi tror på en fremtid, hvor alle trænere har adgang til data-drevet indsigt og effektive planlægningsværktøjer, der forenkler komplekse opgaver og frigør tid til det, der virkelig betyder noget: udvikling på banen.',
+    aboutValuesTitle: 'Vores Værdier',
+    value1Title: 'Innovation',
+    value1Description: 'Vi er drevet af at udforske nye teknologier og metoder for at give dig et forspring.',
+    value2Title: 'Enkelhed',
+    value2Description: 'Komplekse data og planlægning gjort letforståeligt og brugbart for alle.',
+    value3Title: 'Samarbejde',
+    value3Description: 'Vi bygger værktøjer, der fremmer teamwork mellem trænere, spillere og ledelse.',
+    aboutCtaTitle: 'Klar til at Optimere Din Træning?',
+    aboutCtaSubtitle: 'Udforsk vores platform og tag dit team til næste niveau.',
+    aboutCtaButton: 'Kom i Gang',
+    // ---------- NYT: About Side Tekster slutter her ----------
   },
 };
 

@@ -6,8 +6,10 @@ import { LanguageProvider } from '../../components/LanguageContext';
 import Footer from '../../components/Footer';
 import React from 'react'; // <--- VIGTIGT: Importér React for React.use()
 
-const inter = Inter({ subsets: ['latin'] });
-
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter', // <-- TILFØJET HER
+});
 export default function RootLayout({
   children,
   params: paramsPromise // <-- Navngiv som en Promise
@@ -19,7 +21,7 @@ export default function RootLayout({
   const { lang } = params; // <-- Tilgå lang fra det udpakkede objekt
 
   return (
-    <html lang={lang}>
+    <html lang={lang} className={`${inter.variable}`}> 
       <body>
         <LanguageProvider initialLang={lang}>
           <Header />
