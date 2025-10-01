@@ -11,7 +11,6 @@ export default function Home({
 }: {
   params: Promise<{ lang: 'da' | 'en' }>; // <-- Type for Promise
 }) {
-  // Brug React.use til at pakke Promise ud
   const params = React.use(paramsPromise); // <-- Pak params ud
   const { lang } = params; // <-- Tilgå lang fra det udpakkede objekt
 
@@ -24,7 +23,7 @@ export default function Home({
   return (
     <>
       <main>
-        {/* Hero Sektion Start */}
+        {/* Hero Sektion Start - (uændret, behold pt-20) */}
         <section className="relative h-[600px] flex items-center text-white pt-20">
           <div 
             className="absolute inset-0 bg-cover bg-center"
@@ -52,54 +51,91 @@ export default function Home({
         </section>
         {/* Hero Sektion Slut */}
 
-        {/* Features Sektion Start */}
-        <section className="bg-white py-20 text-black">
-          <div className="container max-w-6xl mx-auto px-4 space-y-24">
+        {/* Features Sektion Start - NY OG OPDATERET */}
+        <section className="py-20 bg-gray-50 text-black"> {/* Lettere grå baggrund, øget padding */}
+          <div className="container max-w-6xl mx-auto px-4">
 
             {/* Feature 1: Session Planning */}
-            <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="grid md:grid-cols-2 gap-12 items-center mb-20 md:mb-24"> {/* Tilføjet margin-bottom */}
               <div>
-                <Image src="/images/session-planning.jpeg" alt="A female football coach using a digital session planner." className="rounded-lg shadow-xl" width={600} height={400} />
+                <Image 
+                  src="/images/session-planning.jpeg" 
+                  alt={t.feature1Title} // Brug den korrekte alt-tekst for tilgængelighed
+                  width={600}
+                  height={400}
+                  layout="responsive" // Gør billedet responsivt
+                  objectFit="cover"
+                  className="rounded-lg shadow-xl" 
+                />
               </div>
-              <div>
-                <h3 className="text-3xl font-bold mb-4">{t.feature1Title}</h3>
-                <p className="text-gray-700 mb-4 text-lg leading-relaxed">
+              <div className="space-y-4 md:space-y-6"> {/* Øget space-y på desktop for mere luft */}
+                <h3 className="text-2xl font-bold md:text-2xl uppercase">{t.feature1Title}</h3> {/* Større og federe overskrift på desktop */}
+                <p className="text-lg leading-relaxed text-gray-700"> {/* Lidt mørkere grå tekst for bedre læsbarhed */}
                   {t.feature1Description}
                 </p>
-                <Link href="/features" className="text-orange-500 font-semibold hover:underline text-lg">
-                  {t.feature1Link}
-                </Link>
+                <Link 
+  href="/features#planning" 
+  className="inline-flex items-center text-orange-500 hover:text-orange-600 font-semibold text-lg md:text-xl transition-colors
+             relative after:content-[''] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:bg-orange-500 after:w-0 hover:after:w-full after:transition-all after:duration-300"
+>
+  {t.feature1Link}
+</Link>
               </div>
             </div>
 
             {/* Feature 2: Team & Player Management */}
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div>
-                <h3 className="text-3xl font-bold mb-4">{t.feature2Title}</h3>
-                <p className="text-gray-700 mb-4 text-lg leading-relaxed">
+            <div className="grid md:grid-cols-2 gap-12 items-center mb-20 md:mb-24">
+              {/* Billedet skal være på højre side for denne feature på desktop */}
+              <div className="md:order-2"> {/* md:order-2 flytter dette div til anden kolonne på desktop */}
+                <Image 
+                  src="/images/team-management.jpeg" 
+                  alt={t.feature2Title}
+                  width={600}
+                  height={400}
+                  layout="responsive"
+                  objectFit="cover"
+                  className="rounded-lg shadow-xl" 
+                />
+              </div>
+              <div className="space-y-4 md:space-y-6 md:order-1"> {/* md:order-1 flytter dette div til første kolonne på desktop */}
+                <h3 className="text-2xl font-bold md:text-2xl uppercase">{t.feature2Title}</h3>
+                <p className="text-lg leading-relaxed text-gray-700">
                   {t.feature2Description}
                 </p>
-                <Link href="/features" className="text-orange-500 font-semibold hover:underline text-lg">
-                  {t.feature2Link}
-                </Link>
-              </div>
-              <div>
-                <Image src="/images/team-management.jpeg" alt="A male football coach managing player data and team strategy on a computer." className="rounded-lg shadow-xl" width={600} height={400} />
+<Link 
+  href="/features#planning" 
+  className="inline-flex items-center text-orange-500 hover:text-orange-600 font-semibold text-lg md:text-xl transition-colors
+             relative after:content-[''] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:bg-orange-500 after:w-0 hover:after:w-full after:transition-all after:duration-300"
+>
+  {t.feature2Link}
+</Link>
               </div>
             </div>
 
             {/* Feature 3: Tactical & Video Analysis */}
-            <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="grid md:grid-cols-2 gap-12 items-center"> {/* Fjernet margin-bottom her, da det er den sidste feature */}
               <div>
-                <Image src="/images/tactical-analysis.jpeg" alt="A male football coach analyzing game footage with tactical overlays on a large screen." className="rounded-lg shadow-xl" width={600} height={400} />
+                <Image 
+                  src="/images/tactical-analysis.jpeg" 
+                  alt={t.feature3Title}
+                  width={600}
+                  height={400}
+                  layout="responsive"
+                  objectFit="cover"
+                  className="rounded-lg shadow-xl" 
+                />
               </div>
-              <div>
-                <h3 className="text-3xl font-bold mb-4">{t.feature3Title}</h3>
-                <p className="text-gray-700 mb-4 text-lg leading-relaxed">
+              <div className="space-y-4 md:space-y-6">
+                <h3 className="text-2xl font-bold md:text-2xl uppercase">{t.feature3Title}</h3>
+                <p className="text-lg leading-relaxed text-gray-700">
                   {t.feature3Description}
                 </p>
-                <Link href="/features" className="text-orange-500 font-semibold hover:underline text-lg">
-                  {t.feature3Link}
+                <Link 
+                  href="/features#planning" 
+                  className="inline-flex items-center text-orange-500 hover:text-orange-600 font-semibold text-lg md:text-xl transition-colors
+              relative after:content-[''] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:bg-orange-500 after:w-0 hover:after:w-full after:transition-all after:duration-300"
+                >
+                {t.feature3Link}
                 </Link>
               </div>
             </div>
@@ -107,7 +143,8 @@ export default function Home({
           </div>
         </section>
         {/* Features Sektion Slut */}
-        {/* CTA Sektion Start */}
+
+        {/* CTA Sektion Start - (uændret) */}
         <section
           className="relative bg-cover bg-center py-16 md:py-20 text-white text-center"
           style={{ backgroundImage: "url('/images/cta-bg.jpg')" }}
@@ -130,6 +167,7 @@ export default function Home({
           </div>
         </section>
         {/* CTA Sektion Slut */}
+
       </main>
     </>
   );

@@ -16,15 +16,15 @@ export const i18n = {
     heroButton: "Discover Down The Line",
 
     // Features Section
-    feature1Title: "Master Every Session.",
+    feature1Title: "Master every session.",
     feature1Description: "Bring your training ideas to life with ease. Our intuitive planner lets you design sessions, create an extensive drill library, and share structured playbooks with other coaches. Every detail counts, every session matters!",
     feature1Link: "Explore the Advanced Planner →",
 
-    feature2Title: "Unite the Club. Shape the Game.",
+    feature2Title: "Unite the club - Shape the game.",
     feature2Description: "Bring the entire club together in one system. Plan periodized training cycles, define play style, monitor stats and development goals, and ensure all coaches and players work toward the same vision.",
     feature2Link: "Discover Your Club Hub →",
 
-    feature3Title: "Data-Driven Decisions. Real Results on the pitch.",
+    feature3Title: "Data-driven decisions, real results on the pitch.",
     feature3Description: "Turn data into development. Break down matches, analyze tactics, and visualize every detail. Track player progress and use data from training sessions, to measure if focus areas hit the mark. Use data to elevate every part of coaching.",
     feature3Link: "Master Tactical Analysis →",
     // CTA Section
