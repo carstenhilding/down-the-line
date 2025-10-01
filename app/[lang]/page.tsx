@@ -25,7 +25,7 @@ export default function Home({
     <>
       <main>
         {/* Hero Sektion Start */}
-        <section className="relative h-[600px] flex items-center text-white">
+        <section className="relative h-[600px] flex items-center text-white pt-20">
           <div 
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: "url('/images/hero-bg.jpg')" }}
