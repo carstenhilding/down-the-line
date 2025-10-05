@@ -5,6 +5,12 @@ import Link from 'next/link';
 import { useLanguage } from '../../../components/LanguageContext';
 import React, { use } from 'react';
 
+// Importer ikoner fra lucide-react her
+import { Quote, Lightbulb, TrendingUp, Handshake } from 'lucide-react'; 
+// Lightbulb for Innovation
+// TrendingUp for Enkelhed/Tilgængelighed (kan repræsentere optimering/fremgang)
+// Handshake for Udvikling & Samarbejde
+
 export default function AboutPage({
   params: paramsPromise
 }: {
@@ -43,8 +49,8 @@ export default function AboutPage({
   return (
     <main className="pt-20">
       
-      {/* Hero Sektion for About Siden - NU MINDRE */}
-      <section className="relative bg-gradient-to-r from-gray-900 to-black text-white py-16 md:py-24 overflow-hidden"> {/* py-16 og md:py-24 er reduceret */}
+      {/* Hero Sektion for About Siden */}
+      <section className="relative bg-gradient-to-r from-gray-900 to-black text-white py-16 md:py-24 overflow-hidden">
         <Image
           src="/images/about-hero-bg.jpg"
           alt={translations.aboutHeroTitle}
@@ -53,27 +59,27 @@ export default function AboutPage({
           className="object-cover opacity-30"
         />
         <div className="relative container max-w-6xl mx-auto px-4 text-center z-10">
-          <h1 className="text-3xl md:text-5xl font-extrabold mb-3 animate-fade-in-up"> {/* Tekststørrelse også justeret ned */}
+          <h1 className="text-3xl md:text-5xl font-extrabold mb-3 animate-fade-in-up">
             {translations.aboutHeroTitle}
           </h1>
-          <p className="text-lg md:text-xl opacity-90 leading-relaxed max-w-3xl mx-auto animate-fade-in-up delay-200"> {/* Tekststørrelse også justeret ned */}
+          <p className="text-lg md:text-xl opacity-90 leading-relaxed max-w-3xl mx-auto animate-fade-in-up delay-200">
             {translations.aboutHeroSubtitle}
           </p>
         </div>
       </section>
 
-      {/* Resten af koden forbliver uændret */}
-      {/* Introduktion / Velkomst */}
-      <section className="bg-white py-16 md:py-20 text-center">
-        <div className="container max-w-4xl mx-auto px-4">
-          <p className="text-2xl md:text-3xl font-light leading-relaxed text-gray-800 italic">
+      {/* Introduktion / Velkomst (Citatsektion) */}
+      <section className="bg-white py-10 md:py-12 text-center">
+        <div className="container max-w-2xl mx-auto px-4">
+          <Quote className="mx-auto text-orange-500 w-10 h-10 mb-3" />
+          <p className="text-lg md:text-xl font-light leading-relaxed text-gray-800 italic">
             &quot;{translations.aboutIntroQuote}&quot;
           </p>
         </div>
       </section>
 
       {/* Missionssektion */}
-      <section className="py-16 md:py-20 bg-gray-50">
+      <section className="py-16 md:py-20 bg-gray-50 border-t border-gray-200">
         <div className="container max-w-6xl mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="md:order-2">
@@ -100,7 +106,7 @@ export default function AboutPage({
         </div>
       </section>
 
-      {/* Værdisektion */}
+      {/* Værdisektion - NU MED ORANGE BOKSE, HVID TEKST OG IKONER */}
       <section className="py-16 md:py-20 bg-white">
         <div className="container max-w-6xl mx-auto px-4 text-center">
           <h2 className="text-4xl font-bold text-gray-900 mb-16">
@@ -108,22 +114,26 @@ export default function AboutPage({
           </h2>
           <div className="grid md:grid-cols-3 gap-10">
             {/* Værdi 1: Innovation & Præcision */}
-            <div className="group p-8 border border-gray-200 rounded-lg shadow-md bg-white hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-2">
-              <div className="text-orange-500 mb-4 text-5xl">⚡</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">{translations.value1Title}</h3>
-              <p className="text-gray-600">{translations.value1Description}</p>
+            {/* Standard orange boks med hvid tekst, hover effekt for dybde */}
+            <div className="group p-8 border-none rounded-lg shadow-md bg-orange-500 text-white 
+                          hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-lg">
+              <Lightbulb className="mx-auto text-white w-12 h-12 mb-4" /> {/* Ikon for innovation */}
+              <h3 className="text-xl font-semibold mb-3">{translations.value1Title}</h3>
+              <p className="opacity-90">{translations.value1Description}</p>
             </div>
             {/* Værdi 2: Enkelhed & Tilgængelighed */}
-            <div className="group p-8 border border-gray-200 rounded-lg shadow-md bg-white hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-2">
-              <div className="text-orange-500 mb-4 text-5xl">✨</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">{translations.value2Title}</h3>
-              <p className="text-gray-600">{translations.value2Description}</p>
+            <div className="group p-8 border-none rounded-lg shadow-md bg-orange-500 text-white 
+                          hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-lg">
+              <TrendingUp className="mx-auto text-white w-12 h-12 mb-4" /> {/* Ikon for fremgang/optimering */}
+              <h3 className="text-xl font-semibold mb-3">{translations.value2Title}</h3>
+              <p className="opacity-90">{translations.value2Description}</p>
             </div>
             {/* Værdi 3: Udvikling & Samarbejde */}
-            <div className="group p-8 border border-gray-200 rounded-lg shadow-md bg-white hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-2">
-              <div className="text-orange-500 mb-4 text-5xl">🤝</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">{translations.value3Title}</h3>
-              <p className="text-gray-600">{translations.value3Description}</p>
+            <div className="group p-8 border-none rounded-lg shadow-md bg-orange-500 text-white 
+                          hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-lg">
+              <Handshake className="mx-auto text-white w-12 h-12 mb-4" /> {/* Ikon for samarbejde */}
+              <h3 className="text-xl font-semibold mb-3">{translations.value3Title}</h3>
+              <p className="opacity-90">{translations.value3Description}</p>
             </div>
           </div>
         </div>
@@ -162,7 +172,7 @@ export default function AboutPage({
             {translations.aboutCtaSubtitle}
           </p>
           <Link
-            href="/signup"
+            href={`/${lang}/signup`}
             className="inline-block bg-orange-500 text-white font-bold px-10 py-4 rounded-lg hover:bg-orange-600 transition-colors text-lg shadow-lg"
           >
             {translations.aboutCtaButton}
