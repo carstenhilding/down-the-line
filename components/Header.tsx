@@ -4,12 +4,12 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useLanguage } from '../components/LanguageContext';
+import { useLanguage } from './LanguageContext'; // <-- KORREKT STIL: Relativ til samme mappe (components)
 
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage(); // language er din currentLang
 
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false); // State for when user has scrolled
@@ -72,7 +72,7 @@ export default function Header() {
       <div className="container max-w-6xl mx-auto px-4 flex justify-between items-center">
         {/* Logo - OPdateret til at inkludere sprog */}
         <Link
-          href={`/${language}`} 
+          href={`/${language}`}
           className="flex flex-col items-start space-y-0"
         >
           <div className="flex items-center space-x-2">
@@ -89,7 +89,7 @@ export default function Header() {
         {/* Hamburgermenu-knap for mobil */}
         <button
           onClick={toggleMenu}
-          className="md:hidden text-gray-800 focus:outline-none" // Default color for hamburger icon
+          className="md:hidden text-gray-800 focus:outline-none"
           aria-label="Toggle menu"
         >
           <svg
@@ -124,11 +124,11 @@ export default function Header() {
           } absolute md:relative top-full left-0 w-full md:w-auto bg-white shadow-md md:shadow-none p-4 md:p-0 z-20
           md:flex md:items-center md:space-x-6`}
         >
-          {/* Navigationslinks - OPdateret til at inkludere sprog */}
-          <ul className="flex flex-col md:flex-row md:space-x-6 space-y-4 md:space-y-0 text-lg md:text-base text-black"> {/* Default text color for links */}
+          {/* Navigationslinks */}
+          <ul className="flex flex-col md:flex-row md:space-x-6 space-y-4 md:space-y-0 text-lg md:text-base text-black">
             <li>
               <Link
-                href={`/${language}`} 
+                href={`/${language}`}
                 className="hover:text-orange-500 block"
                 onClick={() => setIsOpen(false)}
               >
@@ -137,7 +137,7 @@ export default function Header() {
             </li>
             <li>
               <Link
-                href={`/${language}/features`} 
+                href={`/${language}/features`}
                 className="hover:text-orange-500 block"
                 onClick={() => setIsOpen(false)}
               >
@@ -146,7 +146,7 @@ export default function Header() {
             </li>
             <li>
               <Link
-                href={`/${language}/pricing`} 
+                href={`/${language}/pricing`}
                 className="hover:text-orange-500 block"
                 onClick={() => setIsOpen(false)}
               >
@@ -155,7 +155,7 @@ export default function Header() {
             </li>
             <li>
               <Link
-                href={`/${language}/about`} 
+                href={`/${language}/about`}
                 className="hover:text-orange-500 block"
                 onClick={() => setIsOpen(false)}
               >
@@ -164,25 +164,24 @@ export default function Header() {
             </li>
           </ul>
 
-          {/* Login og Opret knapper - OPdateret til at inkludere sprog */}
+          {/* Login og Opret knapper */}
           <div className="flex flex-col md:flex-row items-center md:space-x-4 mt-4 md:mt-0 md:ml-6 space-y-3 md:space-y-0">
             <Link
-              href={`/${language}/login`} 
+              href={`/${language}/login`}
               className="font-semibold border border-black text-black px-6 py-2 rounded-md transition-colors hover:bg-black hover:text-white block w-full md:w-auto text-center"
               onClick={() => setIsOpen(false)}
             >
               {t.headerLogin}
             </Link>
             <Link
-              href={`/${language}/signup`} 
+              href={`/${language}/signup`}
               className="bg-orange-500 text-white font-semibold px-6 py-2 rounded-md hover:bg-orange-600 transition-colors block w-full md:w-auto text-center"
               onClick={() => setIsOpen(false)}
             >
               {t.headerJoin}
             </Link>
           </div>
-
-          {/* Sprogvælger - Din eksisterende logik er fin her, da den bruger router.push */}
+          {/* Sprogvælger */}
           <div className="flex items-center space-x-2 mt-4 md:mt-0 md:ml-6 text-gray-800 font-semibold">
             <button
               onClick={() => changeLang('da')}

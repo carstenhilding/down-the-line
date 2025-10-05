@@ -27,30 +27,38 @@ export const i18n = {
     feature3Title: "Data-driven decisions, real results on the pitch.",
     feature3Description: "Turn data into development. Break down matches, analyze tactics, and visualize every detail. Track player progress and use data from training sessions, to measure if focus areas hit the mark. Use data to elevate every part of coaching.",
     feature3Link: "Master Tactical Analysis →",
+
     // CTA Section
     ctaTitle: "Ready to Elevate Your Game?",
     ctaSubtitle: "Get instant access to Down The Line and revolutionize your coaching.",
     ctaButton: "Get Started Now",
-      // Footer Section
-      allRightsReserved: "All Rights Reserved.",
-      privacyPolicy: "Privacy Policy",
-      termsOfService: "Terms of Service",
-      // ---------- NYT: About Side Tekster starter her ----------
-    aboutHeroTitle: "About Down The Line",
-    aboutHeroSubtitle: "Our story, mission, and values",
-    aboutMissionTitle: "Our Mission",
-    aboutMissionParagraph1: "At Down The Line, our mission is to transform how football coaches and clubs operate. We strive to provide the most innovative tools that enable every coach to maximize their team's potential and foster player development.",
-    aboutMissionParagraph2: "We believe in a future where all coaches have access to data-driven insights and effective planning tools that simplify complex tasks, freeing up time for what truly matters: on-field development.",
-    aboutValuesTitle: "Our Values",
-    value1Title: "Innovation",
-    value1Description: "We are driven to explore new technologies and methods to give you an edge.",
-    value2Title: "Simplicity",
-    value2Description: "Complex data and planning made easy to understand and use for everyone.",
-    value3Title: "Collaboration",
-    value3Description: "We build tools that foster teamwork among coaches, players, and management.",
-    aboutCtaTitle: 'Ready to Optimize Your Training?',
-    aboutCtaSubtitle: 'Explore our platform and take your team to the next level.',
-    aboutCtaButton: 'Get Started',
+
+    // Footer Section
+    allRightsReserved: "All Rights Reserved.",
+    privacyPolicy: "Privacy Policy",
+    termsOfService: "Terms of Service",
+
+    // ---------- NYT: About Side Tekster starter her ----------
+    about: { // NU INDKAPSET I ET 'about' OBJEKT
+      heroTitle: "About Down The Line: The Future of Football Coaching",
+      heroSubtitle: "Revolutionizing player development with advanced data and intelligent training tools.",
+      introQuote: "At Down The Line, we envision a world where every football coach has the precision and insight they deserve to shape tomorrow's stars. We bridge the gap between intuition and data.",
+      missionTitle: "Our Mission: Empower Coaches, Optimize Players",
+      missionParagraph1: "Down The Line's mission is to transform football coaching by providing innovative, data-driven tools that maximize the potential of every player and team. We simplify the complexity of coaching, allowing coaches to focus on what truly matters: on-field development.",
+      missionParagraph2: "We strive to equip coaches with intelligent solutions that streamline planning, analysis, and feedback, fostering a culture of continuous improvement and success for clubs at all levels.",
+      valuesTitle: "Our Values: The Cornerstones of Our Success",
+      value1Title: "Innovation & Precision",
+      value1Description: "We embrace cutting-edge technology and data analytics to deliver tools that provide unparalleled insights and optimize training precision.",
+      value2Title: "Simplicity & Accessibility", // Rette her fra "value3Title" til "value2Title"
+      value2Description: "Complex data and advanced planning are made easy to understand and accessible, enabling all coaches to fully leverage our platform.",
+      value3Title: "Development & Collaboration",
+      value3Description: "We believe in a culture of continuous learning for both players and coaches. Our platform fosters collaboration and knowledge sharing to achieve superior results.",
+      historyTitle: "Our Journey: From Vision to Reality",
+      historyDescription: "Down The Line was founded with a passion for modernizing football training. From an innovative idea in a garage project to a leading platform – we are driven to empower coaches with the tools they deserve. Follow our milestones that have shaped us into who we are today.",
+      ctaTitle: "Ready to Redefine Your Training?",
+      ctaSubtitle: "Join the Down The Line community and experience the future of football development.",
+      ctaButton: "Get Started For Free"
+    }
     // ---------- NYT: About Side Tekster slutter her ----------
   },
   da: {
@@ -79,31 +87,38 @@ export const i18n = {
     feature3Title: "Data-drevne beslutninger, reelle resultater på banen",
     feature3Description: "Brug data i udvikling. Nedbryd kampe, analyser taktikker, og visualiser enhver detalje. Holde øje med spilleres udvikling og brug data fra træninger, til at sikre at fokuspunkterne bliver ramt i træningen. Brug data til at forbedre alle dele af træningen.",
     feature3Link: "Mestr Taktisk Analyse →",
+
     // CTA Section
     ctaTitle: "Klar til at løfte dit spil?",
     ctaSubtitle: "Få øjeblikkelig adgang til Down The Line og revolutioner din træning.",
     ctaButton: "Kom i gang nu",
-          // Footer Section
-      allRightsReserved: "Alle Rettigheder Forbeholdes.",
-      privacyPolicy: "Fortrolighedspolitik",
-      termsOfService: "Servicevilkår",
 
-      // ---------- NYT: About Side Tekster starter her ----------
-    aboutHeroTitle: 'Om Down The Line',
-    aboutHeroSubtitle: 'Vores historie, mission og værdier',
-    aboutMissionTitle: 'Vores Mission',
-    aboutMissionParagraph1: 'Hos Down The Line er vores mission at transformere den måde, fodboldtrænere og klubber arbejder på. Vi stræber efter at levere de mest innovative værktøjer, der gør det muligt for enhver træner at maksimere sit holds potentiale og fremme spillerudvikling.',
-    aboutMissionParagraph2: 'Vi tror på en fremtid, hvor alle trænere har adgang til data-drevet indsigt og effektive planlægningsværktøjer, der forenkler komplekse opgaver og frigør tid til det, der virkelig betyder noget: udvikling på banen.',
-    aboutValuesTitle: 'Vores Værdier',
-    value1Title: 'Innovation',
-    value1Description: 'Vi er drevet af at udforske nye teknologier og metoder for at give dig et forspring.',
-    value2Title: 'Enkelhed',
-    value2Description: 'Komplekse data og planlægning gjort letforståeligt og brugbart for alle.',
-    value3Title: 'Samarbejde',
-    value3Description: 'Vi bygger værktøjer, der fremmer teamwork mellem trænere, spillere og ledelse.',
-    aboutCtaTitle: 'Klar til at Optimere Din Træning?',
-    aboutCtaSubtitle: 'Udforsk vores platform og tag dit team til næste niveau.',
-    aboutCtaButton: 'Kom i Gang',
+    // Footer Section
+    allRightsReserved: "Alle Rettigheder Forbeholdes.",
+    privacyPolicy: "Fortrolighedspolitik",
+    termsOfService: "Servicevilkår",
+
+    // ---------- NYT: About Side Tekster starter her ----------
+    about: { // NU INDKAPSET I ET 'about' OBJEKT
+      heroTitle: "Om Down The Line: Fremtidens Fodboldtræning",
+      heroSubtitle: "Revolutionerer spillerudvikling med avanceret data og intelligente træningsværktøjer.",
+      introQuote: "Hos Down The Line forestiller vi os en verden, hvor enhver fodboldtræner har den præcision og indsigt, de fortjener, for at forme morgendagens stjerner. Vi bygger bro mellem intuition og data.",
+      missionTitle: "Vores Mission: Styrk Trænere, Optimer Spillere",
+      missionParagraph1: "Down The Lines mission er at transformere fodboldtræning ved at levere innovative, data-drevne værktøjer, der maksimerer potentialet hos hver eneste spiller og hold. Vi simplificerer kompleksiteten ved coaching, så trænere kan fokusere på det, der virkelig betyder noget: udvikling på banen.",
+      missionParagraph2: "Vi stræber efter at udstyre trænere med intelligente løsninger, der effektiviserer planlægning, analyse og feedback, hvilket fremmer en kultur af konstant forbedring og succes for klubber på alle niveauer.",
+      valuesTitle: "Vores Værdier: Grundstenene i Vores Succes",
+      value1Title: "Innovation & Præcision",
+      value1Description: "Vi omfavner banebrydende teknologi og dataanalyse for at levere værktøjer, der giver uovertruffen indsigt og optimerer træningspræcision.",
+      value2Title: "Enkelhed & Tilgængelighed", // Rette her fra "value3Title" til "value2Title"
+      value2Description: "Komplekse data og avanceret planlægning gøres letforståeligt og tilgængeligt, så alle trænere kan udnytte vores platform fuldt ud.",
+      value3Title: "Udvikling & Samarbejde",
+      value3Description: "Vi tror på en kultur af kontinuerlig læring for både spillere og trænere. Vores platform fremmer samarbejde og videndeling for at skabe bedre resultater.",
+      historyTitle: "Vores Rejse: Fra Vision til Virkelighed",
+      historyDescription: "Down The Line blev grundlagt med en passion for at modernisere fodboldtræning. Fra en innovativ idé i et garageprojekt til en førende platform – vi er drevet af at give trænere de værktøjer, de fortjener. Følg vores milepæle, der har formet os til det, vi er i dag.",
+      ctaTitle: "Klar til at Redefinere Din Træning?",
+      ctaSubtitle: "Slut dig til Down The Line-fællesskabet og oplev fremtiden inden for fodboldudvikling.",
+      ctaButton: "Kom i Gang Gratis"
+    }
     // ---------- NYT: About Side Tekster slutter her ----------
   },
 };
