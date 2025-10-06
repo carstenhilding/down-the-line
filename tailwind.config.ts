@@ -1,8 +1,4 @@
 import type { Config } from "tailwindcss";
-// FJERN DEN FORKERTE IMPORT: import { fontFamily } from 'tailwindcss/defaultTheme'; 
-
-// Du behøver ikke at importere 'fontFamily' direkte på denne måde længere
-// Du kan stadig få fat i standard skrifttyperne via theme() funktionen eller theme.fontFamily
 
 const config: Config = {
   content: [
@@ -12,13 +8,27 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        // Her definerer vi din 'sans' font.
-        // Tailwind vil automatisk flette dette med sine standard 'sans' skrifttyper
-        // uden at du manuelt skal inkludere '...fontFamily.sans' på samme måde som før.
-        sans: ['var(--font-inter)'], 
-        // Hvis du vil tilføje fallback-systemskrifttyper, kan du gøre det eksplicit:
-        // sans: ['var(--font-inter)', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', '"Noto Sans"', 'sans-serif', '"Apple Color Emoji"', '"Segoe UI Emoji"', '"Segoe UI Symbol"', '"Noto Color Emoji"'],
+        // Din eksisterende font-definition, som forbliver uændret
+        sans: ['var(--font-inter)'],
       },
+      // START ÆNDRING: Tilføj din brugerdefinerede orange farveskala her
+      colors: {
+        orange: {
+          DEFAULT: '#fa8f4d',   // Din primære orange
+          '50': '#fff8f2',      // Lette nuancer
+          '100': '#ffefde',
+          '200': '#ffdeb5',
+          '300': '#ffc58c',
+          '400': '#ffac63',
+          '500': '#fa8f4d',     // Din #fa8f4d
+          '600': '#e07f44',     // Lidt mørkere til hover
+          '700': '#c26f3b',     // Endnu mørkere
+          '800': '#a35f32',
+          '900': '#854f2a',
+          '950': '#442614',
+        },
+      },
+      // SLUT ÆNDRING
     },
   },
   plugins: [],

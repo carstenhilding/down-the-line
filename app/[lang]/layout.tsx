@@ -22,13 +22,15 @@ export default function RootLayout({
 
   return (
     <html lang={lang} className={`${inter.variable}`}> 
-      <body>
-        <LanguageProvider initialLang={lang}>
-          <Header />
-          {children}
-          <Footer />
-        </LanguageProvider>
-      </body>
+ <body className={inter.className}> {/* Tilføjet inter.className her */}
+ <LanguageProvider initialLang={lang}>
+ <Header />
+ <main className="min-h-screen pt-[76px]"> {/* TILFØJET <main> med padding her */}
+ {children}
+ </main>
+ <Footer />
+ </LanguageProvider>
+ </body>
     </html>
   );
 }

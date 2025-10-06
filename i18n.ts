@@ -8,7 +8,7 @@ export const i18n = {
     headerPricing: "Pricing",
     headerAbout: "About",
     headerLogin: "Login",
-    headerJoin: "Join",
+    headerJoin: "Join", // Dette er din "Sign Up" knap i headeren
 
     // Hero Section
     heroTitle: "Elevate coaching, optimize the team.",
@@ -38,8 +38,8 @@ export const i18n = {
     privacyPolicy: "Privacy Policy",
     termsOfService: "Terms of Service",
 
-    // ---------- NYT: About Side Tekster starter her ----------
-    about: { // NU INDKAPSET I ET 'about' OBJEKT
+    // ---------- About Side Tekster ----------
+    about: { 
       heroTitle: "About Down The Line: The Future of Football Coaching",
       heroSubtitle: "Revolutionizing player development with advanced data and intelligent training tools.",
       introQuote: "At Down The Line, we envision a world where every football coach has the precision and insight they deserve to shape tomorrow's stars. We bridge the gap between intuition and data.",
@@ -49,7 +49,7 @@ export const i18n = {
       valuesTitle: "Our Values: The Cornerstones of Our Success",
       value1Title: "Innovation & Precision",
       value1Description: "We embrace cutting-edge technology and data analytics to deliver tools that provide unparalleled insights and optimize training precision.",
-      value2Title: "Simplicity & Accessibility", // Rette her fra "value3Title" til "value2Title"
+      value2Title: "Simplicity & Accessibility", 
       value2Description: "Complex data and advanced planning are made easy to understand and accessible, enabling all coaches to fully leverage our platform.",
       value3Title: "Development & Collaboration",
       value3Description: "We believe in a culture of continuous learning for both players and coaches. Our platform fosters collaboration and knowledge sharing to achieve superior results.",
@@ -58,8 +58,20 @@ export const i18n = {
       ctaTitle: "Ready to Redefine Your Training?",
       ctaSubtitle: "Join the Down The Line community and experience the future of football development.",
       ctaButton: "Get Started For Free"
+    },
+    // ---------- NYT: Login Side Tekster starter her ----------
+    login: {
+      title: "Login to Your Account",
+      emailLabel: "Email",
+      passwordLabel: "Password",
+      loginButton: "Login",
+      errorMessage: "An unexpected error occurred. Please try again.",
+      invalidCredentials: "Invalid email or password.",
+      forgotPassword: "Forgot password?",
+      noAccountPrompt: "Don't have an account?",
+      contactSupport: "Contact support"
     }
-    // ---------- NYT: About Side Tekster slutter her ----------
+    // ---------- NYT: Login Side Tekster slutter her ----------
   },
   da: {
     // Header
@@ -68,7 +80,7 @@ export const i18n = {
     headerPricing: "Priser",
     headerAbout: "Om Os",
     headerLogin: "Log Ind",
-    headerJoin: "Opret",
+    headerJoin: "Opret", // Dette er din "Opret bruger" knap i headeren
 
     // Hero Section
     heroTitle: "Løft træningen, optimer holdet.",
@@ -98,32 +110,44 @@ export const i18n = {
     privacyPolicy: "Fortrolighedspolitik",
     termsOfService: "Servicevilkår",
 
-    // ---------- NYT: About Side Tekster starter her ----------
-    about: { // NU INDKAPSET I ET 'about' OBJEKT
+    // ---------- About Side Tekster ----------
+    about: { 
       heroTitle: "Om Down The Line: Fremtidens Fodboldtræning",
       heroSubtitle: "Revolutionerer spillerudvikling med avanceret data og intelligente træningsværktøjer.",
       introQuote: "Hos Down The Line forestiller vi os en verden, hvor enhver fodboldtræner har den præcision og indsigt, de fortjener, for at forme morgendagens stjerner. Vi bygger bro mellem intuition og data.",
       missionTitle: "Vores Mission: Styrk Trænere, Optimer Spillere",
-      missionParagraph1: "Down The Lines mission er at transformere fodboldtræning ved at levere innovative, data-drevne værktøjer, der maksimerer potentialet hos hver eneste spiller og hold. Vi simplificerer kompleksiteten ved coaching, så trænere kan fokusere på det, der virkelig betyder noget: udvikling på banen.",
+      missionParagraph1: "Down The Lines mission er at transformere fodboldtræning ved at levere innovative, data-drevne værktøjer, der maksimerer potentialet hos hver eneste spiller og hold. Vi simplificerer kompleksiteten ved coaching, allowing coaches to focus on what truly matters: on-field development.",
       missionParagraph2: "Vi stræber efter at udstyre trænere med intelligente løsninger, der effektiviserer planlægning, analyse og feedback, hvilket fremmer en kultur af konstant forbedring og succes for klubber på alle niveauer.",
       valuesTitle: "Vores Værdier: Grundstenene i Vores Succes",
       value1Title: "Innovation & Præcision",
       value1Description: "Vi omfavner banebrydende teknologi og dataanalyse for at levere værktøjer, der giver uovertruffen indsigt og optimerer træningspræcision.",
-      value2Title: "Enkelhed & Tilgængelighed", // Rette her fra "value3Title" til "value2Title"
+      value2Title: "Enkelhed & Tilgængelighed", 
       value2Description: "Komplekse data og avanceret planlægning gøres letforståeligt og tilgængeligt, så alle trænere kan udnytte vores platform fuldt ud.",
       value3Title: "Udvikling & Samarbejde",
       value3Description: "Vi tror på en kultur af kontinuerlig læring for både spillere og trænere. Vores platform fremmer samarbejde og videndeling for at skabe bedre resultater.",
-      historyTitle: "Vores Rejse: Fra Vision til Virkelighed",
+      historyTitle: "Our Journey: From Vision to Reality",
       historyDescription: "Down The Line blev grundlagt med en passion for at modernisere fodboldtræning. Fra en innovativ idé i et garageprojekt til en førende platform – vi er drevet af at give trænere de værktøjer, de fortjener. Følg vores milepæle, der har formet os til det, vi er i dag.",
       ctaTitle: "Klar til at Redefinere Din Træning?",
       ctaSubtitle: "Slut dig til Down The Line-fællesskabet og oplev fremtiden inden for fodboldudvikling.",
       ctaButton: "Kom i Gang Gratis"
+    },
+    // ---------- NYT: Login Side Tekster starter her ----------
+    login: {
+      title: "Log ind",
+      emailLabel: "E-mail",
+      passwordLabel: "Adgangskode",
+      loginButton: "Log ind",
+      errorMessage: "Der opstod en uventet fejl. Prøv venligst igen.",
+      invalidCredentials: "Ugyldig e-mail eller adgangskode.",
+      forgotPassword: "Glemt adgangskode?",
+      noAccountPrompt: "Har du ingen konto?",
+      contactSupport: "Kontakt support"
     }
-    // ---------- NYT: About Side Tekster slutter her ----------
+    // ---------- NYT: Login Side Tekster slutter her ----------
   },
 };
 
-// Vi definerer en standardfunktion, der returnerer oversættelser for et givent sprog
+// Vi definerer en standardfunktion, der returnerer oversættelser for et givet sprog
 export function getTranslations(lang: 'en' | 'da') {
   return i18n[lang];
 }

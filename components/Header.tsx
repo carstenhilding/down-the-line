@@ -4,15 +4,15 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useLanguage } from './LanguageContext'; // <-- KORREKT STIL: Relativ til samme mappe (components)
+import { useLanguage } from './LanguageContext';
 
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const { language, setLanguage, t } = useLanguage(); // language er din currentLang
+  const { language, setLanguage, t } = useLanguage();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false); // State for when user has scrolled
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -23,37 +23,29 @@ export default function Header() {
     setLanguage(newLang);
 
     const currentPathWithoutLang = pathname.startsWith(`/${language}`)
-                                  ? pathname.substring(`/${language}`.length)
-                                  : pathname;
+                                   ? pathname.substring(`/${language}`.length)
+                                   : pathname;
     const newPath = `/${newLang}${currentPathWithoutLang === '/' ? '' : currentPathWithoutLang}`;
 
     router.push(newPath);
   };
 
-  // Effect to handle scroll event
   useEffect(() => {
     const handleScroll = () => {
-      // Set isScrolled to true if scroll position is greater than 50px
       setIsScrolled(window.scrollY > 50);
     };
-
-    // Add event listener when component mounts
     window.addEventListener('scroll', handleScroll);
-
-    // Clean up event listener when component unmounts
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []); // Empty dependency array means this effect runs once on mount and cleans up on unmount
+  }, []);
 
-  // Close mobile menu when navigating
   useEffect(() => {
     setIsOpen(false);
-  }, [pathname]); // Close menu when the path changes
+  }, [pathname]);
 
   if (!t) {
     return (
-      // Fixed position for loading header to prevent layout shift
       <header className="fixed top-0 left-0 w-full z-50 bg-white text-black py-4 shadow-md text-center">
         Loading Header Translations...
       </header>
@@ -62,15 +54,13 @@ export default function Header() {
 
   return (
     <header
-      // Always fixed and white background
       className={`
         fixed top-0 left-0 w-full z-50 bg-white transition-all duration-300 ease-in-out
-        ${isScrolled ? 'py-2 shadow-lg' : 'py-1'} {/* Smaller padding and shadow when scrolled */}
-        text-black {/* Default text color for the header */}
+        ${isScrolled ? 'py-2 shadow-lg' : 'py-1'}
+        text-black
       `}
     >
       <div className="container max-w-6xl mx-auto px-4 flex justify-between items-center">
-        {/* Logo - OPdateret til at inkludere sprog */}
         <Link
           href={`/${language}`}
           className="flex flex-col items-start space-y-0"
@@ -79,14 +69,14 @@ export default function Header() {
             <Image
               src="/images/logo.png"
               alt="Down The Line Logo"
-              width={isScrolled ? 150 : 300} // Dynamic logo size
-              height={isScrolled ? 22 : 44}   // Dynamic logo size
+              width={isScrolled ? 150 : 300}
+              height={isScrolled ? 22 : 44}
               priority
+              sizes="(max-width: 768px) 150px, 300px" // <-- ENESTE NYE LINJE HER
             />
           </div>
         </Link>
 
-        {/* Hamburgermenu-knap for mobil */}
         <button
           onClick={toggleMenu}
           className="md:hidden text-gray-800 focus:outline-none"
@@ -117,14 +107,12 @@ export default function Header() {
           </svg>
         </button>
 
-        {/* Navigation, knapper og sprogvælger */}
         <nav
           className={`${
             isOpen ? 'block' : 'hidden'
           } absolute md:relative top-full left-0 w-full md:w-auto bg-white shadow-md md:shadow-none p-4 md:p-0 z-20
           md:flex md:items-center md:space-x-6`}
         >
-          {/* Navigationslinks */}
           <ul className="flex flex-col md:flex-row md:space-x-6 space-y-4 md:space-y-0 text-lg md:text-base text-black">
             <li>
               <Link
@@ -164,7 +152,6 @@ export default function Header() {
             </li>
           </ul>
 
-          {/* Login og Opret knapper */}
           <div className="flex flex-col md:flex-row items-center md:space-x-4 mt-4 md:mt-0 md:ml-6 space-y-3 md:space-y-0">
             <Link
               href={`/${language}/login`}
@@ -181,7 +168,6 @@ export default function Header() {
               {t.headerJoin}
             </Link>
           </div>
-          {/* Sprogvælger */}
           <div className="flex items-center space-x-2 mt-4 md:mt-0 md:ml-6 text-gray-800 font-semibold">
             <button
               onClick={() => changeLang('da')}

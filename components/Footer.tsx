@@ -8,7 +8,7 @@ import { useLanguage } from './LanguageContext';
 import { FaFacebookF, FaInstagram, FaYoutube } from 'react-icons/fa'; 
 
 export default function Footer() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage(); // <--- TILFØJET 'language' HER
   const currentYear = new Date().getFullYear();
 
   if (!t) {
@@ -34,8 +34,8 @@ export default function Footer() {
         {/* Fodnote Links */}
         <nav className="w-full md:w-auto"> {/* Sikre nav fylder bredden på mobil for centrering */}
           <ul className="flex justify-center md:justify-start space-x-6"> {/* Centrer links på mobil, venstrejuster på desktop */}
-            <li><Link href="/privacy" className="text-xs hover:text-orange-500">{t.privacyPolicy}</Link></li> {/* Brug Link komponent */}
-            <li><Link href="/terms" className="text-xs hover:text-orange-500">{t.termsOfService}</Link></li> {/* Brug Link komponent */}
+            <li><Link href={`/${language}/privacy`} className="text-xs hover:text-orange-500">{t.privacyPolicy}</Link></li>
+            <li><Link href={`/${language}/terms`} className="text-xs hover:text-orange-500">{t.termsOfService}</Link></li>
           </ul>
         </nav>
 

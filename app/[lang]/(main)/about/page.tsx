@@ -2,32 +2,33 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useLanguage } from '../../../components/LanguageContext';
-import React, { use } from 'react';
+import { useLanguage } from '../../../../components/LanguageContext';
+import React, { use } from 'react'; // Importer 'use'
 
 // Importer ikoner fra lucide-react her
-import { Quote, Lightbulb, TrendingUp, Handshake } from 'lucide-react'; 
-// Lightbulb for Innovation
-// TrendingUp for Enkelhed/Tilgængelighed (kan repræsentere optimering/fremgang)
-// Handshake for Udvikling & Samarbejde
+import { Quote, Lightbulb, TrendingUp, Handshake } from 'lucide-react';
 
 export default function AboutPage({
   params: paramsPromise
 }: {
   params: Promise<{ lang: 'da' | 'en' }>;
 }) {
-  const params = use(paramsPromise);
+  const params = use(paramsPromise); // Brug 'use' hook her
   const { lang } = params;
 
   const { t } = useLanguage();
 
   if (!t || !t.about || Object.keys(t.about).length === 0) {
+    // Bemærk: Hvis din header IKKE er fixed, skal denne pt-20 også fjernes her
+    // for at undgå at indholdet starter for langt nede, hvis headeren er med i flowet.
     return <div className="pt-20 text-center text-xl text-gray-700">Loading translations...</div>;
   }
 
+  // Ingen ændringer her, da din måde at håndtere oversættelser på er god.
   const translations = {
     aboutHeroTitle: t.about.heroTitle || "",
     aboutHeroSubtitle: t.about.heroSubtitle || "",
+    fintroduction: t.about.introQuote || "", // Ret: 'fintroduction' er ikke defineret i din t.about
     aboutIntroQuote: t.about.introQuote || "",
     aboutMissionTitle: t.about.missionTitle || "",
     aboutMissionParagraph1: t.about.missionParagraph1 || "",
@@ -47,8 +48,9 @@ export default function AboutPage({
   };
 
   return (
-    <main className="pt-20">
-      
+    // START ÆNDRING: Fjernede pt-20. Nu bør indholdet starte direkte under din header.
+    <main>
+
       {/* Hero Sektion for About Siden */}
       <section className="relative bg-gradient-to-r from-gray-900 to-black text-white py-16 md:py-24 overflow-hidden">
         <Image
@@ -58,6 +60,7 @@ export default function AboutPage({
           priority
           className="object-cover opacity-30"
         />
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-900 to-black opacity-30"></div> {/* Tilføjet for at sikre et mørkere overlay */}
         <div className="relative container max-w-6xl mx-auto px-4 text-center z-10">
           <h1 className="text-3xl md:text-5xl font-extrabold mb-3 animate-fade-in-up">
             {translations.aboutHeroTitle}
@@ -114,24 +117,23 @@ export default function AboutPage({
           </h2>
           <div className="grid md:grid-cols-3 gap-10">
             {/* Værdi 1: Innovation & Præcision */}
-            {/* Standard orange boks med hvid tekst, hover effekt for dybde */}
-            <div className="group p-8 border-none rounded-lg shadow-md bg-orange-500 text-white 
-                          hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-lg">
-              <Lightbulb className="mx-auto text-white w-12 h-12 mb-4" /> {/* Ikon for innovation */}
+            <div className="group p-8 border-none rounded-lg shadow-md bg-orange-500 text-white
+                            hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-lg">
+              <Lightbulb className="mx-auto text-white w-12 h-12 mb-4" />
               <h3 className="text-xl font-semibold mb-3">{translations.value1Title}</h3>
               <p className="opacity-90">{translations.value1Description}</p>
             </div>
             {/* Værdi 2: Enkelhed & Tilgængelighed */}
-            <div className="group p-8 border-none rounded-lg shadow-md bg-orange-500 text-white 
-                          hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-lg">
-              <TrendingUp className="mx-auto text-white w-12 h-12 mb-4" /> {/* Ikon for fremgang/optimering */}
+            <div className="group p-8 border-none rounded-lg shadow-md bg-orange-500 text-white
+                            hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-lg">
+              <TrendingUp className="mx-auto text-white w-12 h-12 mb-4" />
               <h3 className="text-xl font-semibold mb-3">{translations.value2Title}</h3>
               <p className="opacity-90">{translations.value2Description}</p>
             </div>
             {/* Værdi 3: Udvikling & Samarbejde */}
-            <div className="group p-8 border-none rounded-lg shadow-md bg-orange-500 text-white 
-                          hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-lg">
-              <Handshake className="mx-auto text-white w-12 h-12 mb-4" /> {/* Ikon for samarbejde */}
+            <div className="group p-8 border-none rounded-lg shadow-md bg-orange-500 text-white
+                            hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-lg">
+              <Handshake className="mx-auto text-white w-12 h-12 mb-4" />
               <h3 className="text-xl font-semibold mb-3">{translations.value3Title}</h3>
               <p className="opacity-90">{translations.value3Description}</p>
             </div>

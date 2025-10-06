@@ -1,31 +1,34 @@
-"use client"; // VIGTIGT
+"use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { getTranslations } from '../i18n'; // <-- VIGTIGT: Importer getTranslations her
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getTranslations } from '../i18n'; // Korrekt sti herfra til i18n.ts
 
 type Language = 'da' | 'en';
-type Translations = ReturnType<typeof getTranslations>; // Henter typen for oversættelsesobjektet
 
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: Translations; // <-- TILFØJET: Nu indeholder konteksten også oversættelserne
+  t: ReturnType<typeof getTranslations>;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export function LanguageProvider({ children, initialLang }: { children: ReactNode; initialLang: Language }) {
+export function LanguageProvider({
+  children,
+  initialLang,
+}: {
+  children: ReactNode;
+  initialLang: Language;
+}) {
   const [language, setLanguage] = useState<Language>(initialLang);
-  const [t, setT] = useState<Translations>(getTranslations(initialLang)); // <-- Initialiser t her
+  const [translations, setTranslations] = useState<ReturnType<typeof getTranslations>>(getTranslations(initialLang));
 
-  // Opdater oversættelser, når sproget ændres
   useEffect(() => {
-    setT(getTranslations(language));
-  }, [language]); // Kør kun, når 'language' ændres
+    setTranslations(getTranslations(language));
+  }, [language]);
 
-  // Send både language, setLanguage og t ned i konteksten
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t: translations }}>
       {children}
     </LanguageContext.Provider>
   );
