@@ -37,47 +37,11 @@ export const i18n = {
     allRightsReserved: "All Rights Reserved.",
     privacyPolicy: "Privacy Policy",
     termsOfService: "Terms of Service",
-
-    // ---------- Dedicated Features Page Text starts here ----------
-    features: {
-      introMainTitle: "Down The Line - One Platform. Every Aspect of Football.",
-      introSubtitle: "Down The Line unites training, analysis, scouting, player development, and communication in one intelligent system.\n\nBuilt for coaches, clubs, and academies that want to work professionally, efficiently, and data-driven — without losing the human touch.",
-      introTagline: "\"From the training ground to the analysis room - everything connects in Down The Line.\"",
-      mainFeaturesHeading: "Here's what Down The Line offers:",
-      feature1Title: "All-in-One Platform for Coaches and Clubs",
-      feature1Bullet1: "Plan and visualize sessions",
-      feature1Bullet2: "Analyze matches and share feedback",
-      feature1Bullet3: "Manage events, players, and communication seamlessly",
-      feature1Bullet4: "No more separate apps, spreadsheets, or emails - everything is integrated and synchronized.",
-      feature2Title: "AI-Driven Coaching and Player Development",
-      feature2Bullet1: "AI suggests drills and session plans based on themes and player data",
-      feature2Bullet2: "Automatic workload and readiness tracking",
-      feature2Bullet3: "Data-driven insights and reports with no manual input",
-      feature2Bullet4: "Make your club smarter, faster, and more data-driven.",
-      feature3Title: "Advanced Video Analysis and Feedback",
-      feature3Bullet1: "Upload, tag, and annotate clips directly in your browser",
-      feature3Bullet2: "Draw and animate tactical movements on screen",
-      feature3Bullet3: "Share highlights and personalized feedback with players",
-      feature3Bullet4: "From match analysis to personal development - it all happens in one flow.",
-      feature4Title: "Complete Player Profiles and Performance Data",
-      feature4Bullet1: "Centralized statistics, testing, and progress history",
-      feature4Bullet2: "Wellness and readiness tracking with AI analysis",
-      feature4Bullet3: "Compare players and visualize development trends over time",
-      feature4Bullet4: "One click - and you have the player's entire development journey.",
-      feature5Title: "Communication and Club Management Simplified",
-      feature5Bullet1: "Secure chats and group channels for teams, coaches, and parents",
-      feature5Bullet2: "Shared calendar for training, matches, and events",
-      feature5Bullet3: "File sharing, announcements, and reminders built into the platform",
-      feature5Bullet4: "Professional club communication - easy, secure, and unified.",
-      ctaTitle: "Ready to optimize your club's success?",
-      ctaSubtitle: "Sign up for Down The Line today for full access to all features.",
-      ctaButtonSignup: "Sign Up Now"
-    },
-    // ---------- Dedicated Features Page Text ends here ----------
-
+    
     // ---------- About Side Tekster ----------
     about: { 
-      heroTitle: "About Down The Line: The Future of Football Coaching",
+      title1: 'About Down The Line:',
+      title2: 'The Future of Football Coaching',
       heroSubtitle: "Revolutionizing player development with advanced data and intelligent training tools.",
       introQuote: "At Down The Line, we envision a world where every football coach has the precision and insight they deserve to shape tomorrow's stars. We bridge the gap between intuition and data.",
       missionTitle: "Our Mission: Empower Coaches, Optimize Players",
@@ -107,8 +71,67 @@ export const i18n = {
       forgotPassword: "Forgot password?",
       noAccountPrompt: "Don't have an account?",
       contactSupport: "Contact support"
-    }
+    },
     // ---------- NYT: Login Side Tekster slutter her ----------
+
+featuresPage: {
+    meta: {
+        title: 'Features',
+        description: 'Down The Line unites training, analysis, scouting, player development, and communication in one intelligent system.'
+    },
+  // Erstat det nuværende 'hero'-objekt med dette:
+hero: {
+    title1: 'Down The Line - One Platform',
+    title2: 'Every Aspect of Football',
+    subtitle: 'Built for coaches, clubs, and academies that want to work professionally, efficiently, and data-driven — without losing the human touch.',
+    tagline: 'From the training ground to the analysis room - everything connects in Down The Line.'
+},
+    feature1: {
+        title: 'All-in-One Platform for Coaches and Clubs',
+        description: 'Down The Line brings everything together — training design, video analysis, player tracking, scouting, and club management — in a single connected platform.',
+        points: [
+            'Plan and visualize sessions',
+            'Analyze matches and share feedback',
+            'Manage events, players, and communication seamlessly'
+        ]
+    },
+    feature2: {
+        title: 'AI-Driven Coaching and Player Development',
+        description: 'Built-in intelligence helps coaches make smarter, faster decisions.',
+        points: [
+            'AI suggests drills and session plans based on themes and player data',
+            'Automatic workload and readiness tracking',
+            'Data-driven insights and reports with no manual input'
+        ]
+    },
+    feature3: {
+        title: 'Advanced Video Analysis and Feedback',
+        description: 'Understand performance like never before with integrated video tools.',
+        points: [
+            'Upload, tag, and annotate clips directly in your browser',
+            'Draw and animate tactical movements on screen',
+            'Share highlights and personalized feedback with players'
+        ]
+    },
+    feature4: {
+        title: 'Complete Player Profiles and Performance Data',
+        description: 'Every player’s journey — physical, technical, and mental — collected in one place.',
+        points: [
+            'Centralized statistics, testing, and progress history',
+            'Wellness and readiness tracking with AI analysis',
+            'Compare players and visualize development trends over time'
+        ]
+    },
+    feature5: {
+        title: 'Communication and Club Management Simplified',
+        description: 'Keep your club connected and organized with one integrated communication hub.',
+        points: [
+            'Secure chats and group channels for teams, coaches, and parents',
+            'Shared calendar for training, matches, and events',
+            'File sharing, announcements, and reminders built into the platform'
+        ]
+    }
+}
   },
   da: {
     // Header
@@ -147,46 +170,10 @@ export const i18n = {
     privacyPolicy: "Fortrolighedspolitik",
     termsOfService: "Servicevilkår",
 
-    // ---------- Dedicated Features Page Text starts here ----------
-    features: {
-      introMainTitle: "Down The Line - Én platform. Alle aspekter af fodbold.",
-      introSubtitle: "Down The Line samler træning, analyse, scouting, spillerudvikling og kommunikation i ét intelligent system.\n\nBygget til trænere, klubber og akademier, der vil arbejde professionelt, effektivt og datadrevet – uden at miste det menneskelige fokus.",
-      introTagline: "\"Fra træningsbanen til analyserummet - alt hænger sammen i Down The Line.\"",
-      mainFeaturesHeading: "Her er hvad Down The Line tilbyder:",
-      feature1Title: "Alt i én platform - fra træning til scouting",
-      feature1Bullet1: "Planlæg og tegn træningspas med animationer",
-      feature1Bullet2: "Analyser kampe og del feedback direkte i appen",
-      feature1Bullet3: "Administrér klub, spillere, events og kommunikation samlet i én løsning",
-      feature1Bullet4: "Ingen flere apps, excelark eller mails - alt er integreret og synkroniseret.",
-      feature2Title: "AI-drevet coaching og spillerudvikling",
-      feature2Bullet1: "Få øvelsesforslag baseret på spillerniveau og træningstema",
-      feature2Bullet2: "AI beregner belastning, readiness og skadesrisiko",
-      feature2Bullet3: "Automatisk statistik og rapporter - uden manuelt tastearbejde",
-      feature2Bullet4: "Gør din klub smartere, hurtigere og mere data-drevet.",
-      feature3Title: "Avanceret videoanalyse og feedback",
-      feature3Bullet1: "Upload og klip videoer, tegn direkte på skærmen",
-      feature3Bullet2: "AI-tagging af highlights og sekvenser",
-      feature3Bullet3: "Giv feedback til spillere med tekst, lyd eller video",
-      feature3Bullet4: "Fra kampanalyse til personlig udvikling - alt sker i ét flow.",
-      feature4Title: "Spillerprofiler, statistik og sundhedsdata samlet ét sted",
-      feature4Bullet1: "Mål performance, tests og udvikling over tid",
-      feature4Bullet2: "Log skader, wellness og readiness dagligt",
-      feature4Bullet3: "Se trends, progression og sammenlign spillere på tværs af hold",
-      feature4Bullet4: "Ét klik - og du har hele spillerens udviklingsrejse.",
-      feature5Title: "Kommunikation og klubstyring gjort simpelt",
-      feature5Bullet1: "Chat med spillere, forældre og trænere",
-      feature5Bullet2: "Planlæg kampe, events og møder i én fælles kalender",
-      feature5Bullet3: "Send påmindelser, beskeder og filer direkte i appen",
-      feature5Bullet4: "Professionel klubkommunikation - nem, sikker og samlet.",
-      ctaTitle: "Klar til at optimere din klubs succes?",
-      ctaSubtitle: "Tilmeld jer Down The Line i dag for at få fuld adgang til alle funktioner.",
-      ctaButtonSignup: "Tilmeld jer nu"
-    },
-    // ---------- Dedicated Features Page Text ends here ----------
-
     // ---------- About Side Tekster ----------
     about: { 
-      heroTitle: "Om Down The Line: Fremtidens Fodboldtræning",
+      title1: 'Om Down The Line:',
+      title2: 'Fremtidens Fodboldtræning',
       heroSubtitle: "Revolutionerer spillerudvikling med avanceret data og intelligente træningsværktøjer.",
       introQuote: "Hos Down The Line forestiller vi os en verden, hvor enhver fodboldtræner har den præcision og indsigt, de fortjener, for at forme morgendagens stjerner. Vi bygger bro mellem intuition og data.",
       missionTitle: "Vores Mission: Styrk Trænere, Optimer Spillere",
@@ -216,8 +203,66 @@ export const i18n = {
       forgotPassword: "Glemt adgangskode?",
       noAccountPrompt: "Har du ingen konto?",
       contactSupport: "Kontakt support"
-    }
+    },
     // ---------- NYT: Login Side Tekster slutter her ----------
+    // ... efter login: { ... },
+featuresPage: {
+    meta: {
+        title: 'Funktioner',
+        description: 'Down The Line samler træning, analyse, scouting, spillerudvikling og kommunikation i ét intelligent system.'
+    },
+hero: {
+    title1: 'Down The Line - Én platform',
+    title2: 'Alle aspekter af fodbold',
+    subtitle: 'Bygget til trænere, klubber og akademier, der vil arbejde professionelt, effektivt og datadrevet - uden at miste det menneskelige fokus.',
+    tagline: 'Fra træningsbanen til analyserummet - alt hænger sammen i Down The Line.'
+},
+    feature1: {
+        title: 'Alt i én platform - fra træning til scouting',
+        description: 'Down The Line samler alt, du som klub eller træner har brug for, ét sted. Ingen flere apps, excelark eller mails – alt er integreret og synkroniseret.',
+        points: [
+            'Planlæg og tegn træningspas med animationer',
+            'Analyser kampe og del feedback direkte i appen',
+            'Administrér klub, spillere, events og kommunikation samlet i én løsning'
+        ]
+    },
+    feature2: {
+        title: 'AI-drevet coaching og spillerudvikling',
+        description: 'Lad vores intelligente assistent hjælpe dig med at tage beslutninger. Gør din klub smartere, hurtigere og mere data-drevet.',
+        points: [
+            'Få øvelsesforslag baseret på spillerniveau og træningstema',
+            'AI beregner belastning, readiness og skadesrisiko',
+            'Automatisk statistik og rapporter - uden manuelt tastearbejde'
+        ]
+    },
+    feature3: {
+        title: 'Avanceret videoanalyse og feedback',
+        description: 'Se, forstå og forbedr præstationer med moderne video- og analyseværktøjer. Fra kampanalyse til personlig udvikling – alt sker i ét flow.',
+        points: [
+            'Upload og klip videoer, tegn direkte på skærmen',
+            'AI-tagging af highlights og sekvenser',
+            'Giv feedback til spillere med tekst, lyd eller video'
+        ]
+    },
+    feature4: {
+        title: 'Spillerprofiler, statistik og sundhedsdata samlet ét sted',
+        description: 'Få et 360° overblik over hver spiller - fysisk, teknisk og mentalt. Ét klik - og du har hele spillerens udviklingsrejse.',
+        points: [
+            'Mål performance, tests og udvikling over tid',
+            'Log skader, wellness og readiness dagligt',
+            'Se trends, progression og sammenlign spillere på tværs af hold'
+        ]
+    },
+    feature5: {
+        title: 'Kommunikation og klubstyring gjort simpelt',
+        description: 'Hold klubben forbundet - fra ungdomshold til seniorafdeling. Professionel klubkommunikation - nem, sikker og samlet.',
+        points: [
+            'Chat med spillere, forældre og trænere',
+            'Planlæg kampe, events og møder i én fælles kalender',
+            'Send påmindelser, beskeder og filer direkte i appen'
+        ]
+    }
+}
   },
 };
 

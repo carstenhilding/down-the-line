@@ -23,8 +23,8 @@ export default function Header() {
     setLanguage(newLang);
 
     const currentPathWithoutLang = pathname.startsWith(`/${language}`)
-                                   ? pathname.substring(`/${language}`.length)
-                                   : pathname;
+                                     ? pathname.substring(`/${language}`.length)
+                                     : pathname;
     const newPath = `/${newLang}${currentPathWithoutLang === '/' ? '' : currentPathWithoutLang}`;
 
     router.push(newPath);
@@ -72,7 +72,7 @@ export default function Header() {
               width={isScrolled ? 150 : 300}
               height={isScrolled ? 22 : 44}
               priority
-              sizes="(max-width: 768px) 150px, 300px" // <-- ENESTE NYE LINJE HER
+              sizes="(max-width: 768px) 150px, 300px"
             />
           </div>
         </Link>
@@ -115,36 +115,48 @@ export default function Header() {
         >
           <ul className="flex flex-col md:flex-row md:space-x-6 space-y-4 md:space-y-0 text-lg md:text-base text-black">
             <li>
+              {/* OPDATERET CLASSNAME FOR AT HÅNDTERE AKTIVT LINK */}
               <Link
                 href={`/${language}`}
-                className="hover:text-orange-500 block"
+                className={`hover:text-orange-500 block ${
+                  pathname === `/${language}` ? 'text-orange-500' : ''
+                }`}
                 onClick={() => setIsOpen(false)}
               >
                 {t.headerHome}
               </Link>
             </li>
             <li>
+              {/* OPDATERET CLASSNAME FOR AT HÅNDTERE AKTIVT LINK */}
               <Link
                 href={`/${language}/features`}
-                className="hover:text-orange-500 block"
+                className={`hover:text-orange-500 block ${
+                  pathname === `/${language}/features` ? 'text-orange-500' : ''
+                }`}
                 onClick={() => setIsOpen(false)}
               >
                 {t.headerFeatures}
               </Link>
             </li>
             <li>
+              {/* OPDATERET CLASSNAME FOR AT HÅNDTERE AKTIVT LINK */}
               <Link
                 href={`/${language}/pricing`}
-                className="hover:text-orange-500 block"
+                className={`hover:text-orange-500 block ${
+                  pathname === `/${language}/pricing` ? 'text-orange-500' : ''
+                }`}
                 onClick={() => setIsOpen(false)}
               >
                 {t.headerPricing}
               </Link>
             </li>
             <li>
+              {/* OPDATERET CLASSNAME FOR AT HÅNDTERE AKTIVT LINK */}
               <Link
                 href={`/${language}/about`}
-                className="hover:text-orange-500 block"
+                className={`hover:text-orange-500 block ${
+                  pathname === `/${language}/about` ? 'text-orange-500' : ''
+                }`}
                 onClick={() => setIsOpen(false)}
               >
                 {t.headerAbout}
