@@ -19,16 +19,15 @@ export default function AboutPage({
   const { t } = useLanguage();
 
   if (!t || !t.about || Object.keys(t.about).length === 0) {
-    // Bemærk: Hvis din header IKKE er fixed, skal denne pt-20 også fjernes her
-    // for at undgå at indholdet starter for langt nede, hvis headeren er med i flowet.
     return <div className="pt-20 text-center text-xl text-gray-700">Loading translations...</div>;
   }
 
-  // Ingen ændringer her, da din måde at håndtere oversættelser på er god.
+  // --- ÆNDRING 1: Henter de to nye titler fra i18n ---
   const translations = {
-    aboutHeroTitle: t.about.heroTitle || "",
+    aboutTitle1: t.about.title1 || "", // Rettet fra aboutHeroTitle
+    aboutTitle2: t.about.title2 || "", // Tilføjet
     aboutHeroSubtitle: t.about.heroSubtitle || "",
-    fintroduction: t.about.introQuote || "", // Ret: 'fintroduction' er ikke defineret i din t.about
+    fintroduction: t.about.introQuote || "",
     aboutIntroQuote: t.about.introQuote || "",
     aboutMissionTitle: t.about.missionTitle || "",
     aboutMissionParagraph1: t.about.missionParagraph1 || "",
@@ -48,22 +47,24 @@ export default function AboutPage({
   };
 
   return (
-    // START ÆNDRING: Fjernede pt-20. Nu bør indholdet starte direkte under din header.
     <main>
 
       {/* Hero Sektion for About Siden */}
       <section className="relative bg-gradient-to-r from-gray-900 to-black text-white py-16 md:py-24 overflow-hidden">
         <Image
           src="/images/about-hero-bg.jpg"
-          alt={translations.aboutHeroTitle}
+          alt={translations.aboutTitle1} // Opdateret alt-tekst
           fill
           priority
           className="object-cover opacity-30"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-900 to-black opacity-30"></div> {/* Tilføjet for at sikre et mørkere overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-900 to-black opacity-30"></div>
         <div className="relative container max-w-6xl mx-auto px-4 text-center z-10">
+          {/* --- ÆNDRING 2: Opdaterer H1-tagget --- */}
           <h1 className="text-3xl md:text-5xl font-extrabold mb-3 animate-fade-in-up">
-            {translations.aboutHeroTitle}
+            {translations.aboutTitle1}
+            <br />
+            <span className="text-orange-500">{translations.aboutTitle2}</span>
           </h1>
           <p className="text-lg md:text-xl opacity-90 leading-relaxed max-w-3xl mx-auto animate-fade-in-up delay-200">
             {translations.aboutHeroSubtitle}
@@ -71,6 +72,8 @@ export default function AboutPage({
         </div>
       </section>
 
+      {/* Resten af din originale kode er URØRT herfra... */}
+      
       {/* Introduktion / Velkomst (Citatsektion) */}
       <section className="bg-white py-10 md:py-12 text-center">
         <div className="container max-w-2xl mx-auto px-4">
@@ -118,21 +121,21 @@ export default function AboutPage({
           <div className="grid md:grid-cols-3 gap-10">
             {/* Værdi 1: Innovation & Præcision */}
             <div className="group p-8 border-none rounded-lg shadow-md bg-orange-500 text-white
-                            hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-lg">
+                           hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-lg">
               <Lightbulb className="mx-auto text-white w-12 h-12 mb-4" />
               <h3 className="text-xl font-semibold mb-3">{translations.value1Title}</h3>
               <p className="opacity-90">{translations.value1Description}</p>
             </div>
             {/* Værdi 2: Enkelhed & Tilgængelighed */}
             <div className="group p-8 border-none rounded-lg shadow-md bg-orange-500 text-white
-                            hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-lg">
+                           hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-lg">
               <TrendingUp className="mx-auto text-white w-12 h-12 mb-4" />
               <h3 className="text-xl font-semibold mb-3">{translations.value2Title}</h3>
               <p className="opacity-90">{translations.value2Description}</p>
             </div>
             {/* Værdi 3: Udvikling & Samarbejde */}
             <div className="group p-8 border-none rounded-lg shadow-md bg-orange-500 text-white
-                            hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-lg">
+                           hover:bg-orange-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-lg">
               <Handshake className="mx-auto text-white w-12 h-12 mb-4" />
               <h3 className="text-xl font-semibold mb-3">{translations.value3Title}</h3>
               <p className="opacity-90">{translations.value3Description}</p>
