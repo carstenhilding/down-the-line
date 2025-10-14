@@ -4,33 +4,35 @@ import '../globals.css';
 import Header from '../../components/Header';
 import { LanguageProvider } from '../../components/LanguageContext';
 import Footer from '../../components/Footer';
-import React from 'react'; // <--- VIGTIGT: Importér React for React.use()
+import React from 'react';
 
 const inter = Inter({ 
   subsets: ['latin'],
-  variable: '--font-inter', // <-- TILFØJET HER
+  variable: '--font-inter',
 });
+
 export default function RootLayout({
   children,
-  params: paramsPromise // <-- Navngiv som en Promise
+  params: paramsPromise
 }: {
   children: React.ReactNode;
-  params: Promise<{ lang: 'da' | 'en' }>; // <-- Type for Promise
+  params: Promise<{ lang: 'da' | 'en' }>;
 }) {
-  const params = React.use(paramsPromise); // <-- Pak params ud
-  const { lang } = params; // <-- Tilgå lang fra det udpakkede objekt
+  const params = React.use(paramsPromise);
+  const { lang } = params;
 
   return (
     <html lang={lang} className={`${inter.variable}`}> 
- <body className={inter.className}> {/* Tilføjet inter.className her */}
- <LanguageProvider initialLang={lang}>
- <Header />
- <main className="min-h-screen pt-[76px]"> {/* TILFØJET <main> med padding her */}
- {children}
- </main>
- <Footer />
- </LanguageProvider>
- </body>
+      <body className={inter.className}>
+        <LanguageProvider initialLang={lang}>
+          <Header />
+          {/* --- OPDATERING HER: 'overflow-x-hidden' er tilføjet --- */}
+          <main className="min-h-screen pt-[76px] overflow-x-hidden">
+            {children}
+          </main>
+          <Footer />
+        </LanguageProvider>
+      </body>
     </html>
   );
 }
