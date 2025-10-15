@@ -66,7 +66,7 @@ export default function PricingPage({
 
     return (
         <main className="min-h-screen">
-            {/* Hero Sektion (uændret) */}
+            {/* Hero Sektion (NU FULDT RESPONSIV) */}
             <section className="relative flex items-center text-white py-16 sm:py-20">
                 <Image
                     src="/images/pricing.jpg"
@@ -76,44 +76,44 @@ export default function PricingPage({
                     priority
                 />
                 <div className="absolute inset-0 bg-black opacity-60 z-10"></div>
-                <div className="relative container max-w-6xl mx-auto px-4 text-center z-20">
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">
+                <div className="relative container max-w-screen-2xl mx-auto px-6 lg:px-8 text-center z-20">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-3">
                         {content.hero.title1}
                         <br />
                         <span className="text-orange-500">{content.hero.title2}</span>
                     </h1>
-                    <p className="text-lg md:text-xl opacity-90 leading-relaxed max-w-3xl mx-auto">
+                    <p className="text-base sm:text-lg lg:text-xl opacity-90 leading-relaxed max-w-3xl mx-auto">
                         {content.hero.subtitle}
                     </p>
                 </div>
             </section>
 
-            {/* --- OPDATERET Kategori-bokse med nyt hover-design --- */}
+            {/* Kategori-bokse (NU FULDT RESPONSIV) */}
             <section className="bg-gray-50 py-16">
-                <div className="container max-w-screen-xl mx-auto px-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {/* Boks 1: Træner */}
-                        <a href="#trainer" className="group block text-center p-8 bg-white rounded-lg shadow-md hover:bg-orange-500 hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-                            <User className="h-12 w-12 mx-auto text-orange-500 group-hover:text-white transition-colors" strokeWidth={1.5} />
-                            <h3 className="mt-4 text-xl font-bold text-gray-900 group-hover:text-white transition-colors">{content.trainer.shortTitle}</h3>
-                        </a>
-                        {/* Boks 2: Klub */}
-                        <a href="#grassroots" className="group block text-center p-8 bg-white rounded-lg shadow-md hover:bg-orange-500 hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-                            <Shield className="h-12 w-12 mx-auto text-orange-500 group-hover:text-white transition-colors" strokeWidth={1.5} />
-                            <h3 className="mt-4 text-xl font-bold text-gray-900 group-hover:text-white transition-colors">{content.grassroots.shortTitle}</h3>
-                        </a>
-                        {/* Boks 3: Akademi */}
-                        <a href="#academy" className="group block text-center p-8 bg-white rounded-lg shadow-md hover:bg-orange-500 hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-                            <Star className="h-12 w-12 mx-auto text-orange-500 group-hover:text-white transition-colors" strokeWidth={1.5} />
-                            <h3 className="mt-4 text-xl font-bold text-gray-900 group-hover:text-white transition-colors">{content.academy.shortTitle}</h3>
-                        </a>
-                    </div>
-                </div>
-            </section>
+				<div className="container max-w-screen-2xl mx-auto px-6 lg:px-8">
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+						<a href="#trainer" className="group flex items-center justify-between p-6 bg-black rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+							<User className="h-14 w-14 text-orange-500" strokeWidth={1.5} />
+							<h3 className="text-xl sm:text-2xl font-bold text-white uppercase">{content.trainer.shortTitle}</h3>
+							<div className="w-14"></div>
+						</a>
+						<a href="#grassroots" className="group flex items-center justify-between p-6 bg-black rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+							<Shield className="h-14 w-14 text-orange-500" strokeWidth={1.5} />
+							<h3 className="text-xl sm:text-2xl font-bold text-white uppercase">{content.grassroots.shortTitle}</h3>
+							<div className="w-14"></div>
+						</a>
+						<a href="#academy" className="group flex items-center justify-between p-6 bg-black rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+							<Star className="h-14 w-14 text-orange-500" strokeWidth={1.5} />
+							<h3 className="text-xl sm:text-2xl font-bold text-white uppercase">{content.academy.shortTitle}</h3>
+							<div className="w-14"></div>
+						</a>
+					</div>
+				</div>
+			</section>
 
-            {/* Pris-sektioner (uændret) */}
+            {/* Pris-sektioner (NU FULDT RESPONSIV) */}
             <section className="py-20 bg-white text-black">
-                <div className="container max-w-screen-xl mx-auto px-6 space-y-20 md:space-y-24">
+                <div className="container max-w-screen-2xl mx-auto px-6 lg:px-8 space-y-20 md:space-y-24">
                     
                     <div id="trainer" className="scroll-mt-20">
                         <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl text-center">

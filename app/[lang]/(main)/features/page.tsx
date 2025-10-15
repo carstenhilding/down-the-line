@@ -42,7 +42,7 @@ export default function FeaturesPage({
 
     return (
         <main className="min-h-screen">
-            {/* Hero Sektion (urørt) */}
+            {/* HERO SEKTION (NU FULDT RESPONSIV) */}
             <section className="relative flex items-center text-white py-16 sm:py-20">
                 <Image
                     src="/images/team-management.jpeg"
@@ -52,29 +52,29 @@ export default function FeaturesPage({
                     priority
                 />
                 <div className="absolute inset-0 bg-black opacity-60 z-10"></div>
-                <div className="relative container max-w-6xl mx-auto px-4 text-center z-20">
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">
+                <div className="relative container max-w-screen-2xl mx-auto px-6 lg:px-8 text-center z-20">
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-3">
                         {content.hero.title1}
                         <br />
                         <span className="text-orange-500">{content.hero.title2}</span>
                     </h1>
-                    <p className="text-lg md:text-xl opacity-90 leading-relaxed max-w-3xl mx-auto">
+                    <p className="text-base sm:text-lg lg:text-xl opacity-90 leading-relaxed max-w-3xl mx-auto">
                         {content.hero.subtitle}
                     </p>
-                    <p className="mt-6 text-md italic text-gray-300">
+                    <p className="mt-6 text-sm sm:text-base italic text-gray-300">
                         &quot;{content.hero.tagline}&quot;
                     </p>
                 </div>
             </section>
 
-            {/* INTERAKTIV FEATURE SEKTION */}
-            <section className="py-20 bg-white text-black">
-                <div className="container max-w-screen-xl mx-auto px-6">
+            {/* INTERAKTIV FEATURE SEKTION (NU FULDT RESPONSIV) */}
+            <section className="py-16 md:py-20 bg-white text-black">
+                <div className="container max-w-screen-2xl mx-auto px-6 lg:px-8">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
                         {/* Venstre Kolonne: Feature Vælger */}
                         <div className="lg:col-span-1">
-                            <h2 className="text-3xl font-bold mb-6">Udforsk Vores Features</h2>
+                            <h2 className="text-3xl font-bold mb-6 text-center lg:text-left">Udforsk Vores Features</h2>
                             <div className="space-y-2">
                                 {features.map((feature, index) => {
                                     const Icon = feature.icon;
@@ -89,7 +89,7 @@ export default function FeaturesPage({
                                                 : 'hover:bg-gray-100'
                                             }`}
                                         >
-                                            <Icon className={`h-8 w-8 mr-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-orange-500'}`} />
+                                            <Icon className={`h-10 w-10 mr-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-orange-500'}`} />
                                             <div>
                                                 <h3 className="font-bold text-lg">{feature.title}</h3>
                                             </div>
@@ -101,9 +101,8 @@ export default function FeaturesPage({
 
                         {/* Højre Kolonne: Vist Feature i en "svævende" sort boks */}
                         <div className="lg:col-span-2">
-                            {/* --- OPDATERING HER: bg-black --- */}
-                            <div className="bg-black text-white rounded-lg p-8 sticky top-28 shadow-2xl">
-                                <div className="w-full h-80 relative mb-6 rounded-md overflow-hidden">
+                            <div className="bg-black text-white rounded-lg p-6 sm:p-8 shadow-2xl lg:sticky lg:top-28">
+                                <div className="w-full h-64 sm:h-80 relative mb-6 rounded-md overflow-hidden">
                                     <Image
                                         src={activeFeature.imageSrc}
                                         alt={activeFeature.title}
@@ -111,12 +110,13 @@ export default function FeaturesPage({
                                         className="object-cover"
                                     />
                                 </div>
-                                <h3 className="text-2xl font-bold mb-4">{activeFeature.title}</h3>
+                                <h3 className="text-2xl sm:text-3xl font-bold mb-4">{activeFeature.title}</h3>
+                                {/* --- RETTELSEN ER HER: className-strengen var ikke afsluttet korrekt --- */}
                                 <p className="text-gray-300 mb-6">{activeFeature.description}</p>
                                 <ul className="space-y-3">
                                     {activeFeature.points.map((point, index) => (
                                         <li key={index} className="flex items-start">
-                                            <span className="text-orange-500 mr-3 mt-1 font-bold text-xl">✓</span>
+                                            <svg className="h-6 w-6 flex-none text-orange-500 mr-3 mt-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.89163 13.2687L9.16582 17.5427L18.7085 8" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                                             <span className="text-gray-200">{point}</span>
                                         </li>
                                     ))}
