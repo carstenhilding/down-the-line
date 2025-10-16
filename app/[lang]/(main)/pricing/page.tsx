@@ -77,7 +77,7 @@ export default function PricingPage({
                 />
                 <div className="absolute inset-0 bg-black opacity-60 z-10"></div>
                 <div className="relative container max-w-screen-2xl mx-auto px-6 lg:px-8 text-center z-20">
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-3">
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-3">
                         {content.hero.title1}
                         <br />
                         <span className="text-orange-500">{content.hero.title2}</span>
