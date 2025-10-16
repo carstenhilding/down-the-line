@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 // RETTET: Stien er justeret til at være 3 niveauer op i stedet for 4.
-import { signInUser } from '../../../firebase/auth'; 
+import { signInUser } from '../../../../firebase/auth'; 
 import { useLanguage } from '../../../../components/LanguageContext';
 
 export default function LoginPage({

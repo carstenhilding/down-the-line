@@ -70,6 +70,18 @@ export const i18n = {
       noAccountPrompt: "Don't have an account?",
       contactSupport: "Contact support"
     },
+    // Dashboard Page (NY)
+    dashboard: {
+      loading: "Loading dashboard...",
+      welcomeTitle: "Welcome",
+      logoutButton: "Log Out",
+      createTrainingTitle: "Create New Session",
+      createTrainingDesc: "Access the advanced training planner to design your next session.",
+      viewTrainingTitle: "Session Library",
+      viewTrainingDesc: "Review your saved drills, animations, and session plans.",
+      recentActivityTitle: "Recent Activity",
+      activityPlaceholder: "Your most recent activities and planned sessions will appear here.",
+    },
     // Features Page
     featuresPage: {
       meta: {
@@ -199,9 +211,9 @@ export const i18n = {
       value2Description: "Komplekse data og avanceret planlægning gøres letforståeligt og tilgængeligt, så alle trænere kan udnytte vores platform fuldt ud.",
       value3Title: "Udvikling & Samarbejde",
       value3Description: "Vi tror på en kultur af kontinuerlig læring for både spillere og trænere. Vores platform fremmer samarbejde og videndeling for at skabe bedre resultater.",
-      historyTitle: "Our Journey: From Vision to Reality",
+      historyTitle: "Our Journey: From Vision to Vision",
       historyDescription: "Down The Line blev grundlagt med en passion for at modernisere fodboldtræning. Fra en innovativ idé i et garageprojekt til en førende platform – vi er drevet af at give trænere de værktøjer, de fortjener. Følg vores milepæle, der har formet os til det, vi er i dag.",
-      ctaTitle: "Ready to Redefine Your Training?",
+      ctaTitle: "Klar til at redefinere din træning?",
       ctaSubtitle: "Slut dig til Down The Line-fællesskabet og oplev fremtiden inden for fodboldudvikling.",
       ctaButton: "Se Vores Planer"
     },
@@ -216,6 +228,18 @@ export const i18n = {
       forgotPassword: "Glemt adgangskode?",
       noAccountPrompt: "Har du ingen konto?",
       contactSupport: "Kontakt support"
+    },
+    // Dashboard Page (NY)
+    dashboard: {
+      loading: "Indlæser dashboard...",
+      welcomeTitle: "Velkommen",
+      logoutButton: "Log Ud",
+      createTrainingTitle: "Opret Ny Træning",
+      createTrainingDesc: "Adgang til den avancerede træningsplanlægger for at designe dit næste træningspas.",
+      viewTrainingTitle: "Øvelsesbibliotek",
+      viewTrainingDesc: "Gennemse dine gemte øvelser, animationer og træningsplaner.",
+      recentActivityTitle: "Seneste Aktivitet",
+      activityPlaceholder: "Dine seneste aktiviteter og planlagte træningspas vises her.",
     },
     // Features Page
     featuresPage: {
@@ -290,7 +314,7 @@ export const i18n = {
           plans: [
               { name: "Performance", price: "Kontakt Os", description: "Avanceret data til elite-udvikling.", features: ["Fuld Videoanalyse-pakke", "Avanceret Spillerstatistik", "Wellness & Readiness Tracking", "Individuelle Udviklingsplaner"], buttonText: "Kontakt Os" },
               { name: "Elite", price: "Contact Us", mostPopular: "Mest Populære", description: "Den komplette platform for professionelle organisationer.", features: ["Alt i Performance, plus:", "Scouting & Talent ID Modul", "API Adgang", "Skræddersyede Integrationer"], buttonText: "Kontakt Os" },
-              { name: "Enterprise", price: "Contact Us", description: "A tailored solution for federations and large-scale talent development.", features: ["Everything in Elite, plus:", "Custom Branding", "Federation-wide Database", "Dedicated Enterprise Support"], buttonText: "Contact Us" }
+              { name: "Enterprise", price: "Contact Us", description: "A tailored solution for federations and large-scale talent development.", features: ["Everything in Elite, plus:", "Custom Branding", "Federation-wide Database", "Dedicated Enterprise Support"], buttonText: "Kontakt Os" }
           ]
       }
     }
