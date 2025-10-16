@@ -120,7 +120,7 @@ export const i18n = {
           subtitle: "We offer dedicated solutions for every part of the football world. Choose your category below."
       },
       trainer: {
-          categoryTitle: "For the Individual Coach",
+          categoryTitle: "The Coach",
           shortTitle: "Coach",
           plans: [
               { name: "Starter", price: "€9", period: "/ month", description: "The essential tools to start planning.", features: ["Exercise Builder (2D)", "Session Planner", "Up to 25 saved drills"], buttonText: "Choose Starter" },
@@ -129,7 +129,7 @@ export const i18n = {
           ]
       },
       grassroots: {
-          categoryTitle: "For the Grassroots Club",
+          categoryTitle: "The Grassroots Club",
           shortTitle: "Club",
           plans: [
               { name: "Essential", price: "€49", period: "/ month", description: "Organize and communicate with the entire club.", features: ["Up to 5 Coaches", "Club Calendar", "Team Communication", "Shared Drill Library"], buttonText: "Choose Essential" },
@@ -138,8 +138,8 @@ export const i18n = {
           ]
       },
       academy: {
-          categoryTitle: "For Academy & Pro",
-          shortTitle: "Academy & Pro",
+          categoryTitle: "The Academy & Pro",
+          shortTitle: "Academy",
           plans: [
               { name: "Performance", price: "Contact Us", description: "Advanced data for elite development.", features: ["Full Video Analysis Suite", "Advanced Player Statistics", "Wellness & Readiness Tracking", "Individual Development Plans"], buttonText: "Contact Us" },
               { name: "Elite", price: "Contact Us", mostPopular: "Most Popular", description: "The complete platform for professional organizations.", features: ["Everything in Performance, plus:", "Scouting & Talent ID Module", "API Access", "Custom Integrations"], buttonText: "Contact Us" },
@@ -267,7 +267,7 @@ export const i18n = {
           subtitle: "Vi tilbyder dedikerede løsninger til alle dele af fodboldverdenen. Vælg din kategori herunder."
       },
       trainer: {
-          categoryTitle: "For den Individuelle Træner",
+          categoryTitle: "Individuelle Træner",
           shortTitle: "Træneren",
           plans: [
               { name: "Starter", price: "69 kr.", period: "/ md.", description: "De essentielle værktøjer til at starte din planlægning.", features: ["Øvelsesbygger (2D)", "Session Planner", "Op til 25 gemte øvelser"], buttonText: "Vælg Starter" },
@@ -276,7 +276,7 @@ export const i18n = {
           ]
       },
       grassroots: {
-          categoryTitle: "For Breddeklubben",
+          categoryTitle: "Breddeklubben",
           shortTitle: "Klubben",
           plans: [
               { name: "Essential", price: "349 kr.", period: "/ md.", description: "Organisér og kommunikér med hele klubben.", features: ["Op til 5 Trænere", "Klubkalender", "Hold-kommunikation", "Fælles øvelsesbibliotek"], buttonText: "Vælg Essential" },
@@ -285,8 +285,8 @@ export const i18n = {
           ]
       },
       academy: {
-          categoryTitle: "For Akademi & Pro",
-          shortTitle: "Akademiet & Pro",
+          categoryTitle: "Akademiet & Pro",
+          shortTitle: "Akademiet",
           plans: [
               { name: "Performance", price: "Kontakt Os", description: "Avanceret data til elite-udvikling.", features: ["Fuld Videoanalyse-pakke", "Avanceret Spillerstatistik", "Wellness & Readiness Tracking", "Individuelle Udviklingsplaner"], buttonText: "Kontakt Os" },
               { name: "Elite", price: "Contact Us", mostPopular: "Mest Populære", description: "Den komplette platform for professionelle organisationer.", features: ["Alt i Performance, plus:", "Scouting & Talent ID Modul", "API Adgang", "Skræddersyede Integrationer"], buttonText: "Kontakt Os" },
