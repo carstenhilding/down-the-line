@@ -120,8 +120,8 @@ export const i18n = {
           subtitle: "We offer dedicated solutions for every part of the football world. Choose your category below."
       },
       trainer: {
-          categoryTitle: "For the Individual Coach",
-          shortTitle: "For the Coach",
+          categoryTitle: "The Coach",
+          shortTitle: "Coach",
           plans: [
               { name: "Starter", price: "€9", period: "/ month", description: "The essential tools to start planning.", features: ["Exercise Builder (2D)", "Session Planner", "Up to 25 saved drills"], buttonText: "Choose Starter" },
               { name: "Advanced", price: "€15", period: "/ month", mostPopular: "Most Popular", description: "Animate and share your vision.", features: ["Everything in Starter, plus:", "Animation Tools", "Video & PDF Export", "Unlimited Drills"], buttonText: "Choose Advanced" },
@@ -129,8 +129,8 @@ export const i18n = {
           ]
       },
       grassroots: {
-          categoryTitle: "For the Grassroots Club",
-          shortTitle: "For the Club",
+          categoryTitle: "The Grassroots Club",
+          shortTitle: "Club",
           plans: [
               { name: "Essential", price: "€49", period: "/ month", description: "Organize and communicate with the entire club.", features: ["Up to 5 Coaches", "Club Calendar", "Team Communication", "Shared Drill Library"], buttonText: "Choose Essential" },
               { name: "Growth", price: "€75", period: "/ month", mostPopular: "Most Popular", description: "Tools for developing players and coaches.", features: ["Up to 10 Coaches", "Everything in Essential, plus:", "Basic Player Development Plans", "Video Analysis Suite"], buttonText: "Choose Growth" },
@@ -138,8 +138,8 @@ export const i18n = {
           ]
       },
       academy: {
-          categoryTitle: "For Academy & Pro",
-          shortTitle: "For the Academy",
+          categoryTitle: "The Academy & Pro",
+          shortTitle: "Academy",
           plans: [
               { name: "Performance", price: "Contact Us", description: "Advanced data for elite development.", features: ["Full Video Analysis Suite", "Advanced Player Statistics", "Wellness & Readiness Tracking", "Individual Development Plans"], buttonText: "Contact Us" },
               { name: "Elite", price: "Contact Us", mostPopular: "Most Popular", description: "The complete platform for professional organizations.", features: ["Everything in Performance, plus:", "Scouting & Talent ID Module", "API Access", "Custom Integrations"], buttonText: "Contact Us" },
@@ -267,8 +267,8 @@ export const i18n = {
           subtitle: "Vi tilbyder dedikerede løsninger til alle dele af fodboldverdenen. Vælg din kategori herunder."
       },
       trainer: {
-          categoryTitle: "For den Individuelle Træner",
-          shortTitle: "For Træneren",
+          categoryTitle: "Individuelle Træner",
+          shortTitle: "Træneren",
           plans: [
               { name: "Starter", price: "69 kr.", period: "/ md.", description: "De essentielle værktøjer til at starte din planlægning.", features: ["Øvelsesbygger (2D)", "Session Planner", "Op til 25 gemte øvelser"], buttonText: "Vælg Starter" },
               { name: "Advanced", price: "99 kr.", period: "/ md.", mostPopular: "Mest Populære", description: "Animer og del din vision.", features: ["Alt i Starter, plus:", "Animations-værktøjer", "Video & PDF Eksport", "Ubegrænset antal øvelser"], buttonText: "Vælg Advanced" },
@@ -276,8 +276,8 @@ export const i18n = {
           ]
       },
       grassroots: {
-          categoryTitle: "For Breddeklubben",
-          shortTitle: "For Klubben",
+          categoryTitle: "Breddeklubben",
+          shortTitle: "Klubben",
           plans: [
               { name: "Essential", price: "349 kr.", period: "/ md.", description: "Organisér og kommunikér med hele klubben.", features: ["Op til 5 Trænere", "Klubkalender", "Hold-kommunikation", "Fælles øvelsesbibliotek"], buttonText: "Vælg Essential" },
               { name: "Growth", price: "499 kr.", period: "/ md.", mostPopular: "Mest Populære", description: "Værktøjer til at udvikle spillere og trænere.", features: ["Op til 10 Trænere", "Alt i Essential, plus:", "Simple Udviklingsplaner", "Videoanalyse-pakke"], buttonText: "Vælg Growth" },
@@ -285,8 +285,8 @@ export const i18n = {
           ]
       },
       academy: {
-          categoryTitle: "For Akademi & Pro",
-          shortTitle: "For Akademiet",
+          categoryTitle: "Akademiet & Pro",
+          shortTitle: "Akademiet",
           plans: [
               { name: "Performance", price: "Kontakt Os", description: "Avanceret data til elite-udvikling.", features: ["Fuld Videoanalyse-pakke", "Avanceret Spillerstatistik", "Wellness & Readiness Tracking", "Individuelle Udviklingsplaner"], buttonText: "Kontakt Os" },
               { name: "Elite", price: "Contact Us", mostPopular: "Mest Populære", description: "Den komplette platform for professionelle organisationer.", features: ["Alt i Performance, plus:", "Scouting & Talent ID Modul", "API Adgang", "Skræddersyede Integrationer"], buttonText: "Kontakt Os" },

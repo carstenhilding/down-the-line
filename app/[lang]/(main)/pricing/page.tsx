@@ -13,14 +13,11 @@ const CheckIcon = () => (
     </svg>
 );
 
-// Hjælpe-komponent til et enkelt priskort (uændret)
+// Hjælpe-komponent til et enkelt priskort (Inkluderer Orange Hover Effekt)
 const PriceCard = ({ plan }: { plan: any }) => (
-    <div className={`relative flex flex-col rounded-3xl p-8 ring-1 ${ plan.mostPopular ? 'ring-2 ring-orange-500' : 'ring-gray-200' }`}>
-        {plan.mostPopular && (
-            <div className="absolute top-0 -translate-y-1/2 rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold tracking-wide text-white">
-                {plan.mostPopular}
-            </div>
-        )}
+    // Fjernet Most Popular, Tilføjet Orange Hover Effekt
+    <div className="relative flex flex-col rounded-3xl p-8 ring-1 ring-gray-200 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:ring-2 hover:ring-orange-500">
+        
         <div className="flex-grow">
             <h3 className="text-lg font-semibold leading-8 text-gray-900">{plan.name}</h3>
             <p className="mt-4 text-sm leading-6 text-gray-600">{plan.description}</p>
@@ -88,37 +85,43 @@ export default function PricingPage({
                 </div>
             </section>
 
-            {/* --- OPDATERET Kategori-bokse med nyt hover-design --- */}
-            <section className="bg-gray-50 py-16">
-                <div className="container max-w-screen-xl mx-auto px-6">
+            {/* Kategori-bokse (py-16 er ændret til py-12) */}
+            <section className="bg-gray-50 py-12">
+                <div className="container max-w-screen-2xl mx-auto px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {/* Boks 1: Træner */}
-                        <a href="#trainer" className="group block text-center p-8 bg-white rounded-lg shadow-md hover:bg-orange-500 hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-                            <User className="h-12 w-12 mx-auto text-orange-500 group-hover:text-white transition-colors" strokeWidth={1.5} />
-                            <h3 className="mt-4 text-xl font-bold text-gray-900 group-hover:text-white transition-colors">{content.trainer.shortTitle}</h3>
+                        <a href="#trainer" className="group flex items-center justify-between p-6 bg-black rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+                            <User className="h-14 w-14 text-orange-500" strokeWidth={1.5} />
+                            <h3 className="text-xl sm:text-2xl font-bold text-white uppercase">{content.trainer.shortTitle}</h3>
+                            <div className="w-14"></div>
                         </a>
-                        {/* Boks 2: Klub */}
-                        <a href="#grassroots" className="group block text-center p-8 bg-white rounded-lg shadow-md hover:bg-orange-500 hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-                            <Shield className="h-12 w-12 mx-auto text-orange-500 group-hover:text-white transition-colors" strokeWidth={1.5} />
-                            <h3 className="mt-4 text-xl font-bold text-gray-900 group-hover:text-white transition-colors">{content.grassroots.shortTitle}</h3>
+                        <a href="#grassroots" className="group flex items-center justify-between p-6 bg-black rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+                            <Shield className="h-14 w-14 text-orange-500" strokeWidth={1.5} />
+                            <h3 className="text-xl sm:text-2xl font-bold text-white uppercase">{content.grassroots.shortTitle}</h3>
+                            <div className="w-14"></div>
                         </a>
-                        {/* Boks 3: Akademi */}
-                        <a href="#academy" className="group block text-center p-8 bg-white rounded-lg shadow-md hover:bg-orange-500 hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-                            <Star className="h-12 w-12 mx-auto text-orange-500 group-hover:text-white transition-colors" strokeWidth={1.5} />
-                            <h3 className="mt-4 text-xl font-bold text-gray-900 group-hover:text-white transition-colors">{content.academy.shortTitle}</h3>
+                        <a href="#academy" className="group flex items-center justify-between p-6 bg-black rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+                            <Star className="h-14 w-14 text-orange-500" strokeWidth={1.5} />
+                            <h3 className="text-xl sm:text-2xl font-bold text-white uppercase">{content.academy.shortTitle}</h3>
+                            <div className="w-14"></div>
                         </a>
                     </div>
                 </div>
             </section>
 
-            {/* Pris-sektioner (uændret) */}
-            <section className="py-20 bg-white text-black">
-                <div className="container max-w-screen-xl mx-auto px-6 space-y-20 md:space-y-24">
+            {/* Pris-sektioner (pt-20 ændret til pt-12, Overskrift redesignet, STREG LÆNGERE) */}
+            <section className="pt-12 pb-20 bg-white text-black">
+                <div className="container max-w-screen-2xl mx-auto px-6 lg:px-8 space-y-20 md:space-y-24">
                     
                     <div id="trainer" className="scroll-mt-20">
-                        <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl text-center">
-                            {content.trainer.categoryTitle}
-                        </h2>
+                        {/* NY OVERSKRIFT STYLING - w-20 ændret til w-28 */}
+                        <div className="text-center mb-16">
+                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900">
+                                {content.trainer.categoryTitle}
+                            </h2>
+                            <div className="h-1 w-28 bg-orange-500 mx-auto mt-4 rounded"></div>
+                        </div>
+                        {/* END NY OVERSKRIFT STYLING */}
+                        
                         <div className="mx-auto mt-16 grid grid-cols-1 gap-8 lg:grid-cols-3">
                             {content.trainer.plans.map((plan: any) => (
                                 <PriceCard key={plan.name} plan={plan} />
@@ -127,9 +130,15 @@ export default function PricingPage({
                     </div>
 
                     <div id="grassroots" className="scroll-mt-20">
-                        <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl text-center">
-                            {content.grassroots.categoryTitle}
-                        </h2>
+                        {/* NY OVERSKRIFT STYLING - w-20 ændret til w-28 */}
+                        <div className="text-center mb-16">
+                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900">
+                                {content.grassroots.categoryTitle}
+                            </h2>
+                            <div className="h-1 w-28 bg-orange-500 mx-auto mt-4 rounded"></div>
+                        </div>
+                        {/* END NY OVERSKRIFT STYLING */}
+                        
                         <div className="mx-auto mt-16 grid grid-cols-1 gap-8 lg:grid-cols-3">
                             {content.grassroots.plans.map((plan: any) => (
                                 <PriceCard key={plan.name} plan={plan} />
@@ -138,9 +147,15 @@ export default function PricingPage({
                     </div>
                     
                     <div id="academy" className="scroll-mt-20">
-                        <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl text-center">
-                            {content.academy.categoryTitle}
-                        </h2>
+                        {/* NY OVERSKRIFT STYLING - w-20 ændret til w-28 */}
+                        <div className="text-center mb-16">
+                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900">
+                                {content.academy.categoryTitle}
+                            </h2>
+                            <div className="h-1 w-28 bg-orange-500 mx-auto mt-4 rounded"></div>
+                        </div>
+                        {/* END NY OVERSKRIFT STYLING */}
+
                         <div className="mx-auto mt-16 grid grid-cols-1 gap-8 lg:grid-cols-3">
                             {content.academy.plans.map((plan: any) => (
                                 <PriceCard key={plan.name} plan={plan} />
