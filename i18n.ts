@@ -81,18 +81,42 @@ export const i18n = {
       viewTrainingDesc: "Review your saved drills, animations, and session plans.",
       recentActivityTitle: "Recent Activity",
       activityPlaceholder: "Your most recent activities and planned sessions will appear here.",
+      // NEW
+      upcoming_week: "Upcoming Week",
+      team_status: "Team Status",
+      player_availability: "Player Availability",
+      total_load: "Total Load",
+      readiness: "Readiness",
+      top_scorer: "Top Scorer",
+      injured_absent: "Injured & Absent",
     },
+
     // Sidebar Menu
     sidebar: {
         dashboard: 'Dashboard',
-        training: 'Training & Drills',
+        training: 'Training',
+        training_new: 'Create New Session',
+        training_library: 'Session Library',
         club: 'Club & Calendar',
         players: 'Player Data',
         video: 'Video Analysis',
         scouting: 'Scouting',
         chat: 'Communication',
     },
-    // Trainer Module (Modul 1 & 2)
+    // NEW SECTION for the trainer page content
+    trainer_page: {
+        session_planner: "Session Planner",
+        session_planner_desc: "Design and plan your next session",
+        animation_studio: "Animation Studio",
+        animation_studio_desc: "Bring your drills to life with animation",
+        weeks_focus: "Week's Focus (Periodization)",
+        weeks_focus_desc: "This week (Week 42), the primary focus is on <1>Defensive Organization</1>, with a secondary focus on quick transitions after losing possession.",
+        upcoming_sessions: "Upcoming Sessions",
+        my_libraries: "My Libraries",
+        club_catalog: "Club's Drill Catalog",
+        personal_catalog: "My Personal Catalog"
+    },
+    // Trainer Module (for forms etc.)
     trainer: {
         titleNew: "New Training Session",
         titleLibrary: "Session Library",
@@ -262,18 +286,42 @@ export const i18n = {
       viewTrainingDesc: "Gennemse dine gemte øvelser, animationer og træningsplaner.",
       recentActivityTitle: "Seneste Aktivitet",
       activityPlaceholder: "Dine seneste aktiviteter og planlagte træningspas vises her.",
+      // NYT
+      upcoming_week: "Kommende Uge",
+      team_status: "Holdets Tilstand",
+      player_availability: "Spillertilgængelighed",
+      total_load: "Samlet Belastning",
+      readiness: "Klarhed",
+      top_scorer: "Topscorer",
+      injured_absent: "Skadet & Fravær",
     },
+
     // Sidebar Menu
     sidebar: {
         dashboard: 'Dashboard',
-        training: 'Træning & Øvelser',
+        training: 'Træning',
+        training_new: 'Opret Nyt Pas',
+        training_library: 'Øvelsesbibliotek',
         club: 'Klub & Kalender',
         players: 'Spillerdata',
         video: 'Videoanalyse',
         scouting: 'Scouting',
         chat: 'Kommunikation',
     },
-    // Trainer Module (Modul 1 & 2)
+     // NY SEKTION for the trainer page content
+    trainer_page: {
+        session_planner: "Session Planner",
+        session_planner_desc: "Design og planlæg dit næste træningspas",
+        animation_studio: "Animation Studio",
+        animation_studio_desc: "Bring dine øvelser til live med animation",
+        weeks_focus: "Ugens Fokus (Periodisering)",
+        weeks_focus_desc: "I denne uge (Uge 42) er det primære fokus på <1>Defensiv Organisation</1>, med sekundært fokus på hurtige omstillinger efter boldtab.",
+        upcoming_sessions: "Kommende Træninger",
+        my_libraries: "Mine Biblioteker",
+        club_catalog: "Klubbens Øvelseskatalog",
+        personal_catalog: "Mit Personlige Katalog"
+    },
+    // Trainer Module (for forms etc.)
     trainer: {
         titleNew: "Nyt Træningspas",
         titleLibrary: "Øvelsesbibliotek",
@@ -357,8 +405,8 @@ export const i18n = {
           shortTitle: "Akademiet",
           plans: [
               { name: "Performance", price: "Kontakt Os", description: "Avanceret data til elite-udvikling.", features: ["Fuld Videoanalyse-pakke", "Avanceret Spillerstatistik", "Wellness & Readiness Tracking", "Individuelle Udviklingsplaner"], buttonText: "Kontakt Os" },
-              { name: "Elite", price: "Kontakt Os", mostPopular: "Mest Populære", description: "Den komplette platform for professionelle organisationer.", features: ["Alt i Performance, plus:", "Scouting & Talent ID Modul", "API Adgang", "Skræddersyede Integrationer"], buttonText: "Kontakt Os" },
-              { name: "Enterprise", price: "Kontakt Os", description: "A tailored solution for federations and large-scale talent development.", features: ["Everything in Elite, plus:", "Custom Branding", "Federation-wide Database", "Dedicated Enterprise Support"], buttonText: "Kontakt Os" }
+              { name: "Elite", price: "Contact Us", mostPopular: "Most Popular", description: "Den komplette platform for professionelle organisationer.", features: ["Everything in Performance, plus:", "Scouting & Talent ID Modul", "API Adgang", "Skræddersyede Integrationer"], buttonText: "Kontakt Os" },
+              { name: "Enterprise", price: "Contact Us", description: "A tailored solution for federations and large-scale talent development.", features: ["Everything in Elite, plus:", "Custom Branding", "Federation-wide Database", "Dedicated Enterprise Support"], buttonText: "Contact Us" }
           ]
       }
     }
