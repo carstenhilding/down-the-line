@@ -70,7 +70,7 @@ export const i18n = {
       noAccountPrompt: "Don't have an account?",
       contactSupport: "Contact support"
     },
-    // Dashboard Page (NY)
+    // Dashboard Page
     dashboard: {
       loading: "Loading dashboard...",
       welcomeTitle: "Welcome",
@@ -81,6 +81,28 @@ export const i18n = {
       viewTrainingDesc: "Review your saved drills, animations, and session plans.",
       recentActivityTitle: "Recent Activity",
       activityPlaceholder: "Your most recent activities and planned sessions will appear here.",
+    },
+    // Sidebar Menu
+    sidebar: {
+        dashboard: 'Dashboard',
+        training: 'Training & Drills',
+        club: 'Club & Calendar',
+        players: 'Player Data',
+        video: 'Video Analysis',
+        scouting: 'Scouting',
+        chat: 'Communication',
+    },
+    // Trainer Module (Modul 1 & 2)
+    trainer: {
+        titleNew: "New Training Session",
+        titleLibrary: "Session Library",
+        detailsTitle: "Session Details",
+        titleLabel: "Session Title",
+        themeLabel: "Theme",
+        durationLabel: "Duration (min.)",
+        notesLabel: "Coach Notes",
+        saveButton: "Save Session",
+        cancelButton: "Cancel"
     },
     // Features Page
     featuresPage: {
@@ -202,7 +224,7 @@ export const i18n = {
       heroSubtitle: "Revolutionerer spillerudvikling med avanceret data og intelligente træningsværktøjer.",
       introQuote: "Hos Down The Line forestiller vi os en verden, hvor enhver fodboldtræner har den præcision og indsigt, de fortjener, for at forme morgendagens stjerner. Vi bygger bro mellem intuition og data.",
       missionTitle: "Vores Mission: Styrk Trænere, Optimer Spillere",
-      missionParagraph1: "Down The Lines mission er at transformere fodboldtræning ved at levere innovative, data-drevne værktøjer, der maksimerer potentialet hos hver eneste spiller og hold. Vi simplificerer kompleksiteten ved coaching, allowing coaches to focus on what truly matters: on-field development.",
+      missionParagraph1: "Down The Lines mission er at transformere fodboldtræning ved at levere innovative, data-drevne værktøjer, der maksimerer potentialet hos hver eneste spiller og hold. Vi simplificerer kompleksiteten ved coaching, så trænere kan fokusere på det, der virkelig betyder noget: udvikling på banen.",
       missionParagraph2: "Vi stræber efter at udstyre trænere med intelligente løsninger, der effektiviserer planlægning, analyse og feedback, hvilket fremmer en kultur af konstant forbedring og succes for klubber på alle niveauer.",
       valuesTitle: "Vores Værdier: Grundstenene i Vores Succes",
       value1Title: "Innovation & Præcision",
@@ -211,7 +233,7 @@ export const i18n = {
       value2Description: "Komplekse data og avanceret planlægning gøres letforståeligt og tilgængeligt, så alle trænere kan udnytte vores platform fuldt ud.",
       value3Title: "Udvikling & Samarbejde",
       value3Description: "Vi tror på en kultur af kontinuerlig læring for både spillere og trænere. Vores platform fremmer samarbejde og videndeling for at skabe bedre resultater.",
-      historyTitle: "Our Journey: From Vision to Vision",
+      historyTitle: "Vores Rejse: Fra Vision til Virkelighed",
       historyDescription: "Down The Line blev grundlagt med en passion for at modernisere fodboldtræning. Fra en innovativ idé i et garageprojekt til en førende platform – vi er drevet af at give trænere de værktøjer, de fortjener. Følg vores milepæle, der har formet os til det, vi er i dag.",
       ctaTitle: "Klar til at redefinere din træning?",
       ctaSubtitle: "Slut dig til Down The Line-fællesskabet og oplev fremtiden inden for fodboldudvikling.",
@@ -229,7 +251,7 @@ export const i18n = {
       noAccountPrompt: "Har du ingen konto?",
       contactSupport: "Kontakt support"
     },
-    // Dashboard Page (NY)
+    // Dashboard Page
     dashboard: {
       loading: "Indlæser dashboard...",
       welcomeTitle: "Velkommen",
@@ -240,6 +262,28 @@ export const i18n = {
       viewTrainingDesc: "Gennemse dine gemte øvelser, animationer og træningsplaner.",
       recentActivityTitle: "Seneste Aktivitet",
       activityPlaceholder: "Dine seneste aktiviteter og planlagte træningspas vises her.",
+    },
+    // Sidebar Menu
+    sidebar: {
+        dashboard: 'Dashboard',
+        training: 'Træning & Øvelser',
+        club: 'Klub & Kalender',
+        players: 'Spillerdata',
+        video: 'Videoanalyse',
+        scouting: 'Scouting',
+        chat: 'Kommunikation',
+    },
+    // Trainer Module (Modul 1 & 2)
+    trainer: {
+        titleNew: "Nyt Træningspas",
+        titleLibrary: "Øvelsesbibliotek",
+        detailsTitle: "Pas Detaljer",
+        titleLabel: "Titel på Pas",
+        themeLabel: "Tema",
+        durationLabel: "Varighed (min.)",
+        notesLabel: "Trænernoter",
+        saveButton: "Gem Pas",
+        cancelButton: "Annuller"
     },
     // Features Page
     featuresPage: {
@@ -313,8 +357,8 @@ export const i18n = {
           shortTitle: "Akademiet",
           plans: [
               { name: "Performance", price: "Kontakt Os", description: "Avanceret data til elite-udvikling.", features: ["Fuld Videoanalyse-pakke", "Avanceret Spillerstatistik", "Wellness & Readiness Tracking", "Individuelle Udviklingsplaner"], buttonText: "Kontakt Os" },
-              { name: "Elite", price: "Contact Us", mostPopular: "Mest Populære", description: "Den komplette platform for professionelle organisationer.", features: ["Alt i Performance, plus:", "Scouting & Talent ID Modul", "API Adgang", "Skræddersyede Integrationer"], buttonText: "Kontakt Os" },
-              { name: "Enterprise", price: "Contact Us", description: "A tailored solution for federations and large-scale talent development.", features: ["Everything in Elite, plus:", "Custom Branding", "Federation-wide Database", "Dedicated Enterprise Support"], buttonText: "Kontakt Os" }
+              { name: "Elite", price: "Kontakt Os", mostPopular: "Mest Populære", description: "Den komplette platform for professionelle organisationer.", features: ["Alt i Performance, plus:", "Scouting & Talent ID Modul", "API Adgang", "Skræddersyede Integrationer"], buttonText: "Kontakt Os" },
+              { name: "Enterprise", price: "Kontakt Os", description: "A tailored solution for federations and large-scale talent development.", features: ["Everything in Elite, plus:", "Custom Branding", "Federation-wide Database", "Dedicated Enterprise Support"], buttonText: "Kontakt Os" }
           ]
       }
     }
@@ -325,3 +369,4 @@ export const i18n = {
 export function getTranslations(lang: 'en' | 'da') {
   return i18n[lang];
 }
+

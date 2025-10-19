@@ -24,13 +24,8 @@ export default function RootLayout({
   const { lang } = params;
   const pathname = usePathname(); // Hent den aktuelle sti
   
-  // Bestem om Header/Footer skal vises
-  // Hvis stien inkluderer '/dashboard', antager vi, at det er en backend/sikker side.
-  const isSecureRoute = pathname.includes('/dashboard');
-
-  // Vi skal flytte React.use(paramsPromise) ud af komponenten for at undgå at bruge hooks i use
-  // MEN: I Next.js 13/14 skal root layout IKKE være "use client" hvis det skal bruge use()
-  // Da du har use() og bruger en client-side komponent (usePathname), skal hele filen være "use client".
+  // NYT TJEK: Skjul Header/Footer, hvis stien indeholder /dashboard ELLER /trainer
+  const isSecureRoute = pathname.includes('/dashboard') || pathname.includes('/trainer');
 
   return (
     <html lang={lang} className={`${inter.variable}`}> 
