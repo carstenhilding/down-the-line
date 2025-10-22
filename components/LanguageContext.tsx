@@ -1,14 +1,17 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getTranslations } from '../i18n'; // Korrekt sti herfra til i18n.ts
+// ÆNDRING HER: Importerer den nye dedikerede funktion
+import { getMainTranslations, getTranslations } from '../i18n';
 
 type Language = 'da' | 'en';
 
+// VIGTIGT: t-typen forbliver den samme, for at undgå at bryde de nuværende MAIN-sider.
+// Men i realiteten indeholder den nu kun Main-oversættelser.
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: ReturnType<typeof getTranslations>;
+  t: ReturnType<typeof getTranslations>; // BEVARER TYPEN for bagudkompatibilitet
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -21,10 +24,12 @@ export function LanguageProvider({
   initialLang: Language;
 }) {
   const [language, setLanguage] = useState<Language>(initialLang);
-  const [translations, setTranslations] = useState<ReturnType<typeof getTranslations>>(getTranslations(initialLang));
+  // ÆNDRING HER: Bruger nu getMainTranslations, som kun henter main/globale oversættelser
+  const [translations, setTranslations] = useState<ReturnType<typeof getTranslations>>(getMainTranslations(initialLang) as ReturnType<typeof getTranslations>);
 
   useEffect(() => {
-    setTranslations(getTranslations(language));
+    // ÆNDRING HER: Skifter til at bruge getMainTranslations ved sprogskift
+    setTranslations(getMainTranslations(language) as ReturnType<typeof getTranslations>);
   }, [language]);
 
   return (

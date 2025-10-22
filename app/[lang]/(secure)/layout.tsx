@@ -6,10 +6,18 @@ import { signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth
 import { LayoutDashboard, Users, Zap, Calendar, Activity, Shield, BookOpen, LogOut, Settings, User as UserIcon, Menu, Globe, ChevronDown } from 'lucide-react';
 import { auth, db } from '../../../firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
-import { useLanguage } from '../../../components/LanguageContext';
+import { useLanguage } from '../../../components/LanguageContext'; 
 import Link from 'next/link';
 
+// KORREKT IMPORTERET: Funktion fra den ene fil
+import { getAllSecureTranslations } from '../../../i18n/getSecurePageTranslations'; 
+// KORREKT IMPORTERET: Type fra den centrale index-fil
+import { secureI18n } from '../../../i18n/index'; 
+
+
 type UserRole = 'developer' | 'tester' | 'unknown';
+// Denne type er nu korrekt hentet fra index.ts
+type SecureTranslations = typeof secureI18n['en'];
 
 const modules = [
     { nameKey: 'dashboard', path: '/dashboard', icon: LayoutDashboard, role: 'tester' },
@@ -31,11 +39,12 @@ const modules = [
 ];
 
 export default function SecureLayout({ children, params: paramsPromise }: { children: ReactNode, params: Promise<{ lang: 'da' | 'en' }> }) {
+    
     const params = use(paramsPromise);
     const { lang } = params;
     const router = useRouter();
     const pathname = usePathname();
-    const { t, language } = useLanguage();
+    const { language, setLanguage } = useLanguage(); 
 
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [userRole, setUserRole] = useState<UserRole>('unknown');
@@ -45,11 +54,14 @@ export default function SecureLayout({ children, params: paramsPromise }: { chil
     const [openMenu, setOpenMenu] = useState<string | null>(null);
     const profileRef = useRef<HTMLDivElement>(null);
 
+    const [secureTranslations, setSecureTranslations] = useState<SecureTranslations | null>(null);
+
     const changeLanguage = (newLang: 'da' | 'en') => {
         if (newLang !== language) {
             const newPath = pathname.replace(`/${language}`, `/${newLang}`);
             router.push(newPath);
             setIsProfileOpen(false);
+            setLanguage(newLang);
         }
     };
 
@@ -90,6 +102,28 @@ export default function SecureLayout({ children, params: paramsPromise }: { chil
         try { await signOut(auth); setIsProfileOpen(false); } 
         catch (error) { console.error("Error signing out:", error); }
     };
+    
+    // NY LOGIK: Henter secure translations lokalt
+    useEffect(() => {
+        async function loadTranslations() {
+            try {
+                const allTranslations = getAllSecureTranslations(lang);
+                setSecureTranslations(allTranslations);
+            } catch (error) {
+                console.error("SecureLayout failed to load translations:", error);
+                // RETTET FEJL 1: Type-casting af fallback
+                setSecureTranslations({} as SecureTranslations); 
+            }
+        }
+        loadTranslations();
+    }, [lang]); 
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        }, 350); 
+        return () => clearTimeout(timer);
+    }, [isSidebarOpen]);
 
     const currentRoute = pathname.replace(`/${language}`, '').replace('//', '/');
 
@@ -98,23 +132,18 @@ export default function SecureLayout({ children, params: paramsPromise }: { chil
         setOpenMenu(activeModule ? activeModule.nameKey : null);
     }, [currentRoute]);
     
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            window.dispatchEvent(new Event('resize'));
-        }, 350); 
-
-        return () => clearTimeout(timer);
-    }, [isSidebarOpen]);
-
-    if (!t || !t.dashboard || !t.sidebar) {
-        return <div className="flex min-h-screen items-center justify-center bg-white"><p>Loading translations...</p></div>;
+    // TJEK PÅ OVERSÆTTELSER
+    if (!secureTranslations || !secureTranslations.dashboard || !secureTranslations.sidebar) {
+         const loadingText = secureTranslations?.dashboard?.loading || (lang === 'da' ? 'Indlæser oversættelser...' : 'Loading translations...');
+         return <div className="flex min-h-screen items-center justify-center bg-white"><p>{loadingText}</p></div>;
     }
     
-    const dashboardTranslations = t.dashboard;
-    const sidebarTranslations = t.sidebar as { [key: string]: string };
+    // RETTET FEJL 2, 3, 4: Bruger index signatur for dynamisk adgang
+    const dashboardTranslations = secureTranslations.dashboard;
+    const sidebarTranslations: { [key: string]: string } = secureTranslations.sidebar;
 
     if (loadingAuth || !user || userRole === 'unknown') {
-        return <div className="flex min-h-screen items-center justify-center bg-white"><p>{lang === 'da' ? 'Indlæser...' : 'Loading...'}</p></div>;
+        return <div className="flex min-h-screen items-center justify-center bg-white"><p>{dashboardTranslations.loading || (lang === 'da' ? 'Indlæser...' : 'Loading...')}</p></div>;
     }
     
     if (userRole !== 'developer' && userRole !== 'tester') {
@@ -128,9 +157,11 @@ export default function SecureLayout({ children, params: paramsPromise }: { chil
             <header className="h-12 bg-white border-b sticky top-0 z-50 w-full flex items-center justify-between">
                 <div className="flex items-center pl-4">
                    <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-full hover:bg-gray-100 mr-2 cursor-pointer">
-                       <Menu className="h-5 w-5 text-gray-700" />
+                        <Menu className="h-5 w-5 text-gray-700" />
                    </button>
-                   <div className="p-2"><img src="/images/logo.png" alt="Logo" className="h-8 w-auto" /></div>
+                   <div className="p-2">
+                        <img src="/images/logo.png" alt="Logo" className="h-8 w-auto" />
+                    </div>
                 </div>
                 <div className="relative pr-4" ref={profileRef}>
                     <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="p-2 rounded-lg cursor-pointer">
@@ -163,7 +194,6 @@ export default function SecureLayout({ children, params: paramsPromise }: { chil
                                     <Link key={module.nameKey} href={`/${language}${module.path}`} className={`relative flex items-center p-2 rounded-lg transition-colors group cursor-pointer ${!isSidebarOpen && 'justify-center'} ${isActive ? 'bg-black text-orange-500 font-bold text-sm' : 'text-black hover:text-orange-500 text-xs'}`}>
                                         <module.icon className="h-5 w-5 shrink-0" />
                                         <span className={`ml-3 whitespace-nowrap transition-opacity ${isSidebarOpen ? 'opacity-100' : 'opacity-0'} ${!isSidebarOpen && 'hidden'}`}>{sidebarTranslations[module.nameKey]}</span>
-                                        {/* FJERNET: Tooltip-span er slettet herfra */}
                                     </Link>
                                 );
                             }
@@ -183,11 +213,10 @@ export default function SecureLayout({ children, params: paramsPromise }: { chil
                                         <module.icon className="h-5 w-5 shrink-0" />
                                         <span className={`ml-3 whitespace-nowrap transition-opacity ${isSidebarOpen ? 'opacity-100' : 'opacity-0'} ${!isSidebarOpen && 'hidden'}`}>{sidebarTranslations[module.nameKey]}</span>
                                         {isSidebarOpen && <ChevronDown className={`ml-auto h-4 w-4 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
-                                        {/* FJERNET: Tooltip-span er slettet herfra */}
                                     </button>
                                     {isSidebarOpen && isOpen && (
                                         <div className="mt-1 ml-4 pl-2 border-l-2 border-gray-200">
-                                            {module.subModules.map(subModule => {
+                                            {module.subModules!.map(subModule => {
                                                 const isSubActive = currentRoute.startsWith(subModule.path);
                                                 return <Link key={subModule.nameKey} href={`/${language}${subModule.path}`} className={`flex items-center w-full py-1.5 px-2 rounded-lg my-0.5 transition-colors cursor-pointer ${isSubActive ? 'bg-black text-orange-500 font-bold text-sm' : 'text-black hover:text-orange-500 text-xs'}`}>{sidebarTranslations[subModule.nameKey]}</Link>
                                             })}
@@ -203,4 +232,3 @@ export default function SecureLayout({ children, params: paramsPromise }: { chil
         </div>
     );
 }
-
