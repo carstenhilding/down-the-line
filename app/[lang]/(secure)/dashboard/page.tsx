@@ -1,36 +1,57 @@
 // app/[lang]/(secure)/dashboard/page.tsx - Serverkomponent
 
 import { getSecurePageTranslations } from '../../../../i18n/getSecurePageTranslations';
-import DashboardClient from './DashboardClient'; 
+import DashboardClient from './DashboardClient';
+
+// Definerer mulige niveauer for at undgå fejl
+type SubscriptionLevel = 'Starter' | 'Advance' | 'Expert' | 'Performance' | 'Elite' | 'Enterprise';
+type UserRole = 'coach' | 'admin' | 'player'; // Tilføj flere roller efter behov
+
+// Data sendt som props til klienten
+interface DashboardProps {
+    dashboardTranslations: { [key: string]: string };
+    lang: 'da' | 'en';
+
+    // NYT: Data til at styre adgang i UI'et
+    userData: {
+        role: UserRole;
+        subscriptionLevel: SubscriptionLevel;
+    };
+}
 
 interface DashboardPageServerProps {
-    // ÆNDRING HER: params er et Promise
-    params: Promise<{ lang: 'da' | 'en' }>; 
+    params: Promise<{ lang: 'da' | 'en' }>;
 }
 
 export default async function DashboardPageServer({ params }: DashboardPageServerProps) {
-    
-    // NY LØSNING: Await params før dekonstruktion
     const awaitedParams = await params;
-    const { lang } = awaitedParams; // Bruger nu den afventede værdi
-    
+    const { lang: finalLang } = awaitedParams;
+
     let dashboardTranslations;
     try {
-        // Hent de nødvendige oversættelser 
-        // Vi beholder 'as any' for at sikre, at der ikke opstår type-konflikter, indtil vi har de strammeste typer.
-        dashboardTranslations = getSecurePageTranslations(lang, 'dashboard') as any;
+        dashboardTranslations = getSecurePageTranslations(finalLang, 'dashboard');
     } catch (error) {
         console.error("Failed to load dashboard translations:", error);
-        // Sikkerheds-fallback til et tomt objekt
-        dashboardTranslations = {}; 
+        dashboardTranslations = {};
     }
+
+    // --- NY LOGIK: SIMULER BRUGER DATA HER ---
+    // Denne data vil senere komme fra din Firebase Authentication og Firestore
+    const mockedUserData = {
+        role: 'coach' as UserRole, // Hårdt kodet for nu - 'coach', 'admin', 'player' etc.
+        // SKIFT DENNE VÆRDI FOR AT TESTE: 'Starter' viser CTA, 'Elite' viser data
+        subscriptionLevel: 'Elite' as SubscriptionLevel,
+    };
+    // ------------------------------------------
 
     const finalTranslations = dashboardTranslations || {};
 
+    // Sender nu både oversættelser, sprog OG brugerdata til klienten
     return (
-        <DashboardClient 
-            dashboardTranslations={finalTranslations} 
-            lang={lang}
+        <DashboardClient
+            dashboardTranslations={finalTranslations}
+            lang={finalLang}
+            userData={mockedUserData}
         />
     );
 }
