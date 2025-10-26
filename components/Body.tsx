@@ -7,10 +7,10 @@ import { LanguageProvider } from './LanguageContext'; // Sti til LanguageContext
 
 const inter = Inter({ subsets: ["latin"] }); // Initialiser Inter her
 
-export default function Body({ children }: { children: React.ReactNode }) {
+export default function Body({ children, initialLang = 'en' }: { children: React.ReactNode; initialLang?: 'da' | 'en' }) {
   return (
     <body className={inter.className}> {/* Anvend inter.className her */}
-      <LanguageProvider>
+      <LanguageProvider initialLang={initialLang}>
         <Header />
         {children}
       </LanguageProvider>

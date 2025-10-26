@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 // ÆNDRING HER: Importerer den nye dedikerede funktion
 import { getMainTranslations, getTranslations } from '../i18n';
 
-type Language = 'da' | 'en';
+export type Language = 'da' | 'en';
 
 // VIGTIGT: t-typen forbliver den samme, for at undgå at bryde de nuværende MAIN-sider.
 // Men i realiteten indeholder den nu kun Main-oversættelser.

@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useLanguage } from '../../../../components/LanguageContext';
+import { useLanguage, Language } from '../../../../components/LanguageContext';
 import React from 'react';
 
 // Importer ikoner fra lucide-react her
@@ -11,7 +11,7 @@ import { Quote, Lightbulb, TrendingUp, Handshake } from 'lucide-react';
 export default function AboutPage({
     params: paramsPromise
 }: {
-    params: Promise<{ lang: 'da' | 'en' }>;
+    params: Promise<{ lang: Language }>;
 }) {
     const params = React.use(paramsPromise);
     const { lang } = params;

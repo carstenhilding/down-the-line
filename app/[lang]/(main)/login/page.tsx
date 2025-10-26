@@ -6,15 +6,17 @@ import Link from 'next/link';
 import Image from 'next/image';
 // RETTET: Stien er justeret til at være 3 niveauer op i stedet for 4.
 import { signInUser } from '../../../../firebase/auth'; 
-import { useLanguage } from '../../../../components/LanguageContext';
+import { useLanguage, Language } from '../../../../components/LanguageContext';
+import validateLang from '@/lib/lang';
 
 export default function LoginPage({
     params: paramsPromise
 }: {
-    params: Promise<{ lang: 'da' | 'en' }>;
+    params: Promise<{ lang: Language }>;
 }) {
     const params = use(paramsPromise);
-    const { lang } = params;
+    const { lang: rawLang } = params as { lang: string };
+    const lang = validateLang(rawLang);
     const router = useRouter();
     const { t, language } = useLanguage();
 

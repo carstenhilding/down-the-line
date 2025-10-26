@@ -2,16 +2,18 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useLanguage } from '../../../components/LanguageContext';
+import { useLanguage, Language } from '../../../components/LanguageContext';
+import validateLang from '@/lib/lang';
 import React from 'react';
 
 export default function Home({
   params: paramsPromise
 }: {
-  params: Promise<{ lang: 'da' | 'en' }>;
+  params: Promise<{ lang: Language }>;
 }) {
   const params = React.use(paramsPromise);
-  const { lang } = params; 
+  const { lang: rawLang } = params as { lang: string };
+  const lang = validateLang(rawLang);
   const { language, t } = useLanguage();
 
   if (!t) {

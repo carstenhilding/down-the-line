@@ -3,7 +3,8 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useLanguage } from '../../../../components/LanguageContext';
+import { useLanguage, Language } from '../../../../components/LanguageContext';
+import validateLang from '@/lib/lang';
 import { User, Shield, Star } from 'lucide-react';
 
 // Hjælpe-komponent til check-ikoner (uændret)
@@ -49,10 +50,11 @@ const PriceCard = ({ plan }: { plan: any }) => (
 export default function PricingPage({
     params: paramsPromise
 }: {
-    params: Promise<{ lang: 'da' | 'en' }>;
+    params: Promise<{ lang: Language }>;
 }) {
     const params = React.use(paramsPromise);
-    const { lang } = params;
+    const { lang: rawLang } = params as { lang: string };
+    const lang = validateLang(rawLang);
     const { t } = useLanguage();
 
     if (!t || !t.pricing) {

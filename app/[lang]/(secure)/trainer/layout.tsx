@@ -2,11 +2,11 @@
 
 import React, { ReactNode } from 'react';
 // RETTET TIL KORREKT STIDYBDE: 3 niveauer op for at nå components fra /trainer/
-import { LanguageProvider } from '../../../../components/LanguageContext'; 
+import { Language } from '../../../../components/LanguageContext'; 
 
 interface TrainerLayoutProps {
     children: ReactNode;
-    params: { lang: 'da' | 'en' };
+    params: { lang: Language };
 }
 
 /**

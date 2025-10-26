@@ -1,57 +1,48 @@
-// app/[lang]/(secure)/dashboard/page.tsx - Serverkomponent
+// app/[lang]/(secure)/dashboard/page.tsx (FINAL KORREKTION V8: await params FØRST)
 
-import { getSecurePageTranslations } from '../../../../i18n/getSecurePageTranslations';
+import { notFound } from 'next/navigation';
+import { fetchSecureTranslations } from '@/i18n/getSecurePageTranslations';
+import { Language } from '@/components/LanguageContext';
+import validateLang from '@/lib/lang';
 import DashboardClient from './DashboardClient';
+import { fetchUserAccessLevel, UserRole, SubscriptionLevel } from '@/lib/server/data';
 
-// Definerer mulige niveauer for at undgå fejl
-type SubscriptionLevel = 'Starter' | 'Advance' | 'Expert' | 'Performance' | 'Elite' | 'Enterprise';
-type UserRole = 'coach' | 'admin' | 'player'; // Tilføj flere roller efter behov
+ interface DashboardPageProps {
+   params: Promise<{ lang: string }>;
+ }
 
-// Data sendt som props til klienten
-interface DashboardProps {
-    dashboardTranslations: { [key: string]: string };
-    lang: 'da' | 'en';
 
-    // NYT: Data til at styre adgang i UI'et
-    userData: {
-        role: UserRole;
-        subscriptionLevel: SubscriptionLevel;
-    };
-}
+export default async function DashboardPage({ params }: DashboardPageProps) {
 
-interface DashboardPageServerProps {
-    params: Promise<{ lang: 'da' | 'en' }>;
-}
+  // KORREKTION: Tilgår params *allerførst* — await params before using its properties
+  const { lang } = await params; // params is a Promise<{ lang: 'da'|'en' }>
+  const locale = validateLang(lang);
 
-export default async function DashboardPageServer({ params }: DashboardPageServerProps) {
-    const awaitedParams = await params;
-    const { lang: finalLang } = awaitedParams;
+  // 1. ADGANGSKONTROL PUNKT
+  const user = await fetchUserAccessLevel();
 
-    let dashboardTranslations;
-    try {
-        dashboardTranslations = getSecurePageTranslations(finalLang, 'dashboard');
-    } catch (error) {
-        console.error("Failed to load dashboard translations:", error);
-        dashboardTranslations = {};
-    }
+  if (user.role === UserRole.Unauthenticated) {
+    return notFound();
+  }
 
-    // --- NY LOGIK: SIMULER BRUGER DATA HER ---
-    // Denne data vil senere komme fra din Firebase Authentication og Firestore
-    const mockedUserData = {
-        role: 'coach' as UserRole, // Hårdt kodet for nu - 'coach', 'admin', 'player' etc.
-        // SKIFT DENNE VÆRDI FOR AT TESTE: 'Starter' viser CTA, 'Elite' viser data
-        subscriptionLevel: 'Elite' as SubscriptionLevel,
-    };
-    // ------------------------------------------
+  // Bruger 'lang' som blev læst FØR await
+  const dict = await fetchSecureTranslations(locale);
 
-    const finalTranslations = dashboardTranslations || {};
+  // Simuleret dashboard data
+  const dashboardData = {
+      activityFeed: ["Spiller X har meldt afbud.", "Ny video er uploaded."],
+      teamReadiness: { score: 78, status: 'grøn' },
+  };
 
-    // Sender nu både oversættelser, sprog OG brugerdata til klienten
-    return (
-        <DashboardClient
-            dashboardTranslations={finalTranslations}
-            lang={finalLang}
-            userData={mockedUserData}
-        />
-    );
+  // 3. RENDERING
+  return (
+    <div className="flex flex-col h-full">
+      <DashboardClient
+        dict={dict}
+        dashboardData={dashboardData}
+        accessLevel={user.subscriptionLevel}
+        userRole={user.role}
+      />
+    </div>
+  );
 }

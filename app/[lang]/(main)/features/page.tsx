@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { useLanguage } from '../../../../components/LanguageContext';
+import { useLanguage, Language } from '../../../../components/LanguageContext';
+import validateLang from '@/lib/lang';
 import { Layers, BrainCircuit, Video, UserSquare, MessagesSquare } from 'lucide-react';
 
 type Feature = {
@@ -16,10 +17,11 @@ type Feature = {
 export default function FeaturesPage({
     params: paramsPromise
 }: {
-    params: Promise<{ lang: 'da' | 'en' }>;
+    params: Promise<{ lang: Language }>;
 }) {
     const params = React.use(paramsPromise);
-    const { lang } = params;
+    const { lang: rawLang } = params as { lang: string };
+    const lang = validateLang(rawLang);
     const { t } = useLanguage();
     
     const [selectedFeature, setSelectedFeature] = useState(0);

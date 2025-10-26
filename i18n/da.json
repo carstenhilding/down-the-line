@@ -1,0 +1,59 @@
+{
+  "header": {
+    "title": "Down The Line Platform",
+    "settings": "Indstillinger",
+    "profile": "Profil"
+  },
+  "dashboard": {
+    "loading": "Indlæser dashboard...",
+    "welcomeTitle": "Velkommen",
+    "logoutButton": "Log Ud",
+    "createTrainingTitle": "Opret Ny Træning",
+    "createTrainingDesc": "Adgang til den avancerede træningsplanlægger for at designe dit næste træningspas.",
+    "viewTrainingTitle": "Øvelsesbibliotek",
+    "viewTrainingDesc": "Gennemse dine gemte øvelser, animationer og træningsplaner.",
+    "recentActivityTitle": "Seneste Aktivitet",
+    "activityPlaceholder": "Dine seneste aktiviteter og planlagte træningspas vises her.",
+    "upcoming_week": "Kommende Uge",
+    "team_status": "Holdets Tilstand",
+    "player_availability": "Spillertilgængelighed",
+    "total_load": "Samlet Belastning",
+    "readiness": "Klarhed",
+    "top_scorer": "Topscorer",
+    "injured_absent": "Skadet & Fravær"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "training": "Træning",
+    "training_new": "Opret Nyt Pas",
+    "training_library": "Øvelsesbibliotek",
+    "club": "Klub & Kalender",
+    "players": "Spillerdata",
+    "video": "Videoanalyse",
+    "scouting": "Scouting",
+    "chat": "Kommunikation"
+  },
+  "trainer_page": {
+    "session_planner": "Session Planner",
+    "session_planner_desc": "Design og planlæg dit næste træningspas",
+    "animation_studio": "Animation Studio",
+    "animation_studio_desc": "Bring dine øvelser til live med animation",
+    "weeks_focus": "Ugens Fokus (Periodisering)",
+    "weeks_focus_desc": "I denne uge (Uge 42) er det primære fokus på <1>Defensiv Organisation</1>, med sekundært fokus på hurtige omstillinger efter boldtab.",
+    "upcoming_sessions": "Kommende Træninger",
+    "my_libraries": "Mine Biblioteker",
+    "club_catalog": "Klubbens Øvelseskatalog",
+    "personal_catalog": "Mit Personlige Katalog"
+  },
+  "trainer": {
+    "titleNew": "Nyt Træningspas",
+    "titleLibrary": "Øvelsesbibliotek",
+    "detailsTitle": "Pas Detaljer",
+    "titleLabel": "Titel på Pas",
+    "themeLabel": "Tema",
+    "durationLabel": "Varighed (min.)",
+    "notesLabel": "Trænernoter",
+    "saveButton": "Gem Pas",
+    "cancelButton": "Annuller"
+  }
+}

@@ -1,28 +1,24 @@
-// i18n/getSecurePageTranslations.ts 
+// i18n/getSecurePageTranslations.ts
 
-import { getSecureTranslations, secureI18n } from './index';
+import { secureI18n } from './secure';
+import { SecureTranslations } from './secureTranslations';
 
-type Lang = 'en' | 'da';
-type SecureDomain = keyof typeof secureI18n['en'];
-type SecureTranslations = ReturnType<typeof getSecureTranslations>;
+// KORREKT EKSPORTNAVN: fetchSecureTranslations
+export async function fetchSecureTranslations(lang: string): Promise<SecureTranslations> {
+  const dict = (secureI18n as any)[lang] || (secureI18n as any)['da'];
 
-/**
- * Henter oversættelser for et specifikt domæne (underside/komponent) i det sikre område.
- * @param lang Det aktuelle sprog ('en' eller 'da').
- * @param domain Navnet på den ønskede sektion (f.eks. 'dashboard', 'trainer_page').
- * @returns Objektet, der kun indeholder de ønskede oversættelser.
- */
-export function getSecurePageTranslations<T extends SecureDomain>(
-    lang: Lang, 
-    domain: T
-): SecureTranslations[T] {
-    const secureTranslations = getSecureTranslations(lang);
-    return secureTranslations[domain];
-}
-
-/**
- * Henter alle secure oversættelser for et givet sprog. (Valgfri, men god praksis)
- */
-export function getAllSecureTranslations(lang: Lang): SecureTranslations {
-    return getSecureTranslations(lang);
+  // Denne funktion udtrækker kun de nøgler, der er defineret i SecureTranslations typen.
+  return {
+    dashboard: dict.dashboard,
+    // TILFØJET: Sikrer, at 'header' nøglen inkluderes i dict til layout.tsx
+    header: dict.header, 
+    sidebar: dict.sidebar,
+    trainer_page: dict.trainer_page,
+    // SIKRER 'trainer' nøglen er inkluderet
+    trainer: dict.trainer, 
+    
+    // Tilføj fremtidige moduler her:
+    // calendar: dict.calendar,
+    // scouting: dict.scouting,
+  } as SecureTranslations;
 }

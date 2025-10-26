@@ -1,0 +1,59 @@
+{
+  "header": {
+    "title": "Down The Line Platform",
+    "settings": "Settings",
+    "profile": "Profile"
+  },
+  "dashboard": {
+    "loading": "Loading dashboard...",
+    "welcomeTitle": "Welcome",
+    "logoutButton": "Log Out",
+    "createTrainingTitle": "Create New Session",
+    "createTrainingDesc": "Access the advanced training planner to design your next session.",
+    "viewTrainingTitle": "Session Library",
+    "viewTrainingDesc": "Review your saved drills, animations, and session plans.",
+    "recentActivityTitle": "Recent Activity",
+    "activityPlaceholder": "Your most recent activities and planned sessions will appear here.",
+    "upcoming_week": "Upcoming Week",
+    "team_status": "Team Status",
+    "player_availability": "Player Availability",
+    "total_load": "Total Load",
+    "readiness": "Readiness",
+    "top_scorer": "Top Scorer",
+    "injured_absent": "Injured & Absent"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "training": "Training",
+    "training_new": "Create New Session",
+    "training_library": "Session Library",
+    "club": "Club & Calendar",
+    "players": "Player Data",
+    "video": "Video Analysis",
+    "scouting": "Scouting",
+    "chat": "Communication"
+  },
+  "trainer_page": {
+    "session_planner": "Session Planner",
+    "session_planner_desc": "Design and plan your next session",
+    "animation_studio": "Animation Studio",
+    "animation_studio_desc": "Bring your drills to life with animation",
+    "weeks_focus": "Week's Focus (Periodization)",
+    "weeks_focus_desc": "This week (Week 42), the primary focus is on <1>Defensive Organization</1>, with a secondary focus on quick transitions after losing possession.",
+    "upcoming_sessions": "Upcoming Sessions",
+    "my_libraries": "My Libraries",
+    "club_catalog": "Club's Drill Catalog",
+    "personal_catalog": "My Personal Catalog"
+  },
+  "trainer": {
+    "titleNew": "New Training Session",
+    "titleLibrary": "Session Library",
+    "detailsTitle": "Session Details",
+    "titleLabel": "Session Title",
+    "themeLabel": "Theme",
+    "durationLabel": "Duration (min.)",
+    "notesLabel": "Coach Notes",
+    "saveButton": "Save Session",
+    "cancelButton": "Cancel"
+  }
+}
