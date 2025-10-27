@@ -1,5 +1,5 @@
-// components/SecureLayoutClient.tsx (FINAL KORREKTION V3: Indeholder UI + Logik)
-'use client'; // VIGTIGT
+// components/SecureLayoutClient.tsx (SMALERE PROFIL DROPDOWN PÅ MOBIL)
+'use client';
 
 import React, { useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -18,8 +18,8 @@ interface SecureTranslations {
   header: any;
   sidebar: any;
   dashboard: any;
-  trainer_page?: any; // Gør optionel hvis ikke altid til stede
-  trainer?: any;      // Gør optionel hvis ikke altid til stede
+  trainer_page?: any;
+  trainer?: any;
   // ... andre nøgler ...
 }
 
@@ -55,9 +55,8 @@ const modules = [
 export default function SecureLayoutClient({ children, user, dict, lang, initialPathname }: SecureLayoutClientProps) {
   const router = useRouter();
   const pathname = usePathname() ?? initialPathname;
-   // Forsigtig: useLanguage kan være null initielt
   const langContext = useLanguage();
-  const language = langContext?.language ?? lang; // Brug prop 'lang' som fallback
+  const language = langContext?.language ?? lang;
   const setLanguage = langContext?.setLanguage ?? (() => console.warn('setLanguage not available'));
 
 
@@ -70,6 +69,20 @@ export default function SecureLayoutClient({ children, user, dict, lang, initial
 
 
   // --- Client-side logik (hooks, handlers) ---
+   useEffect(() => {
+     const checkScreenWidth = () => {
+       if (window.innerWidth < 1024) {
+         setIsSidebarOpen(false);
+       } else {
+         setIsSidebarOpen(true);
+       }
+     };
+     checkScreenWidth();
+     window.addEventListener('resize', checkScreenWidth);
+     return () => window.removeEventListener('resize', checkScreenWidth);
+   }, []);
+
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) setIsProfileOpen(false);
@@ -94,7 +107,6 @@ export default function SecureLayoutClient({ children, user, dict, lang, initial
                      : `/${newLang}${pathname}`;
          router.push(newPath);
          setIsProfileOpen(false);
-         // Forsøg at opdatere context alligevel
          setLanguage(newLang);
     }
   };
@@ -103,7 +115,6 @@ export default function SecureLayoutClient({ children, user, dict, lang, initial
     try {
       await signOut(auth);
       setIsProfileOpen(false);
-      // Explicit redirect ved logout kan være nødvendigt her
       router.push(`/${language}/login`);
     } catch (error) {
       console.error("Error signing out:", error);
@@ -112,14 +123,20 @@ export default function SecureLayoutClient({ children, user, dict, lang, initial
 
    const currentLangSegment = language ? `/${language}` : (pathname.startsWith('/da/') ? '/da' : '/en');
    const currentRoute = pathname.replace(currentLangSegment, '').replace('//', '/');
+    const cleanCurrentRoute = currentRoute.startsWith('//') ? currentRoute.substring(1) : currentRoute;
+
 
    useEffect(() => {
      const activeModule = modules.find(m =>
-         m.subModules?.some(sub => currentRoute.startsWith(sub.path)) ||
-         (m.path && currentRoute.startsWith(m.path) && m.subModules)
+         m.subModules?.some(sub => cleanCurrentRoute.startsWith(sub.path)) ||
+         (m.path && cleanCurrentRoute.startsWith(m.path) && m.subModules)
      );
      setOpenMenu(activeModule ? activeModule.nameKey : null);
-   }, [currentRoute]);
+     // Luk sidebar på mobil ved ruteskift
+     if (window.innerWidth < 1024) {
+        setIsSidebarOpen(false);
+     }
+   }, [cleanCurrentRoute]); // Opdaterer når ruten ændres
    // --- Slut på Client-side logik ---
 
 
@@ -128,10 +145,9 @@ export default function SecureLayoutClient({ children, user, dict, lang, initial
      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-white border-r flex flex-col shrink-0 transition-all duration-300 lg:block ${isSidebarOpen ? 'max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-30 max-lg:pt-12' : 'max-lg:hidden'}`}>
        <nav className="flex-1 mt-2 space-y-1 p-2 overflow-y-auto">
          {accessibleModules.map((module) => {
-           // Sørg for at dict.sidebar eksisterer
            const sidebarDict = dict.sidebar || {};
            if (!module.subModules) {
-             const isActive = module.path && currentRoute.startsWith(module.path);
+             const isActive = module.path && cleanCurrentRoute.startsWith(module.path);
              return (
                <Link key={module.nameKey} href={`/${lang}${module.path}`} className={`relative flex items-center p-2 rounded-lg transition-colors group cursor-pointer ${!isSidebarOpen && 'justify-center'} ${isActive ? 'bg-black text-orange-500 font-bold text-sm' : 'text-black hover:text-orange-500 text-xs'}`}>
                  <module.icon className={`h-5 w-5 shrink-0 ${isActive ? 'text-orange-500': 'text-gray-600 group-hover:text-orange-500'}`} />
@@ -139,7 +155,7 @@ export default function SecureLayoutClient({ children, user, dict, lang, initial
                </Link>
              );
            }
-           const isParentActive = module.path ? currentRoute.startsWith(module.path) : false;
+           const isParentActive = module.path ? cleanCurrentRoute.startsWith(module.path) : false;
            const isOpen = openMenu === module.nameKey;
            return (
              <div key={module.nameKey}>
@@ -159,7 +175,7 @@ export default function SecureLayoutClient({ children, user, dict, lang, initial
                {isSidebarOpen && isOpen && (
                  <div className="mt-1 ml-4 pl-2 border-l-2 border-gray-200">
                    {module.subModules!.map(subModule => {
-                     const isSubActive = currentRoute.startsWith(subModule.path);
+                     const isSubActive = cleanCurrentRoute.startsWith(subModule.path);
                      return <Link key={subModule.nameKey} href={`/${lang}${subModule.path}`} className={`flex items-center w-full py-1.5 px-2 rounded-lg my-0.5 transition-colors cursor-pointer ${isSubActive ? 'bg-black text-orange-500 font-bold text-sm' : 'text-black hover:text-orange-500 text-xs'}`}>{sidebarDict[subModule.nameKey] ?? subModule.nameKey}</Link>
                    })}
                  </div>
@@ -174,44 +190,70 @@ export default function SecureLayoutClient({ children, user, dict, lang, initial
    // === SLUT PÅ SIDEBAR JSX ===
 
 
-  // === HEADER JSX ===
-  const Header = () => (
-    <div className="w-full bg-white shadow-md flex-shrink-0 z-20 relative">
-        <div className="h-12 flex items-center justify-between px-2 sm:px-4 border-b">
-            <div className="flex items-center">
-                <button
-                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                    className="p-1 rounded-full hover:bg-gray-100 cursor-pointer mr-2 sm:mr-3"
-                >
-                    <Menu className="h-5 w-5 text-gray-700" />
-                </button>
-                <img src="/images/logo.png" alt="DTL Logo" className="h-7 sm:h-8 w-auto" />
-            </div>
-            <div className="relative" ref={profileRef}>
-                <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="p-1 rounded-lg cursor-pointer">
-                    <UserIcon className="h-7 w-7 sm:h-8 sm:w-8 bg-orange-500 text-white rounded-full p-1 sm:p-1.5" />
-                </button>
-                {isProfileOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border z-30">
-                        {/* Dropdown indhold */}
-                        <div className="p-3 border-b"><p className="font-semibold text-sm truncate">{user.name}</p><p className="text-xs text-gray-500 capitalize">{user.role}</p></div>
-                        <div className="p-1.5">
-                            <a href="#" className="flex items-center w-full text-left p-2 rounded-md hover:bg-gray-100 text-xs cursor-pointer"><Settings className="h-4 w-4 mr-2" />Account Settings</a>
-                            <div className="my-1 border-t"></div>
-                            <div className="flex items-center p-2 text-xs text-gray-400"><Globe className="h-4 w-4 mr-2" />Language</div>
-                            <button onClick={() => changeLanguage('da')} className={`w-full text-left px-2 py-1 rounded-md text-xs cursor-pointer ${language === 'da' ? 'font-semibold text-orange-600' : 'hover:bg-gray-100'}`}>Dansk</button>
-                            <button onClick={() => changeLanguage('en')} className={`w-full text-left px-2 py-1 rounded-md text-xs cursor-pointer ${language === 'en' ? 'font-semibold text-orange-600' : 'hover:bg-gray-100'}`}>English</button>
+  // === HEADER JSX (RESPONSIV PROFIL DROPDOWN) ===
+  const Header = () => {
+    const isDtlEmployee = user.role === UserRole.Developer || user.role === UserRole.Tester;
+    const headerDict = dict.header || {};
+    const langSelectorDict = headerDict.languageSelector || {};
+
+    return (
+        <div className="w-full bg-white shadow-md flex-shrink-0 z-20 relative">
+            <div className="h-12 flex items-center justify-between px-2 sm:px-4 border-b">
+                <div className="flex items-center">
+                    <button
+                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                        className="p-1 rounded-full hover:bg-gray-100 cursor-pointer mr-2 sm:mr-3"
+                    >
+                        <Menu className="h-5 w-5 text-gray-700" />
+                    </button>
+                    <img src="/images/logo.png" alt="DTL Logo" className="h-7 sm:h-8 w-auto" />
+                </div>
+                <div className="relative" ref={profileRef}>
+                    <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="p-1 rounded-lg cursor-pointer">
+                        <UserIcon className="h-7 w-7 sm:h-8 sm:w-8 bg-orange-500 text-white rounded-full p-1 sm:p-1.5" />
+                    </button>
+                    {isProfileOpen && (
+                         // KORREKTION: Ændret bredde til w-52 sm:w-64
+                        <div className="absolute right-0 mt-2 w-52 sm:w-64 bg-white rounded-lg shadow-xl border z-30">
+                            {/* Øverste sektion med brugerinfo */}
+                            <div className="p-3 border-b">
+                                <p className="font-semibold text-sm truncate">{user.name}</p>
+                                {isDtlEmployee ? (
+                                    <>
+                                        <p className="text-xs text-gray-500">Down The Line</p>
+                                        <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-xs text-gray-500">{user.clubName ?? 'Ukendt Klub'}</p>
+                                        <p className="text-xs text-gray-500">{user.clubFunction ?? user.role}</p>
+                                    </>
+                                )}
+                            </div>
+                            {/* Midtersektion (Settings, Language, Access Level) */}
+                            <div className="p-1.5">
+                                <a href="#" className="flex items-center w-full text-left p-2 rounded-md hover:bg-gray-100 text-xs cursor-pointer"><Settings className="h-4 w-4 mr-2" />{headerDict.settings ?? 'Account Settings'}</a>
+                                <div className="my-1 border-t"></div>
+                                <div className="flex items-center p-2 text-xs text-gray-400"><Globe className="h-4 w-4 mr-2" />{langSelectorDict.label ?? 'Language'}</div>
+                                <button onClick={() => changeLanguage('da')} className={`w-full text-left px-2 py-1 rounded-md text-xs cursor-pointer ${lang === 'da' ? 'font-semibold text-orange-600' : 'hover:bg-gray-100'}`}>{langSelectorDict.danish ?? 'Dansk'}</button>
+                                <button onClick={() => changeLanguage('en')} className={`w-full text-left px-2 py-1 rounded-md text-xs cursor-pointer ${lang === 'en' ? 'font-semibold text-orange-600' : 'hover:bg-gray-100'}`}>{langSelectorDict.english ?? 'English'}</button>
+                                <div className="mt-2 pt-2 border-t border-gray-100">
+                                    <p className="text-[10px] text-gray-400 px-2 text-center">
+                                      {headerDict.access_level_label ?? (lang === 'da' ? 'Adgangsniveau:' : 'Access Level:')} {user.subscriptionLevel}
+                                    </p>
+                                </div>
+                            </div>
+                            {/* Nederste sektion (Logout) */}
+                            <div className="border-t p-1.5">
+                                <button onClick={handleLogout} className="flex items-center w-full text-left p-2 rounded-md bg-orange-500 text-white text-xs hover:bg-orange-600 font-bold cursor-pointer"><LogOut className="h-4 w-4 mr-2" />{dict.dashboard?.logoutButton ?? 'Log Out'}</button>
+                            </div>
                         </div>
-                        <div className="border-t p-1.5">
-                            {/* Sikrer at dict.dashboard eksisterer før logoutButton tilgås */}
-                            <button onClick={handleLogout} className="flex items-center w-full text-left p-2 rounded-md bg-orange-500 text-white text-xs hover:bg-orange-600 font-bold cursor-pointer"><LogOut className="h-4 w-4 mr-2" />{dict.dashboard?.logoutButton ?? 'Log Out'}</button>
-                        </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
-    </div>
-  );
+    );
+  };
   // === SLUT PÅ HEADER JSX ===
 
 

@@ -6,7 +6,13 @@ export const secureI18n = {
     header: {
         title: "Down The Line Platform",
         settings: "Settings",
-        profile: "Profile"
+        profile: "Profile",
+        access_level_label: "Access Level:", // <-- NY NØGLE TILFØJET HER
+        languageSelector: {
+            label: "Language",
+            danish: "Dansk",
+            english: "English"
+        }
     },
     // Dashboard Page
     dashboard: {
@@ -71,7 +77,14 @@ export const secureI18n = {
     header: {
         title: "Down The Line Platform",
         settings: "Indstillinger",
-        profile: "Profil"
+        profile: "Profil",
+        access_level_label: "Adgangsniveau:", // <-- NY NØGLE TILFØJET HER
+        // NYT OBJEKT TILFØJET
+        languageSelector: {
+            label: "Sprog",
+            danish: "Dansk",
+            english: "English"
+        }
     },
     // Dashboard Page
     dashboard: {

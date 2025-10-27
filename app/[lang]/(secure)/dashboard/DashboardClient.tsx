@@ -1,10 +1,10 @@
-// app/[lang]/(secure)/dashboard/DashboardClient.tsx (Client Component)
-
-'use client'; 
+// app/[lang]/(secure)/dashboard/DashboardClient.tsx (FOOTER FJERNET)
+'use client';
 
 import { LayoutDashboard, Rocket, Zap, Users } from 'lucide-react';
 import React, { useMemo } from 'react';
-import { UserRole } from '@/lib/server/data'; // Sikrer korrekt typebrug
+// KORREKTION: Importer SubscriptionLevel for at undgå 'string' type
+import { UserRole, SubscriptionLevel } from '@/lib/server/data';
 
 // --- TYPE DEFINITIONER ---
 // OBS: SecureTranslations skal matches fra i18n/secureTranslations.ts
@@ -12,8 +12,8 @@ interface SecureTranslations {
   dashboard: any;
   sidebar: any;
   header: any;
-  trainer: any;
-  trainer_page: any;
+  trainer?: any; // Gør optionel
+  trainer_page?: any; // Gør optionel
 }
 
 // Definerer de data, Dashboardet modtager fra Server Componentet
@@ -24,26 +24,28 @@ interface DashboardData {
 
 // KORREKTION: Definerer alle props DashboardClient modtager
 interface DashboardProps {
-  dict: SecureTranslations; // Nøgle rettet her
+  dict: SecureTranslations;
   dashboardData: DashboardData;
-  accessLevel: string;
+  accessLevel: SubscriptionLevel; // Brug korrekt type
   userRole: UserRole;
 }
 
 export default function DashboardClient({ dict, dashboardData, accessLevel, userRole }: DashboardProps) {
-  
+
   // Bruger Tailwind CSS for styling (Regel 2)
-  const isPremium = accessLevel === 'Expert' || accessLevel === 'Elite' || accessLevel === 'Enterprise';
-  
+  // KORREKTION: Opdater isPremium check til at bruge de nye SubscriptionLevel navne
+  const isPremium = ['Expert', 'Complete', 'Elite', 'Enterprise'].includes(accessLevel);
+
   // Henter oversættelser for Dashboardet
-  const t = useMemo(() => dict.dashboard, [dict]); 
+  const t = useMemo(() => dict.dashboard, [dict]);
 
   // Simulerer rolletilpasset titel
   const dashboardTitle = useMemo(() => {
-    if (userRole === UserRole.Admin) return `Admin Oversigt (${accessLevel})`;
-    if (userRole === UserRole.HeadOfTalent) return `Talentchef Dashboard (${accessLevel})`;
-    return `${t.welcomeTitle} (Rolle: ${userRole})`;
-  }, [accessLevel, userRole, t.welcomeTitle]);
+    // Returnerer en mere generisk titel, da accessLevel nu er i dropdown
+    if (userRole === UserRole.Admin) return `Admin Oversigt`;
+    if (userRole === UserRole.HeadOfTalent) return `Talentchef Dashboard`;
+    return `${t.welcomeTitle ?? 'Velkommen'} (Rolle: ${userRole})`;
+  }, [userRole, t.welcomeTitle]); // Fjernet accessLevel afhængighed
 
   return (
     <div className="space-y-6">
@@ -68,7 +70,7 @@ export default function DashboardClient({ dict, dashboardData, accessLevel, user
 
       {/* Widget-baseret Layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        
+
         {/* Widget 1: Team Status */}
         <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
             <h2 className="text-xl font-semibold mb-3 text-gray-800 flex items-center">
@@ -87,14 +89,20 @@ export default function DashboardClient({ dict, dashboardData, accessLevel, user
                         {activity}
                     </li>
                 ))}
+                 {/* Tilføjet check for tom activityFeed */}
+                 {dashboardData.activityFeed.length === 0 && (
+                     <p className="text-sm text-gray-500">{t.activityPlaceholder ?? 'Ingen aktivitet fundet.'}</p>
+                 )}
             </ul>
         </div>
       </div>
-      
-      {/* Viser adgangsniveau for debug/verifikation */}
+
+      {/* KORREKTION: Footer er nu helt fjernet */}
+      {/*
       <footer className="text-sm text-gray-400 pt-4 border-t mt-6">
         Adgangsniveau: **{accessLevel}**
       </footer>
+      */}
     </div>
   );
 }

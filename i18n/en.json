@@ -2,7 +2,13 @@
   "header": {
     "title": "Down The Line Platform",
     "settings": "Settings",
-    "profile": "Profile"
+    "profile": "Profile",
+    "access_level_label": "Access Level:",
+       "languageSelector": {
+        "label": "Language",
+        "danish": "Dansk",
+        "english": "English"
+    }
   },
   "dashboard": {
     "loading": "Loading dashboard...",
