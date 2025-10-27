@@ -1,4 +1,4 @@
-// components/SecureLayoutClient.tsx (SMALERE PROFIL DROPDOWN PÅ MOBIL)
+// components/SecureLayoutClient.tsx (RESPONSIV PROFIL DROPDOWN - w-52 sm:w-64)
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, ReactNode } from 'react';
@@ -190,7 +190,7 @@ export default function SecureLayoutClient({ children, user, dict, lang, initial
    // === SLUT PÅ SIDEBAR JSX ===
 
 
-  // === HEADER JSX (RESPONSIV PROFIL DROPDOWN) ===
+  // === HEADER JSX (RESPONSIV PROFIL DROPDOWN BREDDE) ===
   const Header = () => {
     const isDtlEmployee = user.role === UserRole.Developer || user.role === UserRole.Tester;
     const headerDict = dict.header || {};

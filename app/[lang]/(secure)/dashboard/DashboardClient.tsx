@@ -1,108 +1,98 @@
-// app/[lang]/(secure)/dashboard/DashboardClient.tsx (FOOTER FJERNET)
+// app/[lang]/(secure)/dashboard/DashboardClient.tsx (JSX SYNTAKS RETTET)
 'use client';
 
 import { LayoutDashboard, Rocket, Zap, Users } from 'lucide-react';
 import React, { useMemo } from 'react';
-// KORREKTION: Importer SubscriptionLevel for at undgå 'string' type
 import { UserRole, SubscriptionLevel } from '@/lib/server/data';
 
 // --- TYPE DEFINITIONER ---
-// OBS: SecureTranslations skal matches fra i18n/secureTranslations.ts
 interface SecureTranslations {
   dashboard: any;
-  sidebar: any;
-  header: any;
-  trainer?: any; // Gør optionel
-  trainer_page?: any; // Gør optionel
+  sidebar?: any;
+  header?: any;
+  trainer?: any;
+  trainer_page?: any;
 }
 
-// Definerer de data, Dashboardet modtager fra Server Componentet
 interface DashboardData {
     activityFeed: string[];
     teamReadiness: { score: number; status: string };
 }
 
-// KORREKTION: Definerer alle props DashboardClient modtager
 interface DashboardProps {
   dict: SecureTranslations;
   dashboardData: DashboardData;
-  accessLevel: SubscriptionLevel; // Brug korrekt type
+  accessLevel: SubscriptionLevel;
   userRole: UserRole;
 }
 
 export default function DashboardClient({ dict, dashboardData, accessLevel, userRole }: DashboardProps) {
 
-  // Bruger Tailwind CSS for styling (Regel 2)
-  // KORREKTION: Opdater isPremium check til at bruge de nye SubscriptionLevel navne
   const isPremium = ['Expert', 'Complete', 'Elite', 'Enterprise'].includes(accessLevel);
+  const t = useMemo(() => dict.dashboard || {}, [dict]);
 
-  // Henter oversættelser for Dashboardet
-  const t = useMemo(() => dict.dashboard, [dict]);
-
-  // Simulerer rolletilpasset titel
   const dashboardTitle = useMemo(() => {
-    // Returnerer en mere generisk titel, da accessLevel nu er i dropdown
     if (userRole === UserRole.Admin) return `Admin Oversigt`;
     if (userRole === UserRole.HeadOfTalent) return `Talentchef Dashboard`;
-    return `${t.welcomeTitle ?? 'Velkommen'} (Rolle: ${userRole})`;
-  }, [userRole, t.welcomeTitle]); // Fjernet accessLevel afhængighed
+    return (
+        <>
+            {t.welcomeTitle ?? 'Velkommen'}
+            <span className="text-sm font-normal ml-2 hidden sm:inline">(Rolle: {userRole})</span>
+        </>
+    );
+  }, [userRole, t.welcomeTitle]);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-          <LayoutDashboard className="w-6 h-6 mr-3 text-blue-600" />
+    <div className="space-y-4 md:space-y-6">
+
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 flex items-center">
+          <LayoutDashboard className="w-5 h-5 md:w-6 md:h-6 mr-2 md:mr-3 text-blue-600" />
           {dashboardTitle}
       </h1>
 
-      {/* Rollespecifik Quick Access (Knapper - Opret Ny) */}
-      <div className="flex space-x-4">
-        <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
-          <Rocket className="w-5 h-5" />
-          <span>{t.createTrainingTitle}</span>
+      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+        <button className="w-full sm:w-auto flex items-center justify-center sm:justify-start space-x-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
+          <Rocket className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span>{t.createTrainingTitle ?? 'Opret Træning'}</span>
         </button>
         {isPremium && (
-          <button className="flex items-center space-x-2 px-4 py-2 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition duration-150 shadow-md">
-            <Zap className="w-5 h-5" />
-            <span>{t.readiness}</span>
+          <button className="w-full sm:w-auto flex items-center justify-center sm:justify-start space-x-2 px-3 py-1.5 text-sm bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition duration-150 shadow-md">
+            <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span>{t.readiness ?? 'Readiness'}</span>
           </button>
         )}
       </div>
 
-      {/* Widget-baseret Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
 
         {/* Widget 1: Team Status */}
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-            <h2 className="text-xl font-semibold mb-3 text-gray-800 flex items-center">
-                <Users className="w-5 h-5 mr-2" /> {t.team_status}
+        <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg border border-gray-200">
+            <h2 className="text-base sm:text-lg md:text-xl font-semibold mb-1 md:mb-2 text-gray-800 flex items-center">
+                <Users className="w-4 h-4 md:w-5 md:h-5 mr-2" /> {t.team_status ?? 'Team Status'}
             </h2>
-            <p className="text-4xl font-bold text-green-600">{dashboardData.teamReadiness.score}%</p>
-            <p className="text-sm text-gray-500 mt-2">{t.readiness} status: {dashboardData.teamReadiness.status}</p>
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-600">{dashboardData.teamReadiness?.score ?? 'N/A'}%</p>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">{t.readiness ?? 'Readiness'} status: {dashboardData.teamReadiness?.status ?? 'Ukendt'}</p>
         </div>
 
         {/* Widget 2: Recent Activity */}
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 lg:col-span-2">
-            <h2 className="text-xl font-semibold mb-3 text-gray-800">{t.recentActivityTitle}</h2>
-            <ul className="space-y-2">
-                {dashboardData.activityFeed.map((activity, index) => (
-                    <li key={index} className="text-sm text-gray-700 border-b pb-1 last:border-b-0">
+        <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg border border-gray-200 md:col-span-1 lg:col-span-2">
+            <h2 className="text-base sm:text-lg md:text-xl font-semibold mb-1 md:mb-2 text-gray-800">{t.recentActivityTitle ?? 'Seneste Aktivitet'}</h2>
+            <ul className="space-y-1">
+                {/* KORREKTION: Dobbelttjekket syntaksen her */}
+                {dashboardData.activityFeed?.map((activity, index) => (
+                    <li key={index} className="text-xs sm:text-sm text-gray-700 border-b pb-1 last:border-b-0">
                         {activity}
                     </li>
                 ))}
-                 {/* Tilføjet check for tom activityFeed */}
-                 {dashboardData.activityFeed.length === 0 && (
-                     <p className="text-sm text-gray-500">{t.activityPlaceholder ?? 'Ingen aktivitet fundet.'}</p>
+                 {(!dashboardData.activityFeed || dashboardData.activityFeed.length === 0) && (
+                     <p className="text-xs sm:text-sm text-gray-500">{t.activityPlaceholder ?? 'Ingen aktivitet fundet.'}</p>
                  )}
             </ul>
         </div>
-      </div>
+         {/* Tilføj flere widgets her */}
 
-      {/* KORREKTION: Footer er nu helt fjernet */}
-      {/*
-      <footer className="text-sm text-gray-400 pt-4 border-t mt-6">
-        Adgangsniveau: **{accessLevel}**
-      </footer>
-      */}
+      </div>
+       {/* Footer fjernet */}
     </div>
   );
 }

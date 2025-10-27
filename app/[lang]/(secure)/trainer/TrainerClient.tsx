@@ -1,123 +1,111 @@
-// app/[lang]/(secure)/trainer/TrainerClient.tsx (KLIENTKOMPONENT - KORRIGERET PROPS)
+// app/[lang]/(secure)/trainer/TrainerClient.tsx (MINIMAL YDRE PADDING V2)
 "use client";
 
-import React, { useMemo } from 'react'; // Importer useMemo
+import React, { useMemo } from 'react';
 import { PlusCircle, Book, Film, Calendar, Users } from 'lucide-react';
 import Link from 'next/link';
-// Importer nødvendige typer fra data laget
 import { UserRole, SubscriptionLevel } from '@/lib/server/data';
 
 // --- TYPE DEFINITIONER ---
-// Sikrer at Client Componentet bruger den korrekte oversættelsesstruktur
 interface SecureTranslations {
-    dashboard: any;
-    sidebar: any;
-    header: any;
-    trainer: any;
-    trainer_page: any; // Denne nøgle bruges her
+    dashboard?: any;
+    sidebar?: any;
+    header?: any;
+    trainer?: any;
+    trainer_page: any;
 }
 
-// Definerer de data, Trainer Hub modtager fra Server Componentet
 interface TrainerHubData {
     weeksFocus: string;
     upcomingSessions: { id: number; title: string; time: string }[];
 }
 
-// KORREKTION: Definerer alle props TrainerClient modtager
 interface TrainerClientProps {
-    dict: SecureTranslations; // Modtager hele dict-objektet
-    trainerHubData: TrainerHubData; // Modtager specifikke hub-data
-    accessLevel: SubscriptionLevel; // Modtager adgangsniveau
-    userRole: UserRole; // Modtager brugerrolle
-    // lang prop fjernet, da den kan udledes fra dict eller globale kontekst om nødvendigt
+    dict: SecureTranslations;
+    trainerHubData: TrainerHubData;
+    accessLevel: SubscriptionLevel;
+    userRole: UserRole;
+    lang: 'da' | 'en';
 }
 
-// This page acts as a central hub for everything related to training
-export default function TrainerClient({ dict, trainerHubData, accessLevel, userRole }: TrainerClientProps) {
 
-    // KORREKTION: Bruger 'trainer_page' nøglen fra dict, som defineret i secure.ts
-    const t = useMemo(() => dict.trainer_page, [dict]);
-    // Henter 'lang' fra params i Server Component, men vi behøver den ikke direkte her endnu
-    // const lang = ???; // Kan evt. hentes fra useLanguage context senere
+export default function TrainerClient({ dict, trainerHubData, accessLevel, userRole, lang }: TrainerClientProps) {
 
-    // Henter 'lang' for at bygge korrekte links
-    // Antager at 'lang' er en del af 'params' i Server Component og skal sendes med?
-    // For nu, lad os hårdkode det, indtil vi ser, om det er nødvendigt.
-    const lang = 'da'; // ELLER 'en' - skal ideelt set komme fra props
+    // Sikrer at t altid er et objekt
+    const t = useMemo(() => dict.trainer_page || {}, [dict]);
 
     return (
-        <div className="p-4 sm:p-6 lg:p-8">
-            <div className="mx-auto max-w-screen-2xl space-y-6">
+        // KORREKTION: Næsten ingen ydre padding
+        <div className="p-0 md:p-1 lg:p-2"> {/* MINIMAL PADDING HER */}
+            {/* Indre container beholder sin spacing */}
+            <div className="space-y-4 md:space-y-6 xl:space-y-8">
 
-                {/* Grid for shortcuts and information */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 xl:gap-8">
 
                     {/* Main Section (Left side) */}
-                    <div className="lg:col-span-2 space-y-6">
+                    <div className="lg:col-span-2 space-y-4 md:space-y-6 xl:space-y-8">
 
                         {/* Large Shortcut Buttons */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <Link href={`/${lang}/trainer/new`} className="group bg-orange-500 text-white p-6 rounded-lg shadow hover:shadow-md transition-shadow flex items-center space-x-4 cursor-pointer">
-                                <PlusCircle className="h-10 w-10" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 xl:gap-8">
+                            <Link href={`/${lang}/trainer/new`} className="group bg-orange-500 text-white p-4 sm:p-6 rounded-lg shadow hover:shadow-md transition-shadow flex items-center space-x-3 sm:space-x-4 cursor-pointer">
+                                <PlusCircle className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0" />
                                 <div>
-                                    <h2 className="font-bold text-lg">{t.session_planner}</h2>
-                                    <p className="text-sm opacity-90">{t.session_planner_desc}</p>
+                                    <h2 className="font-bold text-base sm:text-lg">{t.session_planner ?? 'Session Planner'}</h2>
+                                    <p className="text-xs sm:text-sm opacity-90">{t.session_planner_desc ?? 'Design og planlæg'}</p>
                                 </div>
                             </Link>
-                            {/* Link til Animation Studio - skal måske have sin egen side? */}
-                            <div className="group bg-black text-white p-6 rounded-lg shadow hover:shadow-md transition-shadow flex items-center space-x-4 cursor-pointer">
-                                <Film className="h-10 w-10" />
+                            <div className="group bg-black text-white p-4 sm:p-6 rounded-lg shadow hover:shadow-md transition-shadow flex items-center space-x-3 sm:space-x-4 cursor-pointer">
+                                <Film className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0" />
                                 <div>
-                                    <h2 className="font-bold text-lg">{t.animation_studio}</h2>
-                                    <p className="text-sm opacity-90">{t.animation_studio_desc}</p>
+                                    <h2 className="font-bold text-base sm:text-lg">{t.animation_studio ?? 'Animation Studio'}</h2>
+                                    <p className="text-xs sm:text-sm opacity-90">{t.animation_studio_desc ?? 'Bring øvelser til live'}</p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Week's Focus */}
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="font-bold text-black mb-4">{t.weeks_focus}</h3>
-                            <p className="text-gray-600"
-                                // Bruger 't' (fra dict.trainer_page)
+                        <div className="bg-white p-4 md:p-6 rounded-lg shadow">
+                            <h3 className="text-base sm:text-lg font-semibold text-black mb-2 md:mb-4">{t.weeks_focus ?? 'Ugens Fokus'}</h3>
+                            <p className="text-xs sm:text-sm text-gray-600"
                                 dangerouslySetInnerHTML={{
-                                    __html: t.weeks_focus_desc.replace('<1>', '<span class="font-semibold text-black">').replace('</1>', '</span>')
+                                    __html: (t.weeks_focus_desc || '').replace('<1>', '<span class="font-semibold text-black">').replace('</1>', '</span>')
                                 }}
                             />
                         </div>
                     </div>
 
                     {/* Side Section (Right side) */}
-                    <div className="space-y-6">
-                        {/* Upcoming Sessions - Bruger nu trainerHubData */}
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="font-bold text-black mb-4">{t.upcoming_sessions}</h3>
-                            <ul className="space-y-3">
-                                {trainerHubData.upcomingSessions.map(session => (
-                                    <li key={session.id} className="flex items-center justify-between text-sm">
+                    <div className="space-y-4 md:space-y-6 xl:space-y-8">
+                        {/* Upcoming Sessions */}
+                        <div className="bg-white p-4 md:p-6 rounded-lg shadow">
+                            <h3 className="text-base sm:text-lg font-semibold text-black mb-2 md:mb-4">{t.upcoming_sessions ?? 'Kommende Træninger'}</h3>
+                            <ul className="space-y-2">
+                                {trainerHubData.upcomingSessions?.map(session => (
+                                    <li key={session.id} className="flex items-center justify-between text-xs sm:text-sm">
                                         <div className="flex items-center">
                                             <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                                            <span>{session.time} - {session.title}</span> {/* Bruger data */}
+                                            <span>{session.time} - {session.title}</span>
                                         </div>
-                                        {/* <span className="font-semibold text-black">Bane 2</span> Mock Data */}
                                     </li>
                                 ))}
-                                {trainerHubData.upcomingSessions.length === 0 && (
-                                     <p className="text-sm text-gray-500">Ingen kommende træninger planlagt.</p>
+                                {(!trainerHubData.upcomingSessions || trainerHubData.upcomingSessions.length === 0) && (
+                                    <p className="text-xs sm:text-sm text-gray-500">Ingen kommende træninger planlagt.</p>
                                 )}
                             </ul>
                         </div>
 
                         {/* Drill Libraries */}
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="font-bold text-black mb-4">{t.my_libraries}</h3>
-                            <div className="space-y-3">
-                                <Link href={`/${lang}/trainer/library`} className="flex items-center p-3 rounded-md hover:bg-gray-100 text-sm font-medium cursor-pointer">
-                                    <Book className="h-5 w-5 mr-3 text-orange-500"/>
-                                    {t.club_catalog}
+                        <div className="bg-white p-4 md:p-6 rounded-lg shadow">
+                            <h3 className="text-base sm:text-lg font-semibold text-black mb-2 md:mb-4">{t.my_libraries ?? 'Mine Biblioteker'}</h3>
+                            <div className="space-y-2">
+                                <Link href={`/${lang}/trainer/library`} className="flex items-center p-2 sm:p-3 rounded-md hover:bg-gray-100 text-xs sm:text-sm font-medium cursor-pointer">
+                                    <Book className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 text-orange-500"/>
+                                    {t.club_catalog ?? 'Klub Katalog'}
                                 </Link>
-                                <Link href={`/${lang}/trainer/library`} className="flex items-center p-3 rounded-md hover:bg-gray-100 text-sm font-medium cursor-pointer">
-                                    <Users className="h-5 w-5 mr-3 text-black"/>
-                                    {t.personal_catalog}
+                                <Link href={`/${lang}/trainer/library`} className="flex items-center p-2 sm:p-3 rounded-md hover:bg-gray-100 text-xs sm:text-sm font-medium cursor-pointer">
+                                    <Users className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 text-black"/>
+                                    {t.personal_catalog ?? 'Personligt Katalog'}
                                 </Link>
                             </div>
                         </div>
