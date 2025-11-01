@@ -1,4 +1,5 @@
 // app/[lang]/(secure)/dashboard/DashboardClient.tsx (FINAL KORREKTION: Mindre Mellemrum i Quick Access)
+
 'use client';
 
 // Imports: Holdt minimalistisk
@@ -10,19 +11,22 @@ import {
   Activity,
   ArrowRight,
   Video,
-  User as UserIcon, 
-  Calendar as CalendarIcon, 
+  User as UserIcon,
+  Calendar as CalendarIcon,
   Star,
   Target,
-  GitPullRequestArrowIcon, 
+  GitPullRequestArrowIcon,
+
 } from 'lucide-react';
 import React, { useMemo } from 'react';
+import { Responsive as ResponsiveGridLayout } from 'react-grid-layout'; // Placeholder for dynamisk gitter
 import Link from 'next/link';
 import { UserRole, SubscriptionLevel } from '@/lib/server/data';
 
 // --- TYPE DEFINITIONER (Uændret) ---
 interface SecureTranslations {
   dashboard: any;
+  lang?: 'da' | 'en';
   // ... andre nøgler ...
 }
 
@@ -48,17 +52,17 @@ type GridItem = {
 };
 
 // --- START: KOMPONENTER TIL LAYOUT ---
-
 // 1. Minimalistisk Quick Access Bar (KORREKTION: Mindre Mellemrum)
+
 const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: SubscriptionLevel, lang: 'da' | 'en' }) => {
     const isPremium = ['Expert', 'Complete', 'Elite', 'Enterprise'].includes(accessLevel);
 
     // Styling forbliver ensartet
     const buttonClass = "flex items-center justify-between p-2 sm:p-3 text-xs sm:text-sm bg-black text-white transition duration-200 shadow-xl rounded-lg border-2 border-black group hover:-translate-y-1 hover:shadow-2xl";
-    
+
     // Forkortede termer (som aftalt)
     const trainingTitle = lang === 'da' ? 'Opret Session' : 'Create Session';
-    const sessionSub = 'Session Planner'; 
+    const sessionSub = 'Session Planner';
     const drillTitle = lang === 'da' ? 'Opret Øvelse' : 'Create Drill';
     const readinessTitle = t.readiness ?? 'Readiness';
     const analysisTitle = 'Video Analysis';
@@ -68,63 +72,63 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
 
     return (
         // KORREKTION: Bruger flex-wrap og lader den responsive beregning styre pladsen
-        <div className="flex flex-wrap gap-4 md:gap-4 mb-6 md:mb-8"> 
-            
+        <div className="flex flex-wrap gap-4 md:gap-4 mb-6 md:mb-8">
+       
             {/* 1. Create Session (Altid synlig) */}
             {/* KORREKTION: Justeret beregningen for at fjerne overflødig margen */}
-            <Link href="/trainer/new" 
-                  className={buttonClass + " w-full md:w-[calc(50%-8px)] lg:w-[calc(33.33%-10.66px)] xl:w-[calc(25%-12px)]"}> 
-                <div className='flex items-center'> 
-                    <CalendarIcon className={ICON_SIZE_CLASS + " text-orange-500 shrink-0"} /> 
+            <Link href="/trainer/new"
+                  className={buttonClass + " w-full md:w-[calc(50%-8px)] lg:w-[calc(33.33%-10.66px)] xl:w-[calc(25%-12px)]"}>
+                <div className='flex items-center'>
+                    <CalendarIcon className={ICON_SIZE_CLASS + " text-orange-500 shrink-0"} />
                 </div>
-                <div className='flex flex-col flex-1 items-center justify-center text-center'> 
-                    <span className='font-bold text-xs sm:text-sm'>{trainingTitle}</span> 
-                    <span className='text-[10px] text-gray-400'>{sessionSub}</span>
+                <div className='flex flex-col flex-1 items-center justify-center text-center'>
+                    <span className='font-bold text-xs sm:text-sm'>{t.createSessionTitle ?? 'Ny Træningsplan'}</span>
+                    <span className='text-[10px] text-gray-400'>{t.sessionPlannerSubtitle ?? 'Træning Planlægning'}</span>
                 </div>
-                <div className={ICON_SIZE_CLASS}></div> 
+                <div className={ICON_SIZE_CLASS}></div>
             </Link>
-            
+          
             {/* 2. Create Drill (Altid synlig) */}
             {/* KORREKTION: Justeret beregningen for at fjerne overflødig margen */}
-            <Link href="/trainer/new?mode=exercise" 
-                  className={buttonClass + " w-full md:w-[calc(50%-8px)] lg:w-[calc(33.33%-10.66px)] xl:w-[calc(25%-12px)]"}> 
+            <Link href="/trainer/new?mode=exercise"
+                  className={buttonClass + " w-full md:w-[calc(50%-8px)] lg:w-[calc(33.33%-10.66px)] xl:w-[calc(25%-12px)]"}>
                 <div className='flex items-center'>
-                    <GitPullRequestArrowIcon className={ICON_SIZE_CLASS + " text-orange-500 shrink-0"} /> 
+                    <GitPullRequestArrowIcon className={ICON_SIZE_CLASS + " text-orange-500 shrink-0"} />
                 </div>
-                <div className='flex flex-col flex-1 items-center justify-center text-center'> 
-                    <span className='font-bold text-xs sm:text-sm'>{drillTitle}</span>
-                    <span className='text-[10px] text-gray-400'>DTL Studio</span>
+                <div className='flex flex-col flex-1 items-center justify-center text-center'>
+                    <span className='font-bold text-xs sm:text-sm'>{t.createDrillTitle ?? 'Ny Øvelse'}</span>
+                    <span className='text-[10px] text-gray-400'>{t.dtlStudioSubtitle ?? 'DTL Studio'}</span>
                 </div>
-                <div className={ICON_SIZE_CLASS}></div> 
+                <div className={ICON_SIZE_CLASS}></div>
             </Link>
-            
+          
             {/* 3. Readiness / Player (Prioritet 3) */}
             {/* KORREKTION: Justeret beregningen for at fjerne overflødig margen */}
             {isPremium && (
-                <Link href="/analysis" 
-                      className={buttonClass + " hidden lg:flex w-full lg:w-[calc(33.33%-10.66px)] xl:w-[calc(25%-12px)]"}> 
-                    <div className='flex items-center'> 
+                <Link href="/analysis"
+                      className={buttonClass + " hidden lg:flex w-full lg:w-[calc(33.33%-10.66px)] xl:w-[calc(25%-12px)]"}>
+                    <div className='flex items-center'>
                         <UserIcon className={ICON_SIZE_CLASS + " text-orange-500 shrink-0"} />
                     </div>
-                    <div className='flex flex-col flex-1 items-center justify-center text-center'> 
-                        <span className='font-bold text-xs sm:text-sm'>{readinessTitle}</span>
-                        <span className='text-[10px] text-gray-400'>Player</span>
+                    <div className='flex flex-col flex-1 items-center justify-center text-center'>
+                        <span className='font-bold text-xs sm:text-sm'>{t.readinessTitle ?? 'Readiness'}</span>
+                        <span className='text-[10px] text-gray-400'>{t.playerSubtitle ?? 'Spiller'}</span>
                     </div>
-                    <div className={ICON_SIZE_CLASS}></div> 
+                    <div className={ICON_SIZE_CLASS}></div>
                 </Link>
             )}
 
             {/* 4. Video Analysis (Prioritet 4) */}
             {/* KORREKTION: Justeret beregningen for at fjerne overflødig margen */}
             {isPremium && (
-                 <Link href="/analysis" 
-                       className={buttonClass + " hidden xl:flex w-full xl:w-[calc(25%-12px)]"}> 
+                 <Link href="/analysis"
+                       className={buttonClass + " hidden xl:flex w-full xl:w-[calc(25%-12px)]"}>
                     <div className='flex items-center'>
                         <Video className={ICON_SIZE_CLASS + " text-orange-500 shrink-0"} />
                     </div>
-                    <div className='flex flex-col flex-1 items-center justify-center text-center'> 
-                        <span className='font-bold text-xs sm:text-sm'>{analysisTitle}</span>
-                        <span className='text-[10px] text-gray-400'>Modul 9</span>
+                    <div className='flex flex-col flex-1 items-center justify-center text-center'>
+                        <span className='font-bold text-xs sm:text-sm'>{t.videoAnalysisTitle ?? 'Video Analysis'}</span>
+                        <span className='text-[10px] text-gray-400'>{t.analysisRoomSubtitle ?? 'Analysis Room'}</span>
                     </div>
                     <div className={ICON_SIZE_CLASS}></div>
                 </Link>
@@ -132,7 +136,6 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
         </div>
     );
 };
-
 
 // Generel Widget-Ramme (med minimalistisk kant) - Uændret
 const SmartWidget = ({
@@ -146,12 +149,13 @@ const SmartWidget = ({
 }) => {
   let borderStyle = 'border-gray-200';
   let color = 'text-black';
-  
+
   if (priority === 'high') {
     // Høj Prioritet: Solid Orange Kant (Alarm)
-    borderStyle = 'border-orange-500 ring-2 ring-orange-500/20'; 
+    borderStyle = 'border-orange-500 ring-2 ring-orange-500/20';
     color = 'text-orange-500';
   } else if (priority === 'medium') {
+
     // Mellem Prioritet: Subtil Sort Kant (Ulæst/Næste Skridt)
     borderStyle = 'border-black';
   }
@@ -166,7 +170,6 @@ const SmartWidget = ({
     </div>
   );
 };
-
 
 // 2. AI Readiness Widget (Høj Prioritet - Orange Fokus) - Uændret
 const ReadinessAlertWidget = ({ t, item }: { t: any; item: GridItem }) => (
@@ -203,6 +206,7 @@ const CalendarWidget = ({ t, item }: { t: any; item: GridItem }) => (
           {t.focus ?? 'Fokus'}:{' '}
           <span className="font-medium text-black">{item.data.focus}</span>
         </p>
+
         <Link
           href={item.data.link}
           className="mt-3 text-sm font-semibold text-orange-500 hover:text-black flex items-center"
@@ -265,7 +269,6 @@ const ActivityWidget = ({ t, item }: { t: any; item: GridItem }) => (
 );
 
 // --- SLUT: KOMPONENTER TIL LAYOUT ---
-
 export default function DashboardClient({
   dict,
   dashboardData,
@@ -273,25 +276,27 @@ export default function DashboardClient({
   userRole,
 }: DashboardProps) {
   const t = useMemo(() => dict.dashboard || {}, [dict]);
-  const lang = useMemo(() => dict.lang as 'da' | 'en', [dict.lang]); 
-  
+  const lang = useMemo(() => dict.lang as 'da' | 'en', [dict.lang]);
+
   // Simulerer det flytbare gitter
   const intelligentGrid: GridItem[] = [
+
     // Højeste prioritet (AI)
     {
       id: 'alert-01',
-      priority: 'high', 
+      priority: 'high',
       type: 'readiness_alert',
       data: {
         title: 'Advarsel: Høj Skadesrisiko (AI Modul)',
         description: `3 spillere (P. Jensen, M. Hansen, L. Nielsen) har høj risiko.`,
       },
-      gridSpan: 1, 
+      gridSpan: 1,
     },
+
     // Mellem prioritet (Kalender og Beskeder)
     {
       id: 'cal-01',
-      priority: 'medium', 
+      priority: 'medium',
       type: 'calendar',
       data: {
         title: 'Næste Event: Træning (U19)',
@@ -311,6 +316,7 @@ export default function DashboardClient({
       },
       gridSpan: 1,
     },
+
     // Lav prioritet (Aktivitetsfeed)
     {
       id: 'act-01',
@@ -319,51 +325,63 @@ export default function DashboardClient({
       data: {
         feed: dashboardData.activityFeed,
       },
-      gridSpan: 2, 
+      gridSpan: 2,
     },
   ];
 
   const renderGridItem = (item: GridItem) => {
     switch (item.type) {
       case 'readiness_alert':
-        return (
-            <div key={item.id} className={`lg:col-span-${item.gridSpan}`}>
-                <ReadinessAlertWidget t={t} item={item} />
-            </div>
-        );
+        return <ReadinessAlertWidget t={t} item={item} />;
       case 'calendar':
-        return (
-            <div key={item.id} className={`lg:col-span-${item.gridSpan}`}>
-                <CalendarWidget t={t} item={item} />
-            </div>
-        );
+        return <CalendarWidget t={t} item={item} />;
       case 'message':
-        return (
-            <div key={item.id} className={`lg:col-span-${item.gridSpan}`}>
-                <MessageWidget t={t} item={item} />
-            </div>
-        );
+        return <MessageWidget t={t} item={item} />;
       case 'activity':
-        return (
-            <div key={item.id} className={`lg:col-span-${item.gridSpan}`}>
-                <ActivityWidget t={t} item={item} />
-            </div>
-        );
+        return <ActivityWidget t={t} item={item} />;
       default:
         return null;
     }
   };
 
+  // Definerer standardlayoutet (Dette skal normalt hentes fra databasen)
+  const defaultLayout = intelligentGrid.map((item, index) => ({
+    i: item.id,
+    x: index % 4,
+    y: Math.floor(index / 4),
+    w: item.gridSpan || 1, // Bruger gridSpan som standardbredde
+    h: 1, // Standardhøjde, justeres senere baseret på indhold
+    minW: 1,
+    maxW: 4,
+  }));
+
+  // Vi skal bruge et useMemo til at generere widgets' elementer, så de kan bruges i gitteret
+  const gridElements = useMemo(() => {
+    return intelligentGrid.map(item => (
+        // Data-grid-holder er nødvendig for at placere elementer i RGL
+        <div key={item.id} data-grid={{ w: item.gridSpan || 1, h: 1, minW: 1, maxW: 4, x: 0, y: 0 }}>
+            {renderGridItem(item)}
+        </div>
+    ));
+  }, [intelligentGrid, t]);
+
   return (
     <div className="space-y-4 md:space-y-6">
       {/* 1. FAST: Quick Access Bar i toppen */}
       <QuickAccessBar t={t} accessLevel={accessLevel} lang={lang} />
-
-      {/* 2. FLYTBAR: Det Smarte Gitter */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6">
-        {intelligentGrid.map(renderGridItem)}
-      </div>
-
+      {/* 2. FLYTBAR: Det Smarte Gitter (Client Component) */}
+      <ResponsiveGridLayout
+          className="layout"
+          layouts={{ lg: defaultLayout, md: defaultLayout }} // Bruger standardlayout for alle breakpoints
+          breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+          cols={{ lg: 4, md: 4, sm: 2, xs: 1, xxs: 1 }}
+          rowHeight={300} // Højden af en række i pixels (justeres senere)
+          isDraggable={true}
+          isResizable={true}
+          margin={[24, 24]} // Gitterets indre margen (matchende gap-4/6)
+        >
+          {gridElements}
+        </ResponsiveGridLayout>
     </div>
   );
 }
