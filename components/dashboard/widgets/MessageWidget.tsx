@@ -13,6 +13,7 @@ interface MessageWidgetProps {
 
 export default function MessageWidget({ t, item }: MessageWidgetProps) {
     return (
+        // RETTET: "h-full" er TILFØJET
         <SmartWidget priority="medium" className="h-full">
             <div className="flex">
                 <MessageSquare className="w-6 h-6 md:w-8 md:h-8 text-black mr-3 md:mr-4 shrink-0" />

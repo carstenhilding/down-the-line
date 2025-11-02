@@ -1,4 +1,4 @@
-// app/[lang]/(secure)/dashboard/DashboardClient.tsx (Fuldt opdateret, fjerner ydre div for at rette scrollbar)
+// app/[lang]/(secure)/dashboard/DashboardClient.tsx (Implementerer 12-kolonne grid og 100px rowHeight)
 
 'use client';
 
@@ -26,15 +26,15 @@ import Link from 'next/link';
 import { UserRole, SubscriptionLevel } from '@/lib/server/data';
 
 // Importerer de komponenter, vi har flyttet
-import ReadinessAlertWidget from '@/components/dashboard/widgets/ReadinessAlertWidget';
-import CalendarWidget from '@/components/dashboard/widgets/CalendarWidget';
+import AiReadinessWidget from '@/components/dashboard/widgets/AiReadinessWidget';
+import CalendarWidget from '@/components/dashboard/widgets/CalendarWidget'; // 7-dages kalender
 import MessageWidget from '@/components/dashboard/widgets/MessageWidget';
 import ActivityWidget from '@/components/dashboard/widgets/ActivityWidget';
 
 // Opretter den "rigtige" ResponsiveGridLayout
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-// --- TYPE DEFINITIONER (Uændret) ---
+// --- TYPE DEFINITIONER ---
 interface SecureTranslations {
   dashboard: any;
   lang?: 'da' | 'en';
@@ -55,9 +55,8 @@ interface DashboardProps {
 type GridItem = {
   id: string;
   priority: 'high' | 'medium' | 'low';
-  type: 'readiness_alert' | 'calendar' | 'message' | 'activity';
+  type: 'ai_readiness' | 'weekly_calendar' | 'message' | 'activity';
   data: any;
-  gridSpan: number; // Bemærk: Denne bruges nu kun til data, ikke layout
 };
 
 // --- START: KOMPONENTER TIL LAYOUT ---
@@ -222,55 +221,43 @@ export default function DashboardClient({
   // Data (Uændret)
   const intelligentGrid: GridItem[] = [
     {
-      id: 'alert-01',
+      id: 'ai-readiness',
       priority: 'high',
-      type: 'readiness_alert',
-      data: {
-        title: 'Advarsel: Høj Skadesrisiko (AI Modul)',
-        description: `3 spillere (P. Jensen, M. Hansen, L. Nielsen) har høj risiko.`,
-      },
-      gridSpan: 2, 
+      type: 'ai_readiness',
+      data: {}, 
     },
     {
-      id: 'cal-01',
+      id: 'weekly-calendar',
       priority: 'medium',
-      type: 'calendar',
-      data: {
-        title: 'Næste Event: Træning (U19)',
-        time: 'I dag kl. 17:00 - 18:30',
-        focus: 'Højt Genpres (fra Curriculum)',
-        link: '/trainer/new',
-      },
-      gridSpan: 2, 
+      type: 'weekly_calendar',
+      data: {}, 
     },
     {
-      id: 'msg-01',
+      id: 'messages',
       priority: 'medium',
       type: 'message',
       data: {
         title: 'Ny ulæst besked (Forældregruppe U19)',
         snippet: 'Hej Træner, angående kørsel til weekendens kamp...',
       },
-      gridSpan: 2, 
     },
     {
-      id: 'act-01',
+      id: 'activity-feed',
       priority: 'low',
       type: 'activity',
       data: {
         feed: dashboardData.activityFeed,
       },
-      gridSpan: 2, 
     },
   ];
 
   // Render-funktion (Uændret)
   const renderGridItem = (item: GridItem) => {
     switch (item.type) {
-      case 'readiness_alert':
-        return <ReadinessAlertWidget t={t} item={item} />;
-      case 'calendar':
-        return <CalendarWidget t={t} item={item} />;
+      case 'ai_readiness':
+        return <AiReadinessWidget userData={{ subscriptionLevel: accessLevel }} lang={lang} />;
+      case 'weekly_calendar':
+        return <CalendarWidget translations={t} lang={lang} />;
       case 'message':
         return <MessageWidget t={t} item={item} />;
       case 'activity':
@@ -280,25 +267,28 @@ export default function DashboardClient({
     }
   };
 
-  // Layouts (Uændret)
+  // --- OPDATERET: LAYOUTS TIL 12-KOLONNER / 100px RÆKKER ---
   const layouts = {
+    // lg & md (12 kolonner grid): Asymmetrisk layout
     lg: [
-      { i: 'alert-01', x: 0, y: 0, w: 2, h: 1, minW: 2, maxW: 4 },
-      { i: 'cal-01',   x: 2, y: 0, w: 2, h: 1, minW: 2, maxW: 4 },
-      { i: 'msg-01',   x: 0, y: 1, w: 2, h: 1, minW: 2, maxW: 4 },
-      { i: 'act-01',   x: 2, y: 1, w: 2, h: 1, minW: 2, maxW: 4 },
+      { i: 'ai-readiness',     x: 0, y: 0, w: 3, h: 2, minW: 1, maxW: 4, minH: 1 }, // 25% bred, 300px høj
+      { i: 'weekly-calendar',  x: 3, y: 0, w: 6, h: 2, minW: 4, maxW: 8, minH: 1 }, // 50% bred, 300px høj
+      { i: 'messages',         x: 9, y: 0, w: 3, h: 2, minW: 2, maxW: 4, minH: 1 }, // 25% bred, 300px høj
+      { i: 'activity-feed',    x: 0, y: 3, w: 12, h: 2, minW: 4, maxW: 12, minH: 2 }, // 100% bred, 200px høj
     ],
+    // sm (6 kolonner grid): 
     sm: [
-      { i: 'alert-01', x: 0, y: 0, w: 1, h: 1 },
-      { i: 'cal-01',   x: 1, y: 0, w: 1, h: 1 },
-      { i: 'msg-01',   x: 0, y: 1, w: 1, h: 1 },
-      { i: 'act-01',   x: 1, y: 1, w: 1, h: 1 },
+      { i: 'ai-readiness',     x: 0, y: 0, w: 3, h: 2, minH: 2 },
+      { i: 'messages',         x: 3, y: 0, w: 3, h: 2, minH: 2 },
+      { i: 'weekly-calendar',  x: 0, y: 3, w: 6, h: 2, minH: 2 },
+      { i: 'activity-feed',    x: 0, y: 6, w: 6, h: 2, minH: 2 },
     ],
+    // xs (4 kolonner grid): Stabler pænt
     xs: [
-      { i: 'alert-01', x: 0, y: 0, w: 1, h: 1 },
-      { i: 'cal-01',   x: 0, y: 1, w: 1, h: 1 },
-      { i: 'msg-01',   x: 0, y: 2, w: 1, h: 1 },
-      { i: 'act-01',   x: 0, y: 3, w: 1, h: 1 },
+      { i: 'ai-readiness',     x: 0, y: 0, w: 4, h: 2, minH: 2 },
+      { i: 'weekly-calendar',  x: 0, y: 3, w: 4, h: 2, minH: 2 },
+      { i: 'messages',         x: 0, y: 6, w: 4, h: 2, minH: 2 },
+      { i: 'activity-feed',    x: 0, y: 9, w: 4, h: 2, minH: 2 },
     ]
   } as { [key: string]: ReactGridLayout.Layout[] }; 
   
@@ -308,23 +298,20 @@ export default function DashboardClient({
 
   const gridElements = useMemo(() => {
     return intelligentGrid.map(item => (
-        <div key={item.id}>
+        // RETTET: className="h-full" er TILFØJET for at fylde den nye faste celle-højde
+        <div key={item.id} className="h-full">
             {renderGridItem(item)}
         </div>
     ));
-  }, [intelligentGrid, t]);
+  }, [intelligentGrid, t, lang, accessLevel]); 
 
-  // Selve return-statement (RETTET)
+  // Selve return-statement (Uændret)
   return (
-    // RETTET: Den yderste <div> er erstattet med et Fragment <>
     <> 
-      
-      {/* 1. FAST: Quick Access Bar (Har nu mb-4 for at erstatte space-y) */}
       <div className="mb-4">
         <QuickAccessBar t={t} accessLevel={accessLevel} lang={lang} />
       </div>
       
-      {/* 2. OPDATERET: View Mode Toggle Bar (Har nu mb-4 for at erstatte space-y) */}
       <div className="mb-4">
         <ViewModeToggle 
           activeTool={activeTool}
@@ -334,14 +321,16 @@ export default function DashboardClient({
         />
       </div>
       
-      {/* 3. Betinget rendering af Grid eller Canvas */}
       {(activeTool === 'grid' || activeTool === 'add') && (
         <ResponsiveGridLayout
             className="layout"
             layouts={layouts}
+            // RETTET: cols er nu 12-baseret
             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-            cols={{ lg: 4, md: 4, sm: 2, xs: 1, xxs: 1 }}
-            rowHeight={300}
+            cols={{ lg: 12, md: 12, sm: 6, xs: 4, xxs: 2 }} // xxs ændret til 2
+            // RETTET: rowHeight er nu 100
+            rowHeight={100}
+            // autoSize er fjernet for at få et fast, rent grid
             isDraggable={isDraggable}
             isResizable={isDraggable}
             margin={[16, 16]} 
@@ -357,7 +346,6 @@ export default function DashboardClient({
             </p>
         </div>
       )}
-    {/* RETTET: Lukker Fragmentet </> */}
     </>
   );
 }

@@ -12,6 +12,7 @@ interface ActivityWidgetProps {
 
 export default function ActivityWidget({ t, item }: ActivityWidgetProps) {
     return (
+        // RETTET: "h-full" er TILFØJET
         <SmartWidget priority="low" className="h-full">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 flex items-center">
                 <Activity className="w-5 h-5 mr-2 text-black" />

@@ -11,7 +11,6 @@ const config: Config = {
         // Din eksisterende font-definition, som forbliver uændret
         sans: ['var(--font-inter)'],
       },
-      // START ÆNDRING: Tilføj din brugerdefinerede orange farveskala her
       colors: {
         orange: {
           DEFAULT: '#fa8f4d',   // Din primære orange
@@ -28,9 +27,11 @@ const config: Config = {
           '950': '#442614',
         },
       },
-      // SLUT ÆNDRING
     },
   },
-  plugins: [],
+  plugins: [
+    // NYT: Tilføjer container queries plugin
+    require('@tailwindcss/container-queries'), 
+  ],
 };
 export default config;

@@ -20,9 +20,10 @@ export const SmartWidget = ({ children, priority = 'low', className = '' }: Smar
       borderStyle = 'border-black';
     }
 
+    // RETTET: Tilføjet '@container' for at gøre den til en "container"
     return (
-      <div className={`bg-white p-4 md:p-6 rounded-xl shadow-md border transition-all duration-300 ${borderStyle} ${className}`}>
-          <div className={color}>
+      <div className={`@container bg-white p-4 md:p-6 rounded-xl shadow-md border transition-all duration-300 ${borderStyle} ${className} h-full flex flex-col`}>
+          <div className={`${color} flex-1`}> 
               {children}
           </div>
       </div>
