@@ -31,6 +31,11 @@ import CalendarWidget from '@/components/dashboard/widgets/CalendarWidget'; // 7
 import MessageWidget from '@/components/dashboard/widgets/MessageWidget';
 import ActivityWidget from '@/components/dashboard/widgets/ActivityWidget';
 
+// *** VORES RETTELSE ER HER ***
+// Tilføj disse to linjer for at aktivere resize-håndtag og basis-styling
+import "react-grid-layout/css/styles.css";
+import "react-resizable/css/styles.css";
+
 // Opretter den "rigtige" ResponsiveGridLayout
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
