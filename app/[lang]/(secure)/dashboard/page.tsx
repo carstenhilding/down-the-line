@@ -1,4 +1,4 @@
-// app/[lang]/(secure)/dashboard/page.tsx (FINAL KORREKTION V8: await params FØRST)
+// app/[lang]/(secure)/dashboard/page.tsx (RETTET: fjerner h-full div)
 
 import { notFound } from 'next/navigation';
 import { fetchSecureTranslations } from '@/i18n/getSecurePageTranslations';
@@ -14,8 +14,7 @@ import { fetchUserAccessLevel, UserRole, SubscriptionLevel } from '@/lib/server/
 
 export default async function DashboardPage({ params }: DashboardPageProps) {
 
-  // KORREKTION: Tilgår params *allerførst* — await params before using its properties
-  const { lang } = await params; // params is a Promise<{ lang: 'da'|'en' }>
+  const { lang } = await params;
   const locale = validateLang(lang);
 
   // 1. ADGANGSKONTROL PUNKT
@@ -25,7 +24,6 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
     return notFound();
   }
 
-  // Bruger 'lang' som blev læst FØR await
   const dict = await fetchSecureTranslations(locale);
 
   // Simuleret dashboard data
@@ -34,15 +32,13 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
       teamReadiness: { score: 78, status: 'grøn' },
   };
 
-  // 3. RENDERING
+  // 3. RENDERING (RETTET: Den ydre <div> er fjernet for at stoppe dobbelt scrollbar)
   return (
-    <div className="flex flex-col h-full">
       <DashboardClient
         dict={dict}
         dashboardData={dashboardData}
         accessLevel={user.subscriptionLevel}
         userRole={user.role}
       />
-    </div>
   );
 }

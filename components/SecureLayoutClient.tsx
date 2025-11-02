@@ -1,4 +1,4 @@
-// components/SecureLayoutClient.tsx (RENSERET: Quick Access Knapper fjernet fra Header)
+// components/SecureLayoutClient.tsx (RETTET: h-screen er fjernet for at løse dobbelt scrollbar)
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, ReactNode } from 'react';
@@ -392,7 +392,11 @@ export default function SecureLayoutClient({
   return (
     <div
       id="secure-layout-client-root"
-      className="flex flex-col h-screen bg-gray-50 text-black overflow-hidden"
+      // *** RETTELSEN ER HER ***
+      // 'h-screen' er erstattet med 'h-full'. 
+      // Dette tvinger ikke længere layoutet til at være 100% af skærmen,
+      // men 100% af sin forælder, hvilket løser konflikten med headeren.
+      className="flex flex-col h-full bg-gray-50 text-black overflow-hidden"
     >
       <Header />
       <div className="flex flex-1 overflow-hidden">

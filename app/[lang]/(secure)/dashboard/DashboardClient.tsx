@@ -1,4 +1,4 @@
-// app/[lang]/(secure)/dashboard/DashboardClient.tsx (Fuldt refaktoreret)
+// app/[lang]/(secure)/dashboard/DashboardClient.tsx (Fuldt opdateret, fjerner ydre div for at rette scrollbar)
 
 'use client';
 
@@ -21,24 +21,23 @@ import {
   View, 
   PlusCircle, 
 } from 'lucide-react';
-import { Responsive as ResponsiveGridLayout } from 'react-grid-layout';
+import { Responsive, WidthProvider } from 'react-grid-layout';
 import Link from 'next/link';
 import { UserRole, SubscriptionLevel } from '@/lib/server/data';
 
-// --- NYE WIDGET IMPORTS ---
-// Importerer de komponenter, vi lige har oprettet og flyttet
+// Importerer de komponenter, vi har flyttet
 import ReadinessAlertWidget from '@/components/dashboard/widgets/ReadinessAlertWidget';
 import CalendarWidget from '@/components/dashboard/widgets/CalendarWidget';
 import MessageWidget from '@/components/dashboard/widgets/MessageWidget';
 import ActivityWidget from '@/components/dashboard/widgets/ActivityWidget';
-// --- SLUT NYE IMPORTS ---
 
+// Opretter den "rigtige" ResponsiveGridLayout
+const ResponsiveGridLayout = WidthProvider(Responsive);
 
 // --- TYPE DEFINITIONER (Uændret) ---
 interface SecureTranslations {
   dashboard: any;
   lang?: 'da' | 'en';
-  // ... andre nøgler ...
 }
 
 interface DashboardData {
@@ -58,7 +57,7 @@ type GridItem = {
   priority: 'high' | 'medium' | 'low';
   type: 'readiness_alert' | 'calendar' | 'message' | 'activity';
   data: any;
-  gridSpan: number;
+  gridSpan: number; // Bemærk: Denne bruges nu kun til data, ikke layout
 };
 
 // --- START: KOMPONENTER TIL LAYOUT ---
@@ -133,8 +132,6 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
         </div>
     );
 };
-
-// --- WIDGET-KOMPONENTER ER NU FJERNET HERFRA ---
 
 
 // 2. View Mode Toggle Bar (Uændret)
@@ -232,7 +229,7 @@ export default function DashboardClient({
         title: 'Advarsel: Høj Skadesrisiko (AI Modul)',
         description: `3 spillere (P. Jensen, M. Hansen, L. Nielsen) har høj risiko.`,
       },
-      gridSpan: 1,
+      gridSpan: 2, 
     },
     {
       id: 'cal-01',
@@ -244,7 +241,7 @@ export default function DashboardClient({
         focus: 'Højt Genpres (fra Curriculum)',
         link: '/trainer/new',
       },
-      gridSpan: 1,
+      gridSpan: 2, 
     },
     {
       id: 'msg-01',
@@ -254,7 +251,7 @@ export default function DashboardClient({
         title: 'Ny ulæst besked (Forældregruppe U19)',
         snippet: 'Hej Træner, angående kørsel til weekendens kamp...',
       },
-      gridSpan: 1,
+      gridSpan: 2, 
     },
     {
       id: 'act-01',
@@ -263,12 +260,11 @@ export default function DashboardClient({
       data: {
         feed: dashboardData.activityFeed,
       },
-      gridSpan: 2,
+      gridSpan: 2, 
     },
   ];
 
-  // --- OPDATERET RENDER-FUNKTION ---
-  // Denne funktion kalder nu de importerede komponenter
+  // Render-funktion (Uændret)
   const renderGridItem = (item: GridItem) => {
     switch (item.type) {
       case 'readiness_alert':
@@ -280,48 +276,69 @@ export default function DashboardClient({
       case 'activity':
         return <ActivityWidget t={t} item={item} />;
       default:
-        return null; // Bør ikke ske
+        return null;
     }
   };
-  // --- SLUT OPDATERING ---
 
-  const defaultLayout = intelligentGrid.map((item, index) => ({
-    i: item.id,
-    x: index % 4,
-    y: Math.floor(index / 4),
-    w: item.gridSpan || 1,
-    h: 1,
-    minW: 1,
-    maxW: 4,
-  }));
+  // Layouts (Uændret)
+  const layouts = {
+    lg: [
+      { i: 'alert-01', x: 0, y: 0, w: 2, h: 1, minW: 2, maxW: 4 },
+      { i: 'cal-01',   x: 2, y: 0, w: 2, h: 1, minW: 2, maxW: 4 },
+      { i: 'msg-01',   x: 0, y: 1, w: 2, h: 1, minW: 2, maxW: 4 },
+      { i: 'act-01',   x: 2, y: 1, w: 2, h: 1, minW: 2, maxW: 4 },
+    ],
+    sm: [
+      { i: 'alert-01', x: 0, y: 0, w: 1, h: 1 },
+      { i: 'cal-01',   x: 1, y: 0, w: 1, h: 1 },
+      { i: 'msg-01',   x: 0, y: 1, w: 1, h: 1 },
+      { i: 'act-01',   x: 1, y: 1, w: 1, h: 1 },
+    ],
+    xs: [
+      { i: 'alert-01', x: 0, y: 0, w: 1, h: 1 },
+      { i: 'cal-01',   x: 0, y: 1, w: 1, h: 1 },
+      { i: 'msg-01',   x: 0, y: 2, w: 1, h: 1 },
+      { i: 'act-01',   x: 0, y: 3, w: 1, h: 1 },
+    ]
+  } as { [key: string]: ReactGridLayout.Layout[] }; 
+  
+  layouts.md = layouts.lg;
+  layouts.xxs = layouts.xs;
+
 
   const gridElements = useMemo(() => {
     return intelligentGrid.map(item => (
-        <div key={item.id} data-grid={{ w: item.gridSpan || 1, h: 1, minW: 1, maxW: 4, x: 0, y: 0 }}>
+        <div key={item.id}>
             {renderGridItem(item)}
         </div>
     ));
   }, [intelligentGrid, t]);
 
-  // Selve return-statement (Uændret)
+  // Selve return-statement (RETTET)
   return (
-    <div className="space-y-4">
-      {/* 1. FAST: Quick Access Bar */}
-      <QuickAccessBar t={t} accessLevel={accessLevel} lang={lang} />
+    // RETTET: Den yderste <div> er erstattet med et Fragment <>
+    <> 
       
-      {/* 2. OPDATERET: View Mode Toggle Bar */}
-      <ViewModeToggle 
-        activeTool={activeTool}
-        setActiveTool={setActiveTool}
-        canUseCanvas={canUseCanvas}
-        isDraggable={isDraggable}
-      />
+      {/* 1. FAST: Quick Access Bar (Har nu mb-4 for at erstatte space-y) */}
+      <div className="mb-4">
+        <QuickAccessBar t={t} accessLevel={accessLevel} lang={lang} />
+      </div>
+      
+      {/* 2. OPDATERET: View Mode Toggle Bar (Har nu mb-4 for at erstatte space-y) */}
+      <div className="mb-4">
+        <ViewModeToggle 
+          activeTool={activeTool}
+          setActiveTool={setActiveTool}
+          canUseCanvas={canUseCanvas}
+          isDraggable={isDraggable}
+        />
+      </div>
       
       {/* 3. Betinget rendering af Grid eller Canvas */}
       {(activeTool === 'grid' || activeTool === 'add') && (
         <ResponsiveGridLayout
             className="layout"
-            layouts={{ lg: defaultLayout, md: defaultLayout }}
+            layouts={layouts}
             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
             cols={{ lg: 4, md: 4, sm: 2, xs: 1, xxs: 1 }}
             rowHeight={300}
@@ -340,6 +357,7 @@ export default function DashboardClient({
             </p>
         </div>
       )}
-    </div>
+    {/* RETTET: Lukker Fragmentet </> */}
+    </>
   );
 }

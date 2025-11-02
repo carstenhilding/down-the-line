@@ -32,12 +32,17 @@ export default function RootLayout({
   return (
     <html lang={lang} className={`${inter.variable}`}> 
       <body className={inter.className}>
-  <LanguageProvider initialLang={lang}>
+        <LanguageProvider initialLang={lang}>
           
           {/* VIS KUN HEADER HVIS DET IKKE ER EN SIKKER RUTE */}
           {!isSecureRoute && <Header />}
           
-          <main className={`min-h-screen ${!isSecureRoute ? 'pt-[76px]' : ''} overflow-x-hidden`}>
+          {/* RETTET: 
+            - 'min-h-screen' og 'pt-[76px]' anvendes KUN, hvis det IKKE er en sikker rute.
+            - Sikre ruter (som dashboard) styrer selv deres højde (via SecureLayoutClient.tsx).
+            - Dette fjerner den dobbelte scrollbar.
+          */}
+          <main className={`${!isSecureRoute ? 'min-h-screen pt-[76px]' : ''} overflow-x-hidden`}>
             {children}
           </main>
           

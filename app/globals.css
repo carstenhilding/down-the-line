@@ -1,3 +1,4 @@
+/* Tailwind skal indlæses EFTER de andre imports */
 @import "tailwindcss";
 
 html,
