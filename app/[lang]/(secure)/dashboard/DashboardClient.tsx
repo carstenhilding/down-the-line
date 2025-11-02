@@ -1,8 +1,8 @@
-// app/[lang]/(secure)/dashboard/DashboardClient.tsx (KORREKTION: Ultra-diskret toggle-bar)
+// app/[lang]/(secure)/dashboard/DashboardClient.tsx (KORREKTION: Aktiv knap er nu kun orange tekst)
 
 'use client';
 
-// Imports (uændret)
+// Imports
 import React, { useMemo, useState } from 'react';
 import {
   Users,
@@ -19,6 +19,7 @@ import {
   GitPullRequestArrowIcon,
   LayoutGrid, 
   View, 
+  PlusCircle, // Sørget for at PlusCircle er importeret
 } from 'lucide-react';
 import { Responsive as ResponsiveGridLayout } from 'react-grid-layout';
 import Link from 'next/link';
@@ -236,34 +237,33 @@ const ActivityWidget = ({ t, item }: { t: any; item: GridItem }) => (
 );
 
 
-// === START: OPDATERET View Mode Toggle Bar (ULTRA-DISKRET) ===
-const ViewModeToggle = ({ viewMode, setViewMode, canUseCanvas }: { 
-  viewMode: 'grid' | 'canvas';
-  setViewMode: (mode: 'grid' | 'canvas') => void;
+// === START: OPDATERET View Mode Toggle Bar (Aktiv = Orange Tekst) ===
+const ViewModeToggle = ({ activeTool, setActiveTool, canUseCanvas }: { 
+  activeTool: 'grid' | 'canvas' | 'add';
+  setActiveTool: (tool: 'grid' | 'canvas' | 'add') => void;
   canUseCanvas: boolean;
 }) => {
   
-  // KORREKTION: Mindre padding (px-2 py-1) og text-xs for diskret look
   const toggleBaseClass = "flex items-center justify-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold transition-colors";
   
-  // Aktiv knap (sort baggrund)
-  const activeClass = "bg-black text-white";
+  // *** OPDATERET ***
+  // Aktiv knap (kun orange tekst)
+  const activeClass = "text-orange-500";
   
-  // KORREKTION: Inaktiv knap er nu grå tekst (diskret) og bliver orange ved hover
-  const inactiveClass = "text-gray-500 hover:text-orange-500";
+  // *** OPDATERET ***
+  // Inaktiv knap (grå tekst, hover til sort for at undgå konflikt)
+  const inactiveClass = "text-gray-500 hover:text-black"; // Hover er nu sort
 
-  // KORREKTION: Action-knapper er også gjort mindre (py-1)
   const actionButtonBaseClass = "flex items-center justify-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-colors border";
   
   return (
-    // Bruger mb-4 (16px), som er den samme som QuickAccessBar
     <div className="flex items-center justify-between mb-4">
         
-        {/* Venstre side: Toggles (ligner nu tekst-links) */}
+        {/* Venstre side: Toggles */}
         <div className="flex items-center space-x-2">
             <button 
-                onClick={() => setViewMode('grid')}
-                className={`${toggleBaseClass} ${viewMode === 'grid' ? activeClass : inactiveClass}`}
+                onClick={() => setActiveTool('grid')}
+                className={`${toggleBaseClass} ${activeTool === 'grid' ? activeClass : inactiveClass}`}
             >
                 <LayoutGrid className="h-4 w-4" />
                 Grid
@@ -271,21 +271,25 @@ const ViewModeToggle = ({ viewMode, setViewMode, canUseCanvas }: {
             
             {canUseCanvas && (
                 <button 
-                    onClick={() => setViewMode('canvas')}
-                    className={`${toggleBaseClass} ${viewMode === 'canvas' ? activeClass : inactiveClass}`}
+                    onClick={() => setActiveTool('canvas')}
+                    className={`${toggleBaseClass} ${activeTool === 'canvas' ? activeClass : inactiveClass}`}
                 >
                     <View className="h-4 w-4" />
                     Canvas
                 </button>
             )}
+
+            <button 
+                onClick={() => setActiveTool('add')}
+                className={`${toggleBaseClass} ${activeTool === 'add' ? activeClass : inactiveClass}`}
+            >
+                <PlusCircle className="h-4 w-4" />
+                Add Widget
+            </button>
         </div>
 
-        {/* Højre side: Knapper (mindre og tyndere) */}
+        {/* Højre side: Knap */}
         <div className="flex items-center gap-2">
-            <button className={`${actionButtonBaseClass} bg-white text-black border-black hover:text-orange-500 hover:border-orange-500`}>
-                + Add Widget
-            </button>
-            
             <button className={`${actionButtonBaseClass} bg-orange-500 text-white border-orange-500 hover:bg-orange-600 hover:border-orange-600`}>
                 Save Layout
             </button>
@@ -305,7 +309,7 @@ export default function DashboardClient({
   const t = useMemo(() => dict.dashboard || {}, [dict]);
   const lang = useMemo(() => dict.lang as 'da' | 'en', [dict.lang]);
 
-  const [viewMode, setViewMode] = useState<'grid' | 'canvas'>('grid');
+  const [activeTool, setActiveTool] = useState<'grid' | 'canvas' | 'add'>('grid');
   
   const canUseCanvas = useMemo(() => 
     ['Expert', 'Complete', 'Performance', 'Elite', 'Enterprise'].includes(accessLevel),
@@ -398,15 +402,15 @@ export default function DashboardClient({
       
       {/* 2. OPDATERET: Den nye, ultra-diskrete View Mode Toggle Bar */}
       <ViewModeToggle 
-        viewMode={viewMode}
-        setViewMode={setViewMode}
+        activeTool={activeTool}
+        setActiveTool={setActiveTool}
         canUseCanvas={canUseCanvas}
       />
       
       {/* 3. Betinget rendering af Grid eller Canvas */}
       
       {/* 3.A. GRID VIEW */}
-      {viewMode === 'grid' && (
+      {(activeTool === 'grid' || activeTool === 'add') && (
         <ResponsiveGridLayout
             className="layout"
             layouts={{ lg: defaultLayout, md: defaultLayout }}
@@ -422,7 +426,7 @@ export default function DashboardClient({
       )}
 
       {/* 3.B. CANVAS VIEW (Pladsholder) */}
-      {viewMode === 'canvas' && (
+      {activeTool === 'canvas' && (
         <div className="w-full h-[600px] bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
             <p className="text-gray-500 font-semibold">
                 Canvas View (Pro Feature) - Her vil det frie lærred (Miro-style) blive vist.
