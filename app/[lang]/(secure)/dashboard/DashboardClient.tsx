@@ -1,8 +1,9 @@
-// app/[lang]/(secure)/dashboard/DashboardClient.tsx (FINAL KORREKTION: Mindre Mellemrum i Quick Access)
+// app/[lang]/(secure)/dashboard/DashboardClient.tsx (KORREKTION: Ultra-diskret toggle-bar)
 
 'use client';
 
-// Imports: Holdt minimalistisk
+// Imports (uændret)
+import React, { useMemo, useState } from 'react';
 import {
   Users,
   AlertTriangle,
@@ -16,10 +17,10 @@ import {
   Star,
   Target,
   GitPullRequestArrowIcon,
-
+  LayoutGrid, 
+  View, 
 } from 'lucide-react';
-import React, { useMemo } from 'react';
-import { Responsive as ResponsiveGridLayout } from 'react-grid-layout'; // Placeholder for dynamisk gitter
+import { Responsive as ResponsiveGridLayout } from 'react-grid-layout';
 import Link from 'next/link';
 import { UserRole, SubscriptionLevel } from '@/lib/server/data';
 
@@ -42,7 +43,6 @@ interface DashboardProps {
   userRole: UserRole;
 }
 
-// NYT: Definer typer for det flytbare gitter
 type GridItem = {
   id: string;
   priority: 'high' | 'medium' | 'low';
@@ -52,30 +52,20 @@ type GridItem = {
 };
 
 // --- START: KOMPONENTER TIL LAYOUT ---
-// 1. Minimalistisk Quick Access Bar (KORREKTION: Mindre Mellemrum)
 
+// 1. Quick Access Bar (Uændret, bruger mb-4)
 const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: SubscriptionLevel, lang: 'da' | 'en' }) => {
     const isPremium = ['Expert', 'Complete', 'Elite', 'Enterprise'].includes(accessLevel);
-
-    // Styling forbliver ensartet
     const buttonClass = "flex items-center justify-between p-2 sm:p-3 text-xs sm:text-sm bg-black text-white transition duration-200 shadow-xl rounded-lg border-2 border-black group hover:-translate-y-1 hover:shadow-2xl";
-
-    // Forkortede termer (som aftalt)
     const trainingTitle = lang === 'da' ? 'Opret Session' : 'Create Session';
-    const sessionSub = 'Session Planner';
     const drillTitle = lang === 'da' ? 'Opret Øvelse' : 'Create Drill';
     const readinessTitle = t.readiness ?? 'Readiness';
     const analysisTitle = 'Video Analysis';
-
-    // Definerer størrelsen på ikonet + margen, som dummy-elementet skal matche
     const ICON_SIZE_CLASS = "w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 mr-3";
 
     return (
-        // KORREKTION: Bruger flex-wrap og lader den responsive beregning styre pladsen
-        <div className="flex flex-wrap gap-4 md:gap-4 mb-6 md:mb-8">
-       
+        <div className="flex flex-wrap gap-4 md:gap-4 mb-4">
             {/* 1. Create Session (Altid synlig) */}
-            {/* KORREKTION: Justeret beregningen for at fjerne overflødig margen */}
             <Link href="/trainer/new"
                   className={buttonClass + " w-full md:w-[calc(50%-8px)] lg:w-[calc(33.33%-10.66px)] xl:w-[calc(25%-12px)]"}>
                 <div className='flex items-center'>
@@ -89,7 +79,6 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
             </Link>
           
             {/* 2. Create Drill (Altid synlig) */}
-            {/* KORREKTION: Justeret beregningen for at fjerne overflødig margen */}
             <Link href="/trainer/new?mode=exercise"
                   className={buttonClass + " w-full md:w-[calc(50%-8px)] lg:w-[calc(33.33%-10.66px)] xl:w-[calc(25%-12px)]"}>
                 <div className='flex items-center'>
@@ -102,8 +91,7 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
                 <div className={ICON_SIZE_CLASS}></div>
             </Link>
           
-            {/* 3. Readiness / Player (Prioritet 3) */}
-            {/* KORREKTION: Justeret beregningen for at fjerne overflødig margen */}
+            {/* 3. Readiness / Player (Premium) */}
             {isPremium && (
                 <Link href="/analysis"
                       className={buttonClass + " hidden lg:flex w-full lg:w-[calc(33.33%-10.66px)] xl:w-[calc(25%-12px)]"}>
@@ -118,8 +106,7 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
                 </Link>
             )}
 
-            {/* 4. Video Analysis (Prioritet 4) */}
-            {/* KORREKTION: Justeret beregningen for at fjerne overflødig margen */}
+            {/* 4. Video Analysis (Premium) */}
             {isPremium && (
                  <Link href="/analysis"
                        className={buttonClass + " hidden xl:flex w-full xl:w-[calc(25%-12px)]"}>
@@ -137,33 +124,18 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
     );
 };
 
-// Generel Widget-Ramme (med minimalistisk kant) - Uændret
-const SmartWidget = ({
-  children,
-  priority = 'low',
-  className = '',
-}: {
-  children: React.ReactNode;
-  priority?: 'high' | 'medium' | 'low';
-  className?: string;
-}) => {
+// Widget-komponenter (Uændrede)
+const SmartWidget = ({ children, priority = 'low', className = '' }: { children: React.ReactNode; priority?: 'high' | 'medium' | 'low'; className?: string; }) => {
   let borderStyle = 'border-gray-200';
   let color = 'text-black';
-
   if (priority === 'high') {
-    // Høj Prioritet: Solid Orange Kant (Alarm)
     borderStyle = 'border-orange-500 ring-2 ring-orange-500/20';
     color = 'text-orange-500';
   } else if (priority === 'medium') {
-
-    // Mellem Prioritet: Subtil Sort Kant (Ulæst/Næste Skridt)
     borderStyle = 'border-black';
   }
-
   return (
-    <div
-      className={`bg-white p-4 md:p-6 rounded-xl shadow-md border transition-all duration-300 ${borderStyle} ${className}`}
-    >
+    <div className={`bg-white p-4 md:p-6 rounded-xl shadow-md border transition-all duration-300 ${borderStyle} ${className}`}>
         <div className={color}>
             {children}
         </div>
@@ -171,7 +143,6 @@ const SmartWidget = ({
   );
 };
 
-// 2. AI Readiness Widget (Høj Prioritet - Orange Fokus) - Uændret
 const ReadinessAlertWidget = ({ t, item }: { t: any; item: GridItem }) => (
   <SmartWidget priority={item.priority} className="h-full">
     <div className="flex items-start">
@@ -192,7 +163,6 @@ const ReadinessAlertWidget = ({ t, item }: { t: any; item: GridItem }) => (
   </SmartWidget>
 );
 
-// 3. Kalender Widget (Mellem Prioritet - Sort Ikon) - Uændret
 const CalendarWidget = ({ t, item }: { t: any; item: GridItem }) => (
   <SmartWidget priority={item.priority} className="h-full">
     <div className="flex">
@@ -206,7 +176,6 @@ const CalendarWidget = ({ t, item }: { t: any; item: GridItem }) => (
           {t.focus ?? 'Fokus'}:{' '}
           <span className="font-medium text-black">{item.data.focus}</span>
         </p>
-
         <Link
           href={item.data.link}
           className="mt-3 text-sm font-semibold text-orange-500 hover:text-black flex items-center"
@@ -219,7 +188,6 @@ const CalendarWidget = ({ t, item }: { t: any; item: GridItem }) => (
   </SmartWidget>
 );
 
-// 4. Kommunikations Widget (Mellem Prioritet - Sort Ikon) - Uændret
 const MessageWidget = ({ t, item }: { t: any; item: GridItem }) => (
   <SmartWidget priority={item.priority} className="h-full">
     <div className="flex">
@@ -243,7 +211,6 @@ const MessageWidget = ({ t, item }: { t: any; item: GridItem }) => (
   </SmartWidget>
 );
 
-// 5. Seneste Aktivitet Widget (Lav Prioritet) - Uændret
 const ActivityWidget = ({ t, item }: { t: any; item: GridItem }) => (
   <SmartWidget priority={item.priority} className="h-full">
     <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 flex items-center">
@@ -268,7 +235,67 @@ const ActivityWidget = ({ t, item }: { t: any; item: GridItem }) => (
   </SmartWidget>
 );
 
-// --- SLUT: KOMPONENTER TIL LAYOUT ---
+
+// === START: OPDATERET View Mode Toggle Bar (ULTRA-DISKRET) ===
+const ViewModeToggle = ({ viewMode, setViewMode, canUseCanvas }: { 
+  viewMode: 'grid' | 'canvas';
+  setViewMode: (mode: 'grid' | 'canvas') => void;
+  canUseCanvas: boolean;
+}) => {
+  
+  // KORREKTION: Mindre padding (px-2 py-1) og text-xs for diskret look
+  const toggleBaseClass = "flex items-center justify-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold transition-colors";
+  
+  // Aktiv knap (sort baggrund)
+  const activeClass = "bg-black text-white";
+  
+  // KORREKTION: Inaktiv knap er nu grå tekst (diskret) og bliver orange ved hover
+  const inactiveClass = "text-gray-500 hover:text-orange-500";
+
+  // KORREKTION: Action-knapper er også gjort mindre (py-1)
+  const actionButtonBaseClass = "flex items-center justify-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-colors border";
+  
+  return (
+    // Bruger mb-4 (16px), som er den samme som QuickAccessBar
+    <div className="flex items-center justify-between mb-4">
+        
+        {/* Venstre side: Toggles (ligner nu tekst-links) */}
+        <div className="flex items-center space-x-2">
+            <button 
+                onClick={() => setViewMode('grid')}
+                className={`${toggleBaseClass} ${viewMode === 'grid' ? activeClass : inactiveClass}`}
+            >
+                <LayoutGrid className="h-4 w-4" />
+                Grid
+            </button>
+            
+            {canUseCanvas && (
+                <button 
+                    onClick={() => setViewMode('canvas')}
+                    className={`${toggleBaseClass} ${viewMode === 'canvas' ? activeClass : inactiveClass}`}
+                >
+                    <View className="h-4 w-4" />
+                    Canvas
+                </button>
+            )}
+        </div>
+
+        {/* Højre side: Knapper (mindre og tyndere) */}
+        <div className="flex items-center gap-2">
+            <button className={`${actionButtonBaseClass} bg-white text-black border-black hover:text-orange-500 hover:border-orange-500`}>
+                + Add Widget
+            </button>
+            
+            <button className={`${actionButtonBaseClass} bg-orange-500 text-white border-orange-500 hover:bg-orange-600 hover:border-orange-600`}>
+                Save Layout
+            </button>
+        </div>
+    </div>
+  );
+};
+// === SLUT: OPDATERET View Mode Toggle Bar ===
+
+
 export default function DashboardClient({
   dict,
   dashboardData,
@@ -278,10 +305,15 @@ export default function DashboardClient({
   const t = useMemo(() => dict.dashboard || {}, [dict]);
   const lang = useMemo(() => dict.lang as 'da' | 'en', [dict.lang]);
 
-  // Simulerer det flytbare gitter
-  const intelligentGrid: GridItem[] = [
+  const [viewMode, setViewMode] = useState<'grid' | 'canvas'>('grid');
+  
+  const canUseCanvas = useMemo(() => 
+    ['Expert', 'Complete', 'Performance', 'Elite', 'Enterprise'].includes(accessLevel),
+    [accessLevel]
+  );
 
-    // Højeste prioritet (AI)
+  // Data og rendering af widgets (Uændret)
+  const intelligentGrid: GridItem[] = [
     {
       id: 'alert-01',
       priority: 'high',
@@ -292,8 +324,6 @@ export default function DashboardClient({
       },
       gridSpan: 1,
     },
-
-    // Mellem prioritet (Kalender og Beskeder)
     {
       id: 'cal-01',
       priority: 'medium',
@@ -316,8 +346,6 @@ export default function DashboardClient({
       },
       gridSpan: 1,
     },
-
-    // Lav prioritet (Aktivitetsfeed)
     {
       id: 'act-01',
       priority: 'low',
@@ -344,44 +372,62 @@ export default function DashboardClient({
     }
   };
 
-  // Definerer standardlayoutet (Dette skal normalt hentes fra databasen)
   const defaultLayout = intelligentGrid.map((item, index) => ({
     i: item.id,
     x: index % 4,
     y: Math.floor(index / 4),
-    w: item.gridSpan || 1, // Bruger gridSpan som standardbredde
-    h: 1, // Standardhøjde, justeres senere baseret på indhold
+    w: item.gridSpan || 1,
+    h: 1,
     minW: 1,
     maxW: 4,
   }));
 
-  // Vi skal bruge et useMemo til at generere widgets' elementer, så de kan bruges i gitteret
   const gridElements = useMemo(() => {
     return intelligentGrid.map(item => (
-        // Data-grid-holder er nødvendig for at placere elementer i RGL
         <div key={item.id} data-grid={{ w: item.gridSpan || 1, h: 1, minW: 1, maxW: 4, x: 0, y: 0 }}>
             {renderGridItem(item)}
         </div>
     ));
   }, [intelligentGrid, t]);
 
+  // Selve return-statement (Uændret, bruger space-y-4)
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* 1. FAST: Quick Access Bar i toppen */}
+    <div className="space-y-4">
+      {/* 1. FAST: Quick Access Bar */}
       <QuickAccessBar t={t} accessLevel={accessLevel} lang={lang} />
-      {/* 2. FLYTBAR: Det Smarte Gitter (Client Component) */}
-      <ResponsiveGridLayout
-          className="layout"
-          layouts={{ lg: defaultLayout, md: defaultLayout }} // Bruger standardlayout for alle breakpoints
-          breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-          cols={{ lg: 4, md: 4, sm: 2, xs: 1, xxs: 1 }}
-          rowHeight={300} // Højden af en række i pixels (justeres senere)
-          isDraggable={true}
-          isResizable={true}
-          margin={[24, 24]} // Gitterets indre margen (matchende gap-4/6)
-        >
-          {gridElements}
-        </ResponsiveGridLayout>
+      
+      {/* 2. OPDATERET: Den nye, ultra-diskrete View Mode Toggle Bar */}
+      <ViewModeToggle 
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        canUseCanvas={canUseCanvas}
+      />
+      
+      {/* 3. Betinget rendering af Grid eller Canvas */}
+      
+      {/* 3.A. GRID VIEW */}
+      {viewMode === 'grid' && (
+        <ResponsiveGridLayout
+            className="layout"
+            layouts={{ lg: defaultLayout, md: defaultLayout }}
+            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+            cols={{ lg: 4, md: 4, sm: 2, xs: 1, xxs: 1 }}
+            rowHeight={300}
+            isDraggable={true}
+            isResizable={true}
+            margin={[16, 16]} 
+          >
+            {gridElements}
+          </ResponsiveGridLayout>
+      )}
+
+      {/* 3.B. CANVAS VIEW (Pladsholder) */}
+      {viewMode === 'canvas' && (
+        <div className="w-full h-[600px] bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+            <p className="text-gray-500 font-semibold">
+                Canvas View (Pro Feature) - Her vil det frie lærred (Miro-style) blive vist.
+            </p>
+        </div>
+      )}
     </div>
   );
-}

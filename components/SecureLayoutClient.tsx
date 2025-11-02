@@ -403,7 +403,7 @@ export default function SecureLayoutClient({
             onClick={() => setIsSidebarOpen(false)}
           ></div>
         )}
-        <main className="flex-1 overflow-y-auto p-2 sm:p-4 md:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-2 md:p-4">
           {children}
         </main>
       </div>
