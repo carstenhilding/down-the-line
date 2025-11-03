@@ -7,7 +7,9 @@ interface SmartWidgetProps {
     children: React.ReactNode;
     priority?: 'high' | 'medium' | 'low';
     className?: string;
+    noPadding?: boolean;
 }
+
 
 export const SmartWidget = ({ children, priority = 'low', className = '' }: SmartWidgetProps) => {
     let borderStyle = 'border-gray-200';

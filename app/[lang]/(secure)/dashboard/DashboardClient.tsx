@@ -1,9 +1,7 @@
-// app/[lang]/(secure)/dashboard/DashboardClient.tsx (Implementerer 12-kolonne grid og 100px rowHeight)
-
 'use client';
 
 // Imports
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import {
   Users,
   AlertTriangle,
@@ -21,6 +19,8 @@ import {
   View, 
   PlusCircle, 
 } from 'lucide-react';
+// NY IMPORT: Draggable til at flytte widgets på Canvas
+import Draggable, { DraggableData, DraggableEvent } from 'react-draggable'; // Importer DraggableEvent og Data
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import Link from 'next/link';
 import { UserRole, SubscriptionLevel } from '@/lib/server/data';
@@ -30,6 +30,8 @@ import AiReadinessWidget from '@/components/dashboard/widgets/AiReadinessWidget'
 import CalendarWidget from '@/components/dashboard/widgets/CalendarWidget'; // 7-dages kalender
 import MessageWidget from '@/components/dashboard/widgets/MessageWidget';
 import ActivityWidget from '@/components/dashboard/widgets/ActivityWidget';
+// NY IMPORT: SmartWidget for at kunne bruge widgets på lærredet
+import { SmartWidget } from '@/components/dashboard/widgets/SmartWidget';
 
 // *** VORES RETTELSE ER HER ***
 // Tilføj disse to linjer for at aktivere resize-håndtag og basis-styling
@@ -62,6 +64,19 @@ type GridItem = {
   priority: 'high' | 'medium' | 'low';
   type: 'ai_readiness' | 'weekly_calendar' | 'message' | 'activity';
   data: any;
+};
+
+// ### KORREKTION: ref-typen tillader nu en nullable 'current' (React.createRef returnerer current | null) ###
+type CanvasCard = {
+  id: string;
+  type: 'note' | 'ai_readiness' | 'weekly_calendar'; // Typer af kort
+  content?: { // Valgfrit, bruges kun til 'note'
+    title: string;
+    text: string;
+  };
+  defaultPosition: { x: number; y: number };
+  size: { w: number; h: number }; // Størrelse på kortet
+  ref: React.RefObject<HTMLDivElement | null>; // Acceptér React.createRef<HTMLDivElement>()
 };
 
 // --- START: KOMPONENTER TIL LAYOUT ---
@@ -138,12 +153,19 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
 };
 
 
-// 2. View Mode Toggle Bar (Uændret)
-const ViewModeToggle = ({ activeTool, setActiveTool, canUseCanvas, isDraggable }: { 
+// 2. View Mode Toggle Bar (OPDATERET MED onAddWidget)
+const ViewModeToggle = ({ 
+  activeTool, 
+  setActiveTool, 
+  canUseCanvas, 
+  isDraggable,
+  onAddWidget // <-- NY PROP
+}: { 
   activeTool: 'grid' | 'canvas' | 'add';
   setActiveTool: (tool: 'grid' | 'canvas' | 'add') => void;
   canUseCanvas: boolean;
   isDraggable: boolean;
+  onAddWidget: () => void; // <-- NY PROP TYPE
 }) => {
   
   const toggleBaseClass = "flex items-center justify-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold transition-colors";
@@ -151,6 +173,15 @@ const ViewModeToggle = ({ activeTool, setActiveTool, canUseCanvas, isDraggable }
   const inactiveClass = "text-gray-500 hover:text-black";
   const actionButtonBaseClass = "flex items-center justify-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-colors border";
   
+  // NY HANDLER: Tjekker hvilken tilstand der er aktiv
+  const handleAddClick = () => {
+    if (activeTool === 'canvas') {
+      onAddWidget(); // Kald canvas-funktionen
+    } else if (activeTool === 'grid') {
+      setActiveTool('add'); // Gør det den plejede
+    }
+  };
+
   return (
     <div className="flex items-center justify-between mb-4">
         
@@ -174,9 +205,11 @@ const ViewModeToggle = ({ activeTool, setActiveTool, canUseCanvas, isDraggable }
                 </button>
             )}
 
-            {isDraggable && (
+            {/* OPDATERET: Knappen vises nu i Canvas-mode og Grid-mode (hvis draggable) */}
+            {(isDraggable || activeTool === 'canvas') && (
                 <button 
-                    onClick={() => setActiveTool('add')}
+                    onClick={handleAddClick} // <-- OPDATERET onClick
+                    // Altid aktiv, når 'add' er valgt, eller når vi er i canvas
                     className={`${toggleBaseClass} ${activeTool === 'add' ? activeClass : inactiveClass}`}
                 >
                     <PlusCircle className="h-4 w-4" />
@@ -210,6 +243,44 @@ export default function DashboardClient({
 
   const [activeTool, setActiveTool] = useState<'grid' | 'canvas' | 'add'>('grid');
   
+  // *** CANVAS STATES OG REFS ***
+  const zoomControlRef = useRef<HTMLDivElement>(null); 
+  const canvasRef = useRef<HTMLDivElement>(null); 
+  const touchStartDist = useRef<number | null>(null); 
+  const lastTouchCenter = useRef<{ x: number; y: number } | null>(null); 
+  
+  const [canvasPosition, setCanvasPosition] = useState({ x: 0, y: 0 }); 
+  const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
+  const dragStartPoint = useRef({ x: 0, y: 0 });
+  const [canvasScale, setCanvasScale] = useState(1); 
+  const MIN_SCALE = 0.5;
+  const MAX_SCALE = 3.0;
+  const SCALE_STEP = 0.05; 
+
+  // ### OPDATERET STATE: Nu med widget-typer ###
+  const [canvasCards, setCanvasCards] = useState<CanvasCard[]>([
+    {
+      id: 'card-1',
+      type: 'note',
+      content: {
+        title: 'Øvelses-Kort (Kort 1)',
+        text: 'Dette er det første kort. Prøv at flytte mig.'
+      },
+      defaultPosition: { x: 40, y: 40 },
+      size: { w: 256, h: 192 }, // w-64, h-48
+      ref: React.createRef<HTMLDivElement>() // KORREKTION: fjerner 'null'
+    },
+    {
+      id: 'card-2',
+      type: 'ai_readiness', // Dette er nu en rigtig widget
+      defaultPosition: { x: 350, y: 100 },
+      size: { w: 320, h: 200 }, // Størrelsen på AI widget (ca. w-80)
+      ref: React.createRef<HTMLDivElement>() // KORREKTION: fjerner 'null'
+    }
+  ]);
+  // ### SLUT PÅ OPDATERET STATE ###
+
+
   // Adgangslogik (Uændret)
   const canUseCanvas = useMemo(() => 
     ['Elite', 'Enterprise'].includes(accessLevel) ||
@@ -221,6 +292,7 @@ export default function DashboardClient({
     ['Starter', 'Advanced', 'Essential'].includes(accessLevel),
     [accessLevel]
   );
+  
   const isDraggable = !isStaticGrid;
 
   // Data (Uændret)
@@ -272,7 +344,7 @@ export default function DashboardClient({
     }
   };
 
-  // --- OPDATERET: LAYOUTS TIL 12-KOLONNER / 100px RÆKKER ---
+  // --- LAYOUTS TIL 12-KOLONNER / 100px RÆKKER ---
   const layouts = {
     // lg & md (12 kolonner grid): Asymmetrisk layout
     lg: [
@@ -303,14 +375,227 @@ export default function DashboardClient({
 
   const gridElements = useMemo(() => {
     return intelligentGrid.map(item => (
-        // RETTET: className="h-full" er TILFØJET for at fylde den nye faste celle-højde
+        // className="h-full" er TILFØJET for at fylde den nye faste celle-højde
         <div key={item.id} className="h-full">
             {renderGridItem(item)}
         </div>
     ));
   }, [intelligentGrid, t, lang, accessLevel]); 
+  
+  // --- CANVAS FUNKTIONER ---
 
-  // Selve return-statement (Uændret)
+  // ### KORREKTION: fjerner 'noPadding' fra komponent-kald ###
+  const renderCanvasCardContent = (card: CanvasCard) => {
+    switch (card.type) {
+      case 'ai_readiness':
+        // Fejlen var her: noPadding er fjernet
+        return <AiReadinessWidget userData={{ subscriptionLevel: accessLevel }} lang={lang} />;
+      case 'weekly_calendar':
+        // Fejlen var her: noPadding er fjernet
+        return <CalendarWidget translations={t} lang={lang} />;
+      case 'note':
+      default:
+        // Standard note-indhold
+        return (
+          <p className="text-sm text-gray-600 mt-2">
+            {card.content?.text ?? '...'}
+          </p>
+        );
+    }
+  };
+
+  // ### OPDATERET: TILFØJER NYE KORTTYPER ###
+  const widgetTypes: CanvasCard['type'][] = ['note', 'ai_readiness', 'weekly_calendar'];
+
+  const addCardToCanvas = () => {
+    const newX = 40 + (canvasCards.length % 5) * 50; 
+    const newY = 40 + (canvasCards.length % 5) * 50;
+
+    // Vælg en ny type baseret på hvor mange kort der er
+    const newType = widgetTypes[canvasCards.length % widgetTypes.length];
+    
+    let newSize = { w: 256, h: 192 }; // Standardstørrelse (note)
+    let newContent = { title: 'Nyt Kort', text: 'Dette er et nyt kort...' };
+
+    if (newType === 'ai_readiness') {
+      newSize = { w: 320, h: 200 }; // w-80
+      newContent.title = 'AI Readiness';
+    } else if (newType === 'weekly_calendar') {
+      newSize = { w: 400, h: 300 }; // w-100
+      newContent.title = 'Ugekalender';
+    }
+
+    setCanvasCards(prevCards => [
+      ...prevCards,
+      {
+        id: `card-${Date.now()}`,
+        type: newType,
+        content: newContent,
+        defaultPosition: { x: newX, y: newY },
+        size: newSize,
+        ref: React.createRef<HTMLDivElement>() // KORREKTION: fjerner 'null'
+      }
+    ]);
+  };
+
+  // FUNKTION TIL AT GEMME KORTPOSITION (Uændret)
+  const handleCardStop = (cardId: string, e: DraggableEvent, data: DraggableData) => {
+    setCanvasCards(prevCards => 
+      prevCards.map(card => 
+        card.id === cardId 
+          ? { ...card, defaultPosition: { x: data.x, y: data.y } } // Opdater positionen i state
+          : card
+      )
+    );
+  };
+  
+  // getDistance (Uændret)
+  const getDistance = (touches: React.TouchList) => {
+    if (touches.length < 2) return null;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+  
+  // getCenter (Uændret)
+  const getCenter = (touches: React.TouchList) => {
+    if (touches.length === 0) return null;
+    if (touches.length === 1) return { x: touches[0].clientX, y: touches[0].clientY };
+    
+    return {
+        x: (touches[0].clientX + touches[1].clientX) / 2,
+        y: (touches[0].clientY + touches[1].clientY) / 2,
+    };
+  };
+
+  // --- 1. MOUSE PAN LOGIC (Uændret) ---
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.target instanceof HTMLElement && !e.target.closest('.canvas-handle')) {
+        setIsDraggingCanvas(true);
+        dragStartPoint.current = { x: e.clientX, y: e.clientY }; 
+        e.preventDefault();
+    }
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDraggingCanvas) return;
+    const dx = e.clientX - dragStartPoint.current.x;
+    const dy = e.clientY - dragStartPoint.current.y;
+    setCanvasPosition(prev => ({
+      x: prev.x + dx,
+      y: prev.y + dy,
+    }));
+    dragStartPoint.current = { x: e.clientX, y: e.clientY }; 
+    e.preventDefault();
+  }, [isDraggingCanvas]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDraggingCanvas(false);
+  }, []);
+  
+  // --- 2. TOUCH/GESTURE LOGIC (Uændret) ---
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.target instanceof HTMLElement && e.target.closest('.canvas-handle')) {
+        return;
+    }
+    if (e.touches.length === 2) {
+        const distance = getDistance(e.touches)!;
+        touchStartDist.current = distance;
+        lastTouchCenter.current = getCenter(e.touches);
+        setIsDraggingCanvas(false); 
+    } else if (e.touches.length === 1) {
+        setIsDraggingCanvas(true);
+        dragStartPoint.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; 
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2 && touchStartDist.current !== null) {
+        const newDistance = getDistance(e.touches)!;
+        const scaleChange = newDistance / touchStartDist.current;
+        const scaleDelta = (scaleChange - 1); 
+        const newScaleRaw = canvasScale + scaleDelta;
+        const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScaleRaw));
+        setCanvasScale(parseFloat(newScale.toFixed(2)));
+        touchStartDist.current = newDistance;
+    } else if (isDraggingCanvas && e.touches.length === 1) {
+        const dx = e.touches[0].clientX - dragStartPoint.current.x;
+        const dy = e.touches[0].clientY - dragStartPoint.current.y;
+        setCanvasPosition(prev => ({
+          x: prev.x + dx,
+          y: prev.y + dy,
+        }));
+        dragStartPoint.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; 
+    }
+  }, [canvasScale, MIN_SCALE, MAX_SCALE, isDraggingCanvas, SCALE_STEP]); 
+
+  const handleTouchEnd = useCallback(() => {
+    touchStartDist.current = null;
+    lastTouchCenter.current = null;
+    setIsDraggingCanvas(false);
+  }, []);
+  
+  // --- 3. MOUSE/TOUCHPAD SCROLL ZOOM LOGIC (Uændret) ---
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    let delta = -e.deltaY / 1000; 
+    if (Math.abs(e.deltaY) < 10) {
+        delta = -e.deltaY / 100;
+    }
+    setCanvasScale(prevScale => {
+        let newScale = prevScale + delta;
+        newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+        return parseFloat(newScale.toFixed(2));
+    });
+  }, [MIN_SCALE, MAX_SCALE]);
+
+  // --- WINDOW LISTENERS (Uændret) ---
+  useEffect(() => {
+    if (activeTool !== 'canvas' || !canUseCanvas) return;
+    const mouseMove = (e: MouseEvent) => handleMouseMove(e as unknown as React.MouseEvent);
+    const mouseUp = handleMouseUp;
+    if (isDraggingCanvas) {
+      window.addEventListener('mousemove', mouseMove);
+      window.addEventListener('mouseup', mouseUp);
+    } else {
+      window.removeEventListener('mousemove', mouseMove);
+      window.removeEventListener('mouseup', mouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', mouseMove);
+      window.removeEventListener('mouseup', mouseUp);
+    };
+  }, [isDraggingCanvas, activeTool, canUseCanvas, handleMouseMove, handleMouseUp]);
+  
+  // *** ROBUST SCROLL/TOUCH-LOCK EFFECT (Uændret) ***
+  useEffect(() => {
+    if (activeTool !== 'canvas' || !canvasRef.current) return;
+    const canvasElement = canvasRef.current;
+    
+    const onWheel = (e: WheelEvent) => {
+        if (e.target === canvasElement || canvasElement.contains(e.target as Node)) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleWheel(e as unknown as React.WheelEvent);
+        }
+    };
+    const onTouchMove = (e: TouchEvent) => {
+        if (e.target === canvasElement || canvasElement.contains(e.target as Node)) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleTouchMove(e as unknown as React.TouchEvent<HTMLDivElement>);
+        }
+    };
+
+    canvasElement.addEventListener('wheel', onWheel, { passive: false });
+    canvasElement.addEventListener('touchmove', onTouchMove, { passive: false });
+    return () => {
+      canvasElement.removeEventListener('wheel', onWheel);
+      canvasElement.removeEventListener('touchmove', onTouchMove);
+    };
+  }, [activeTool, canvasRef, handleWheel, handleTouchMove]); 
+  
+  
+  // Selve return-statement (OPDATERET)
   return (
     <> 
       <div className="mb-4">
@@ -323,6 +608,7 @@ export default function DashboardClient({
           setActiveTool={setActiveTool}
           canUseCanvas={canUseCanvas}
           isDraggable={isDraggable}
+          onAddWidget={addCardToCanvas} // <-- Sender den nye funktion ind
         />
       </div>
       
@@ -330,12 +616,9 @@ export default function DashboardClient({
         <ResponsiveGridLayout
             className="layout"
             layouts={layouts}
-            // RETTET: cols er nu 12-baseret
-            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-            cols={{ lg: 12, md: 12, sm: 6, xs: 4, xxs: 2 }} // xxs ændret til 2
-            // RETTET: rowHeight er nu 100
+            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 200 }}
+            cols={{ lg: 12, md: 12, sm: 6, xs: 4, xxs: 2 }} 
             rowHeight={100}
-            // autoSize er fjernet for at få et fast, rent grid
             isDraggable={isDraggable}
             isResizable={isDraggable}
             margin={[16, 16]} 
@@ -344,13 +627,84 @@ export default function DashboardClient({
           </ResponsiveGridLayout>
       )}
 
+      {/* FLYTBAR ZOOM KONTROL UI (Uændret) */}
       {activeTool === 'canvas' && canUseCanvas && (
-        <div className="w-full h-[600px] bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-            <p className="text-gray-500 font-semibold">
-                Canvas View (Pro Feature) - Her vil det frie lærred (Miro-style) blive vist.
-            </p>
+        <Draggable 
+            nodeRef={zoomControlRef} 
+            handle=".zoom-control" 
+            bounds="body" 
+        >
+            <div 
+                ref={zoomControlRef} 
+                className="fixed bottom-4 left-4 z-50 cursor-grab" 
+            >
+                <div className="zoom-control flex flex-col items-center space-y-2 bg-white/20 backdrop-blur-sm p-1.5 rounded-xl shadow-lg border border-white/30 cursor-move">
+                    <div className="text-xs font-semibold text-white px-2 py-1 rounded select-none">
+                        Zoom: {Math.round(canvasScale * 100)}%
+                    </div>
+                </div>
+            </div>
+        </Draggable>
+      )}
+
+      {activeTool === 'canvas' && canUseCanvas && (
+        <div 
+          ref={canvasRef} 
+          className="relative w-full h-[800px] bg-gray-100 rounded-lg touch-none border border-gray-300 overflow-hidden" 
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart} 
+          onTouchEnd={handleTouchEnd}     
+          style={{ cursor: isDraggingCanvas ? 'grabbing' : 'grab' }}
+        >
+
+          {/* Canvas Indhold: Transformeres for Pan og Zoom */}
+          <div
+            className="absolute inset-0 origin-top-left transition-transform duration-50"
+            style={{ transform: `translate(${canvasPosition.x}px, ${canvasPosition.y}px) scale(${canvasScale})` }}
+          >
+            {/* ### KORREKTION HER: Fjerner .filter() ### */}
+            {canvasCards.map((card) => {
+              
+              // Bestemmer om SmartWidget skal have padding
+              const hasPadding = card.type === 'note';
+
+              return (
+                <Draggable 
+                  key={card.id}
+                  nodeRef={card.ref}
+                  handle=".canvas-handle" 
+                  defaultPosition={card.defaultPosition}
+                  scale={canvasScale} 
+                  onStop={(e, data) => handleCardStop(card.id, e, data)}
+                >
+                  <div 
+                    ref={card.ref}
+                    style={{ width: `${card.size.w}px`, height: `${card.size.h}px` }}
+                  > 
+                    {/* KORREKTION: 'noPadding' sendes nu korrekt til SmartWidget */}
+                    <SmartWidget className="h-full w-full shadow-lg" noPadding={!hasPadding}>
+                        {/* Håndtag er nu standardiseret */}
+                        <div className="canvas-handle cursor-move mb-2 p-1 -m-1 rounded-t-lg bg-gray-100 border-b border-gray-200">
+                          <h3 className="font-semibold text-black text-sm">
+                            {/* Viser titel fra 'note' eller standardtitel for widget */}
+                            {card.type === 'note' ? card.content?.title : 
+                             card.type === 'ai_readiness' ? 'AI Readiness' : 
+                             card.type === 'weekly_calendar' ? 'Ugekalender' : 'Widget'}
+                          </h3>
+                        </div>
+                        {/* Kalder den nye render-funktion for indholdet */}
+                        {renderCanvasCardContent(card)}
+                    </SmartWidget>
+                  </div>
+                </Draggable>
+              );
+            })}
+            {/* ### SLUT PÅ MAP ### */}
+
+          </div>
         </div>
       )}
     </>
   );
 }
+
