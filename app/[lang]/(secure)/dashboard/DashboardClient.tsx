@@ -66,7 +66,7 @@ type GridItem = {
   data: any;
 };
 
-// ### KORREKTION: ref-typen tillader nu en nullable 'current' (React.createRef returnerer current | null) ###
+// ### KORREKTION: ref-typen er nu ren og ikke nullable ###
 type CanvasCard = {
   id: string;
   type: 'note' | 'ai_readiness' | 'weekly_calendar'; // Typer af kort
@@ -76,7 +76,7 @@ type CanvasCard = {
   };
   defaultPosition: { x: number; y: number };
   size: { w: number; h: number }; // Størrelse på kortet
-  ref: React.RefObject<HTMLDivElement | null>; // Acceptér React.createRef<HTMLDivElement>()
+  ref: React.RefObject<HTMLDivElement | null>; // Tillader null som værdi
 };
 
 // --- START: KOMPONENTER TIL LAYOUT ---
@@ -274,7 +274,7 @@ export default function DashboardClient({
       id: 'card-2',
       type: 'ai_readiness', // Dette er nu en rigtig widget
       defaultPosition: { x: 350, y: 100 },
-      size: { w: 320, h: 200 }, // Størrelsen på AI widget (ca. w-80)
+      size: { w: 320, h: 288 }, // ### KORREKTION: Øget højde til h-72 (288px) ###
       ref: React.createRef<HTMLDivElement>() // KORREKTION: fjerner 'null'
     }
   ]);
@@ -418,7 +418,7 @@ export default function DashboardClient({
     let newContent = { title: 'Nyt Kort', text: 'Dette er et nyt kort...' };
 
     if (newType === 'ai_readiness') {
-      newSize = { w: 320, h: 200 }; // w-80
+      newSize = { w: 320, h: 288 }; // ### KORREKTION: Øget højde
       newContent.title = 'AI Readiness';
     } else if (newType === 'weekly_calendar') {
       newSize = { w: 400, h: 300 }; // w-100
@@ -499,6 +499,7 @@ export default function DashboardClient({
         return;
     }
     if (e.touches.length === 2) {
+        // To fingre: Starter zoom
         const distance = getDistance(e.touches)!;
         touchStartDist.current = distance;
         lastTouchCenter.current = getCenter(e.touches);
@@ -662,39 +663,56 @@ export default function DashboardClient({
             className="absolute inset-0 origin-top-left transition-transform duration-50"
             style={{ transform: `translate(${canvasPosition.x}px, ${canvasPosition.y}px) scale(${canvasScale})` }}
           >
-            {/* ### KORREKTION HER: Fjerner .filter() ### */}
+            {/* ### KORREKTION HER: Fjerner .filter() og implementerer "kort-på-kort" løsning ### */}
             {canvasCards.map((card) => {
               
               // Bestemmer om SmartWidget skal have padding
               const hasPadding = card.type === 'note';
+              const title = card.type === 'note' ? card.content?.title : 
+                            card.type === 'ai_readiness' ? 'AI Readiness' : 
+                            card.type === 'weekly_calendar' ? 'Ugekalender' : 'Widget';
 
               return (
                 <Draggable 
                   key={card.id}
-                  nodeRef={card.ref}
+                  nodeRef={card.ref} // Nu er card.ref garanteret at være en RefObject<HTMLDivElement>
                   handle=".canvas-handle" 
                   defaultPosition={card.defaultPosition}
                   scale={canvasScale} 
                   onStop={(e, data) => handleCardStop(card.id, e, data)}
                 >
                   <div 
-                    ref={card.ref}
-                    style={{ width: `${card.size.w}px`, height: `${card.size.h}px` }}
+                    ref={card.ref} 
+                    style={{ 
+                      width: `${card.size.w}px`, 
+                      height: `${card.size.h}px`,
+                      // Vi skal bruge 'absolute' for at Draggable kan placere kortet
+                      position: 'absolute' 
+                    }}
                   > 
-                    {/* KORREKTION: 'noPadding' sendes nu korrekt til SmartWidget */}
-                    <SmartWidget className="h-full w-full shadow-lg" noPadding={!hasPadding}>
-                        {/* Håndtag er nu standardiseret */}
+                    {/* ### KORREKTION: Betinget rendering af SmartWidget ### */}
+                    {card.type === 'note' ? (
+                      // Hvis det er en 'note', pak den ind i SmartWidget
+                      <SmartWidget className="h-full w-full shadow-lg" noPadding={!hasPadding}>
                         <div className="canvas-handle cursor-move mb-2 p-1 -m-1 rounded-t-lg bg-gray-100 border-b border-gray-200">
-                          <h3 className="font-semibold text-black text-sm">
-                            {/* Viser titel fra 'note' eller standardtitel for widget */}
-                            {card.type === 'note' ? card.content?.title : 
-                             card.type === 'ai_readiness' ? 'AI Readiness' : 
-                             card.type === 'weekly_calendar' ? 'Ugekalender' : 'Widget'}
-                          </h3>
+                          <h3 className="font-semibold text-black text-sm">{title}</h3>
                         </div>
-                        {/* Kalder den nye render-funktion for indholdet */}
-                        {renderCanvasCardContent(card)}
-                    </SmartWidget>
+                        <p className="text-sm text-gray-600 mt-2">
+                          {card.content?.text ?? '...'}
+                        </p>
+                      </SmartWidget>
+                    ) : (
+                      // For 'ai_readiness' og 'weekly_calendar', render dem direkte
+                      // Vi tilføjer manuelt et håndtag (via .canvas-handle) og skygge
+                      <div className="h-full w-full shadow-lg rounded-xl canvas-handle cursor-move">
+                        {card.type === 'ai_readiness' && (
+                          <AiReadinessWidget userData={{ subscriptionLevel: accessLevel }} lang={lang} />
+                        )}
+                        {card.type === 'weekly_calendar' && (
+                          <CalendarWidget translations={t} lang={lang} />
+                        )}
+                      </div>
+                    )}
                   </div>
                 </Draggable>
               );

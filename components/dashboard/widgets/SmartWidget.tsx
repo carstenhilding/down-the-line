@@ -7,11 +7,11 @@ interface SmartWidgetProps {
     children: React.ReactNode;
     priority?: 'high' | 'medium' | 'low';
     className?: string;
-    noPadding?: boolean;
+    noPadding?: boolean; // <-- TILFØJET DENNE LINJE
 }
 
-
-export const SmartWidget = ({ children, priority = 'low', className = '' }: SmartWidgetProps) => {
+// ### KORREKTION HER: Tilføjet 'noPadding' til props og betinget padding ###
+export const SmartWidget = ({ children, priority = 'low', className = '', noPadding = false }: SmartWidgetProps) => {
     let borderStyle = 'border-gray-200';
     let color = 'text-black';
     
@@ -22,12 +22,13 @@ export const SmartWidget = ({ children, priority = 'low', className = '' }: Smar
       borderStyle = 'border-black';
     }
 
-    // RETTET: Tilføjet '@container' for at gøre den til en "container"
+    // ### RETTELSE: Tjekker 'noPadding' før p-4/md:p-6 tilføjes ###
     return (
-      <div className={`@container bg-white p-4 md:p-6 rounded-xl shadow-md border transition-all duration-300 ${borderStyle} ${className} h-full flex flex-col`}>
+      <div className={`@container bg-white ${noPadding ? '' : 'p-4 md:p-6'} rounded-xl shadow-md border transition-all duration-300 ${borderStyle} ${className} h-full flex flex-col`}>
           <div className={`${color} flex-1`}> 
               {children}
           </div>
       </div>
     );
 };
+
