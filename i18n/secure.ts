@@ -40,6 +40,12 @@ export const secureI18n = {
       readiness: "Readiness",
       top_scorer: "Top Scorer",
       injured_absent: "Injured & Absent",
+
+      // --- TILFØJET HER (ENGELSK) ---
+      "addNote": "Add Note",
+      "addAiReadiness": "Add AI Readiness",
+      "addWeeklyCalendar": "Add Weekly Calendar",
+      "addGridWidget": "Add Widget (Grid)"
     },
 
     // Sidebar Menu
@@ -122,6 +128,12 @@ export const secureI18n = {
       readiness: "Klarhed",
       top_scorer: "Topscorer",
       injured_absent: "Skadet & Fravær",
+      
+      // --- TILFØJET HER (DANSK) ---
+      "addNote": "Tilføj Note",
+      "addAiReadiness": "Tilføj AI Readiness",
+      "addWeeklyCalendar": "Tilføj Ugekalender",
+      "addGridWidget": "Tilføj Widget (Grid)"
     },
 
     // Sidebar Menu
@@ -167,4 +179,3 @@ export const secureI18n = {
     },
   },
 };
-

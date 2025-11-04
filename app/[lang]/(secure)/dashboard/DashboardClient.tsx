@@ -10,7 +10,7 @@ import {
   ArrowRight,
   Video,
   User as UserIcon,
-  Calendar as CalendarIcon, // <-- FEJLEN VAR HER: Denne linje er nu gen-indsat
+  Calendar as CalendarIcon, // <-- Rettel_se til QuickAccessBar
   Star,
   Target,
   GitPullRequestArrowIcon,
@@ -20,7 +20,7 @@ import {
   StickyNote,       
   Package,          
   Zap,              
-  Calendar,         // <-- Denne er til dropdown-menuen
+  Calendar,         // <-- Til Dropdown
 } from 'lucide-react';
 // NY IMPORT: Draggable til at flytte widgets på Canvas
 import Draggable, { DraggableData, DraggableEvent } from 'react-draggable'; // Importer DraggableEvent og Data
@@ -72,7 +72,6 @@ type GridItem = {
 // ### KORREKTION: ref-typen er nu ren og ikke nullable ###
 type CanvasCard = {
   id: string;
-  // OPDATERET: Sørger for at 'weekly_calendar' er en valid type
   type: 'note' | 'ai_readiness' | 'weekly_calendar'; // Typer af kort
   content?: { // Valgfrit, bruges kun til 'note'
     title: string;
@@ -85,7 +84,7 @@ type CanvasCard = {
 
 // --- START: KOMPONENTER TIL LAYOUT ---
 
-// 1. Quick Access Bar (Uændret, men 'CalendarIcon' virker nu)
+// 1. Quick Access Bar (Uændret)
 const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: SubscriptionLevel, lang: 'da' | 'en' }) => {
     const isPremium = ['Expert', 'Complete', 'Elite', 'Enterprise'].includes(accessLevel);
     const buttonClass = "flex items-center justify-between p-2 sm:p-3 text-xs sm:text-sm bg-black text-white transition duration-200 shadow-xl rounded-lg border-2 border-black group hover:-translate-y-1 hover:shadow-2xl";
@@ -156,19 +155,22 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
     );
 };
 
-// 2. View Mode Toggle Bar (RETTET: Dropdown-position tilbage til under)
+
+// 2. View Mode Toggle Bar (RETTET: Dropdown-position er nu centreret + oversat)
 const ViewModeToggle = ({ 
   activeTool, 
   setActiveTool, 
   canUseCanvas, 
   isDraggable,
-  onAddWidget
+  onAddWidget,
+  t // <-- TILFØJET: Oversættelsesprop
 }: { 
   activeTool: 'grid' | 'canvas' | 'add';
   setActiveTool: (tool: 'grid' | 'canvas' | 'add') => void;
   canUseCanvas: boolean;
   isDraggable: boolean;
   onAddWidget: (type: CanvasCard['type']) => void; 
+  t: any // <-- TILFØJET: Oversættelsesprop type
 }) => {
   
   // --- State og Ref til at styre dropdown ---
@@ -252,9 +254,8 @@ const ViewModeToggle = ({
                   </button>
               )}
 
-              {/* OPDATERET Dropdown Menu (Position ændret tilbage til under) */}
+              {/* OPDATERET Dropdown Menu (Position centreret + Oversættelser) */}
               {isDropdownOpen && (
-                  // OPDATERET: 'right-full top-0 mr-2' er ændret til 'right-0 top-full mt-2'
                   <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-56 bg-white rounded-lg shadow-xl border z-10 p-1.5 space-y-1"> 
                       
                       {showCanvasOptions && (
@@ -264,21 +265,21 @@ const ViewModeToggle = ({
                                   className="flex items-center w-full text-left px-2 py-1.5 text-xs text-gray-800 rounded-md hover:bg-orange-500 hover:text-white group"
                               >
                                   <StickyNote className="h-4 w-4 mr-3 text-gray-500 group-hover:text-white" />
-                                  Tilføj Note
+                                  {t.addNote ?? 'Tilføj Note'}
                               </button>
                               <button 
                                   onClick={() => handleAddCanvasItemClick('ai_readiness')}
                                   className="flex items-center w-full text-left px-2 py-1.5 text-xs text-gray-800 rounded-md hover:bg-orange-500 hover:text-white group"
                               >
                                   <Zap className="h-4 w-4 mr-3 text-gray-500 group-hover:text-white" />
-                                  Tilføj AI Readiness
+                                  {t.addAiReadiness ?? 'Tilføj AI Readiness'}
                               </button>
                               <button 
                                   onClick={() => handleAddCanvasItemClick('weekly_calendar')}
                                   className="flex items-center w-full text-left px-2 py-1.5 text-xs text-gray-800 rounded-md hover:bg-orange-500 hover:text-white group"
                               >
                                   <Calendar className="h-4 w-4 mr-3 text-gray-500 group-hover:text-white" />
-                                  Tilføj Ugekalender
+                                  {t.addWeeklyCalendar ?? 'Tilføj Ugekalender'}
                               </button>
                           </>
                       )}
@@ -290,7 +291,7 @@ const ViewModeToggle = ({
                                   className="flex items-center w-full text-left px-2 py-1.5 text-xs text-gray-800 rounded-md hover:bg-orange-500 hover:text-white group"
                               >
                                   <Package className="h-4 w-4 mr-3 text-gray-500 group-hover:text-white" />
-                                  Tilføj Widget (Grid)
+                                  {t.addGridWidget ?? 'Tilføj Widget (Grid)'}
                               </button>
                           </>
                       )}
@@ -594,6 +595,7 @@ export default function DashboardClient({
     }
   }, []);
 
+  // --- RETTET: handleTouchMove (fra dit screenshot) ---
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (e.touches.length === 2 && touchStartDist.current !== null) {
         const newDistance = getDistance(e.touches)!;
@@ -604,7 +606,6 @@ export default function DashboardClient({
         setCanvasScale(parseFloat(newScale.toFixed(2)));
         touchStartDist.current = newDistance;
     } else if (isDraggingCanvas && e.touches.length === 1) {
-        // --- RETTELSE FRA DIT SCREENSHOT ---
         const dx = e.touches[0].clientX - dragStartPoint.current.x; // <-- RETTET
         const dy = e.touches[0].clientY - dragStartPoint.current.y; // <-- RETTET
         setCanvasPosition(prev => ({
@@ -612,7 +613,6 @@ export default function DashboardClient({
           y: prev.y + dy,
         }));
         dragStartPoint.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; // <-- RETTET
-        // --- SLUT PÅ RETTELSE ---
     }
   }, [canvasScale, MIN_SCALE, MAX_SCALE, isDraggingCanvas, SCALE_STEP]); 
 
@@ -689,13 +689,15 @@ export default function DashboardClient({
         <QuickAccessBar t={t} accessLevel={accessLevel} lang={lang} />
       </div>
       
+      {/* OPDATERET: Sender nu 't' med ned til ViewModeToggle */}
       <div className="mb-4">
         <ViewModeToggle 
           activeTool={activeTool}
           setActiveTool={setActiveTool}
           canUseCanvas={canUseCanvas}
           isDraggable={isDraggable}
-          onAddWidget={addCardToCanvas} // <-- Sender den opdaterede funktion ind
+          onAddWidget={addCardToCanvas}
+          t={t} // <-- TILFØJET
         />
       </div>
       

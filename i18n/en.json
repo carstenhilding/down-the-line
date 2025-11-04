@@ -4,10 +4,10 @@
     "settings": "Settings",
     "profile": "Profile",
     "access_level_label": "Access Level:",
-       "languageSelector": {
-        "label": "Language",
-        "danish": "Dansk",
-        "english": "English"
+    "languageSelector": {
+      "label": "Language",
+      "danish": "Dansk",
+      "english": "English"
     }
   },
   "dashboard": {
@@ -26,7 +26,11 @@
     "total_load": "Total Load",
     "readiness": "Readiness",
     "top_scorer": "Top Scorer",
-    "injured_absent": "Injured & Absent"
+    "injured_absent": "Injured & Absent",
+    "addNote": "Add Note",
+    "addAiReadiness": "Add AI Readiness",
+    "addWeeklyCalendar": "Add Weekly Calendar",
+    "addGridWidget": "Add Widget (Grid)"
   },
   "sidebar": {
     "dashboard": "Dashboard",

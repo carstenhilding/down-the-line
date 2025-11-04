@@ -5,9 +5,9 @@
     "profile": "Profil",
     "access_level_label": "Adgangsniveau:",
     "languageSelector": {
-    "label": "Sprog",
-    "danish": "Dansk",
-    "english": "English"
+      "label": "Sprog",
+      "danish": "Dansk",
+      "english": "English"
     }
   },
   "dashboard": {
@@ -26,7 +26,11 @@
     "total_load": "Samlet Belastning",
     "readiness": "Klarhed",
     "top_scorer": "Topscorer",
-    "injured_absent": "Skadet & Fravær"
+    "injured_absent": "Skadet & Fravær",
+    "addNote": "Tilføj Note",
+    "addAiReadiness": "Tilføj AI Readiness",
+    "addWeeklyCalendar": "Tilføj Ugekalender",
+    "addGridWidget": "Tilføj Widget (Grid)"
   },
   "sidebar": {
     "dashboard": "Dashboard",
