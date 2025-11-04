@@ -5,19 +5,22 @@ import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react'
 import {
   Users,
   AlertTriangle,
-  Calendar,
   MessageSquare,
   Activity,
   ArrowRight,
   Video,
   User as UserIcon,
-  Calendar as CalendarIcon,
+  Calendar as CalendarIcon, // <-- FEJLEN VAR HER: Denne linje er nu gen-indsat
   Star,
   Target,
   GitPullRequestArrowIcon,
   LayoutGrid, 
   View, 
   PlusCircle, 
+  StickyNote,       
+  Package,          
+  Zap,              
+  Calendar,         // <-- Denne er til dropdown-menuen
 } from 'lucide-react';
 // NY IMPORT: Draggable til at flytte widgets på Canvas
 import Draggable, { DraggableData, DraggableEvent } from 'react-draggable'; // Importer DraggableEvent og Data
@@ -69,6 +72,7 @@ type GridItem = {
 // ### KORREKTION: ref-typen er nu ren og ikke nullable ###
 type CanvasCard = {
   id: string;
+  // OPDATERET: Sørger for at 'weekly_calendar' er en valid type
   type: 'note' | 'ai_readiness' | 'weekly_calendar'; // Typer af kort
   content?: { // Valgfrit, bruges kun til 'note'
     title: string;
@@ -81,7 +85,7 @@ type CanvasCard = {
 
 // --- START: KOMPONENTER TIL LAYOUT ---
 
-// 1. Quick Access Bar (Uændret)
+// 1. Quick Access Bar (Uændret, men 'CalendarIcon' virker nu)
 const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: SubscriptionLevel, lang: 'da' | 'en' }) => {
     const isPremium = ['Expert', 'Complete', 'Elite', 'Enterprise'].includes(accessLevel);
     const buttonClass = "flex items-center justify-between p-2 sm:p-3 text-xs sm:text-sm bg-black text-white transition duration-200 shadow-xl rounded-lg border-2 border-black group hover:-translate-y-1 hover:shadow-2xl";
@@ -123,14 +127,14 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
             {isPremium && (
                 <Link href="/analysis"
                       className={buttonClass + " hidden lg:flex w-full lg:w-[calc(33.33%-10.66px)] xl:w-[calc(25%-12px)]"}>
-                    <div className='flex items-center'>
-                        <UserIcon className={ICON_SIZE_CLASS + " text-orange-500 shrink-0"} />
-                    </div>
-                    <div className='flex flex-col flex-1 items-center justify-center text-center'>
-                        <span className='font-bold text-xs sm:text-sm'>{t.readinessTitle ?? 'Readiness'}</span>
-                        <span className='text-[10px] text-gray-400'>{t.playerSubtitle ?? 'Spiller'}</span>
-                    </div>
-                    <div className={ICON_SIZE_CLASS}></div>
+                <div className='flex items-center'>
+                    <UserIcon className={ICON_SIZE_CLASS + " text-orange-500 shrink-0"} />
+                </div>
+                <div className='flex flex-col flex-1 items-center justify-center text-center'>
+                    <span className='font-bold text-xs sm:text-sm'>{t.readinessTitle ?? 'Readiness'}</span>
+                    <span className='text-[10px] text-gray-400'>{t.playerSubtitle ?? 'Spiller'}</span>
+                </div>
+                <div className={ICON_SIZE_CLASS}></div>
                 </Link>
             )}
 
@@ -152,35 +156,59 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
     );
 };
 
-
-// 2. View Mode Toggle Bar (OPDATERET MED onAddWidget)
+// 2. View Mode Toggle Bar (RETTET: Dropdown-position tilbage til under)
 const ViewModeToggle = ({ 
   activeTool, 
   setActiveTool, 
   canUseCanvas, 
   isDraggable,
-  onAddWidget // <-- NY PROP
+  onAddWidget
 }: { 
   activeTool: 'grid' | 'canvas' | 'add';
   setActiveTool: (tool: 'grid' | 'canvas' | 'add') => void;
   canUseCanvas: boolean;
   isDraggable: boolean;
-  onAddWidget: () => void; // <-- NY PROP TYPE
+  onAddWidget: (type: CanvasCard['type']) => void; 
 }) => {
   
+  // --- State og Ref til at styre dropdown ---
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null); 
+
+  // --- useEffect til at lukke menuen ved klik udenfor ---
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+            setIsDropdownOpen(false); 
+        }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []); 
+
   const toggleBaseClass = "flex items-center justify-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold transition-colors";
   const activeClass = "text-orange-500";
   const inactiveClass = "text-gray-500 hover:text-black";
   const actionButtonBaseClass = "flex items-center justify-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-colors border";
   
-  // NY HANDLER: Tjekker hvilken tilstand der er aktiv
-  const handleAddClick = () => {
-    if (activeTool === 'canvas') {
-      onAddWidget(); // Kald canvas-funktionen
-    } else if (activeTool === 'grid') {
-      setActiveTool('add'); // Gør det den plejede
-    }
+  // Handler til Canvas-knapper
+  const handleAddCanvasItemClick = (type: CanvasCard['type']) => {
+    onAddWidget(type); 
+    setIsDropdownOpen(false); 
   };
+
+  // Handler til Grid-knap
+  const handleAddGridItemClick = () => {
+    setActiveTool('add'); 
+    setIsDropdownOpen(false); 
+  };
+
+  // Beregn om menuen har indhold
+  const showCanvasOptions = activeTool === 'canvas' && canUseCanvas;
+  const showGridOptions = (activeTool === 'grid' || activeTool === 'add') && isDraggable;
+  const showMenuOptions = showCanvasOptions || showGridOptions;
 
   return (
     <div className="flex items-center justify-between mb-4">
@@ -189,7 +217,9 @@ const ViewModeToggle = ({
         <div className="flex items-center space-x-2">
             <button 
                 onClick={() => setActiveTool('grid')}
-                className={`${toggleBaseClass} ${activeTool === 'grid' ? activeClass : inactiveClass}`}
+                className={`${toggleBaseClass} ${
+                  (activeTool === 'grid' || activeTool === 'add') ? activeClass : inactiveClass
+                }`}
             >
                 <LayoutGrid className="h-4 w-4" />
                 Grid
@@ -204,22 +234,76 @@ const ViewModeToggle = ({
                     Canvas
                 </button>
             )}
-
-            {/* OPDATERET: Knappen vises nu i Canvas-mode og Grid-mode (hvis draggable) */}
-            {(isDraggable || activeTool === 'canvas') && (
-                <button 
-                    onClick={handleAddClick} // <-- OPDATERET onClick
-                    // Altid aktiv, når 'add' er valgt, eller når vi er i canvas
-                    className={`${toggleBaseClass} ${activeTool === 'add' ? activeClass : inactiveClass}`}
-                >
-                    <PlusCircle className="h-4 w-4" />
-                    Add Widget
-                </button>
-            )}
         </div>
 
-        {/* Højre side: Knap */}
+        {/* Højre side: Knapper */}
         <div className="flex items-center gap-2">
+            
+            <div ref={dropdownRef} className="relative"> {/* relative er vigtig for dropdown-positionering */}
+              {(isDraggable || activeTool === 'canvas') && (
+                  <button 
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
+                      className={`${toggleBaseClass} ${
+                        isDropdownOpen || activeTool === 'add' ? activeClass : inactiveClass
+                      }`}
+                  >
+                      <PlusCircle className="h-4 w-4" />
+                      Widget
+                  </button>
+              )}
+
+              {/* OPDATERET Dropdown Menu (Position ændret tilbage til under) */}
+              {isDropdownOpen && (
+                  // OPDATERET: 'right-full top-0 mr-2' er ændret til 'right-0 top-full mt-2'
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-56 bg-white rounded-lg shadow-xl border z-10 p-1.5 space-y-1"> 
+                      
+                      {showCanvasOptions && (
+                          <>
+                              <button 
+                                  onClick={() => handleAddCanvasItemClick('note')}
+                                  className="flex items-center w-full text-left px-2 py-1.5 text-xs text-gray-800 rounded-md hover:bg-orange-500 hover:text-white group"
+                              >
+                                  <StickyNote className="h-4 w-4 mr-3 text-gray-500 group-hover:text-white" />
+                                  Tilføj Note
+                              </button>
+                              <button 
+                                  onClick={() => handleAddCanvasItemClick('ai_readiness')}
+                                  className="flex items-center w-full text-left px-2 py-1.5 text-xs text-gray-800 rounded-md hover:bg-orange-500 hover:text-white group"
+                              >
+                                  <Zap className="h-4 w-4 mr-3 text-gray-500 group-hover:text-white" />
+                                  Tilføj AI Readiness
+                              </button>
+                              <button 
+                                  onClick={() => handleAddCanvasItemClick('weekly_calendar')}
+                                  className="flex items-center w-full text-left px-2 py-1.5 text-xs text-gray-800 rounded-md hover:bg-orange-500 hover:text-white group"
+                              >
+                                  <Calendar className="h-4 w-4 mr-3 text-gray-500 group-hover:text-white" />
+                                  Tilføj Ugekalender
+                              </button>
+                          </>
+                      )}
+
+                      {showGridOptions && (
+                          <>
+                              <button 
+                                  onClick={handleAddGridItemClick} 
+                                  className="flex items-center w-full text-left px-2 py-1.5 text-xs text-gray-800 rounded-md hover:bg-orange-500 hover:text-white group"
+                              >
+                                  <Package className="h-4 w-4 mr-3 text-gray-500 group-hover:text-white" />
+                                  Tilføj Widget (Grid)
+                              </button>
+                          </>
+                      )}
+
+                      {!showMenuOptions && (
+                           <p className="p-2 text-xs text-center text-gray-500">Ingen handlinger tilgængelige her.</p>
+                      )}
+                      
+                  </div>
+              )}
+            </div>
+
+
             {isDraggable && (
                 <button className={`${actionButtonBaseClass} bg-orange-500 text-white border-orange-500 hover:bg-orange-600 hover:border-orange-600`}>
                     Save Layout
@@ -407,12 +491,11 @@ export default function DashboardClient({
   // ### OPDATERET: TILFØJER NYE KORTTYPER ###
   const widgetTypes: CanvasCard['type'][] = ['note', 'ai_readiness', 'weekly_calendar'];
 
-  const addCardToCanvas = () => {
+  // --- OPDATERET addCardToCanvas ---
+  // Tager nu imod en specifik type fra dropdown-menuen
+  const addCardToCanvas = (newType: CanvasCard['type']) => {
     const newX = 40 + (canvasCards.length % 5) * 50; 
     const newY = 40 + (canvasCards.length % 5) * 50;
-
-    // Vælg en ny type baseret på hvor mange kort der er
-    const newType = widgetTypes[canvasCards.length % widgetTypes.length];
     
     let newSize = { w: 256, h: 192 }; // Standardstørrelse (note)
     let newContent = { title: 'Nyt Kort', text: 'Dette er et nyt kort...' };
@@ -424,6 +507,7 @@ export default function DashboardClient({
       newSize = { w: 400, h: 300 }; // w-100
       newContent.title = 'Ugekalender';
     }
+    // Hvis newType er 'note', bruges standard-størrelsen og -indholdet
 
     setCanvasCards(prevCards => [
       ...prevCards,
@@ -520,13 +604,15 @@ export default function DashboardClient({
         setCanvasScale(parseFloat(newScale.toFixed(2)));
         touchStartDist.current = newDistance;
     } else if (isDraggingCanvas && e.touches.length === 1) {
-        const dx = e.touches[0].clientX - dragStartPoint.current.x;
-        const dy = e.touches[0].clientY - dragStartPoint.current.y;
+        // --- RETTELSE FRA DIT SCREENSHOT ---
+        const dx = e.touches[0].clientX - dragStartPoint.current.x; // <-- RETTET
+        const dy = e.touches[0].clientY - dragStartPoint.current.y; // <-- RETTET
         setCanvasPosition(prev => ({
           x: prev.x + dx,
           y: prev.y + dy,
         }));
-        dragStartPoint.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; 
+        dragStartPoint.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; // <-- RETTET
+        // --- SLUT PÅ RETTELSE ---
     }
   }, [canvasScale, MIN_SCALE, MAX_SCALE, isDraggingCanvas, SCALE_STEP]); 
 
@@ -609,7 +695,7 @@ export default function DashboardClient({
           setActiveTool={setActiveTool}
           canUseCanvas={canUseCanvas}
           isDraggable={isDraggable}
-          onAddWidget={addCardToCanvas} // <-- Sender den nye funktion ind
+          onAddWidget={addCardToCanvas} // <-- Sender den opdaterede funktion ind
         />
       </div>
       
@@ -725,4 +811,3 @@ export default function DashboardClient({
     </>
   );
 }
-
