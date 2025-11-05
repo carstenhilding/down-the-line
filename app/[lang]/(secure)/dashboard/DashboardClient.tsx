@@ -10,7 +10,7 @@ import {
   ArrowRight,
   Video,
   User as UserIcon,
-  Calendar as CalendarIcon, // <-- Rettel_se til QuickAccessBar
+  Calendar as CalendarIcon, 
   Star,
   Target,
   GitPullRequestArrowIcon,
@@ -20,24 +20,22 @@ import {
   StickyNote,       
   Package,          
   Zap,              
-  Calendar,         // <-- Til Dropdown
+  Calendar,         
+  X,                
 } from 'lucide-react';
-// NY IMPORT: Draggable til at flytte widgets på Canvas
-import Draggable, { DraggableData, DraggableEvent } from 'react-draggable'; // Importer DraggableEvent og Data
+import Draggable, { DraggableData, DraggableEvent } from 'react-draggable'; 
+import { Resizable, ResizeCallbackData } from 'react-resizable'; // Importeret
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import Link from 'next/link';
 import { UserRole, SubscriptionLevel } from '@/lib/server/data';
 
 // Importerer de komponenter, vi har flyttet
 import AiReadinessWidget from '@/components/dashboard/widgets/AiReadinessWidget';
-import CalendarWidget from '@/components/dashboard/widgets/CalendarWidget'; // 7-dages kalender
+import CalendarWidget from '@/components/dashboard/widgets/CalendarWidget'; 
 import MessageWidget from '@/components/dashboard/widgets/MessageWidget';
 import ActivityWidget from '@/components/dashboard/widgets/ActivityWidget';
-// NY IMPORT: SmartWidget for at kunne bruge widgets på lærredet
 import { SmartWidget } from '@/components/dashboard/widgets/SmartWidget';
 
-// *** VORES RETTELSE ER HER ***
-// Tilføj disse to linjer for at aktivere resize-håndtag og basis-styling
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
@@ -69,7 +67,6 @@ type GridItem = {
   data: any;
 };
 
-// ### KORREKTION: ref-typen er nu ren og ikke nullable ###
 type CanvasCard = {
   id: string;
   type: 'note' | 'ai_readiness' | 'weekly_calendar'; // Typer af kort
@@ -80,6 +77,7 @@ type CanvasCard = {
   defaultPosition: { x: number; y: number };
   size: { w: number; h: number }; // Størrelse på kortet
   ref: React.RefObject<HTMLDivElement | null>; // Tillader null som værdi
+  isEditing?: boolean; // OPGAVE 3: Lokal state for at vide om kortet redigeres
 };
 
 // --- START: KOMPONENTER TIL LAYOUT ---
@@ -88,15 +86,10 @@ type CanvasCard = {
 const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: SubscriptionLevel, lang: 'da' | 'en' }) => {
     const isPremium = ['Expert', 'Complete', 'Elite', 'Enterprise'].includes(accessLevel);
     const buttonClass = "flex items-center justify-between p-2 sm:p-3 text-xs sm:text-sm bg-black text-white transition duration-200 shadow-xl rounded-lg border-2 border-black group hover:-translate-y-1 hover:shadow-2xl";
-    const trainingTitle = lang === 'da' ? 'Opret Session' : 'Create Session';
-    const drillTitle = lang === 'da' ? 'Opret Øvelse' : 'Create Drill';
-    const readinessTitle = t.readiness ?? 'Readiness';
-    const analysisTitle = 'Video Analysis';
     const ICON_SIZE_CLASS = "w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 mr-3";
 
     return (
         <div className="flex flex-wrap gap-4 md:gap-4 mb-4">
-            {/* 1. Create Session (Altid synlig) */}
             <Link href="/trainer/new"
                   className={buttonClass + " w-full md:w-[calc(50%-8px)] lg:w-[calc(33.33%-10.66px)] xl:w-[calc(25%-12px)]"}>
                 <div className='flex items-center'>
@@ -108,8 +101,6 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
                 </div>
                 <div className={ICON_SIZE_CLASS}></div>
             </Link>
-          
-            {/* 2. Create Drill (Altid synlig) */}
             <Link href="/trainer/new?mode=exercise"
                   className={buttonClass + " w-full md:w-[calc(50%-8px)] lg:w-[calc(33.33%-10.66px)] xl:w-[calc(25%-12px)]"}>
                 <div className='flex items-center'>
@@ -121,8 +112,6 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
                 </div>
                 <div className={ICON_SIZE_CLASS}></div>
             </Link>
-          
-            {/* 3. Readiness / Player (Premium) */}
             {isPremium && (
                 <Link href="/analysis"
                       className={buttonClass + " hidden lg:flex w-full lg:w-[calc(33.33%-10.66px)] xl:w-[calc(25%-12px)]"}>
@@ -136,8 +125,6 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
                 <div className={ICON_SIZE_CLASS}></div>
                 </Link>
             )}
-
-            {/* 4. Video Analysis (Premium) */}
             {isPremium && (
                  <Link href="/analysis"
                        className={buttonClass + " hidden xl:flex w-full xl:w-[calc(25%-12px)]"}>
@@ -156,28 +143,26 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
 };
 
 
-// 2. View Mode Toggle Bar (RETTET: Dropdown-position er nu centreret + oversat)
+// 2. View Mode Toggle Bar (Uændret)
 const ViewModeToggle = ({ 
   activeTool, 
   setActiveTool, 
   canUseCanvas, 
   isDraggable,
   onAddWidget,
-  t // <-- TILFØJET: Oversættelsesprop
+  t 
 }: { 
   activeTool: 'grid' | 'canvas' | 'add';
   setActiveTool: (tool: 'grid' | 'canvas' | 'add') => void;
   canUseCanvas: boolean;
   isDraggable: boolean;
   onAddWidget: (type: CanvasCard['type']) => void; 
-  t: any // <-- TILFØJET: Oversættelsesprop type
+  t: any 
 }) => {
   
-  // --- State og Ref til at styre dropdown ---
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null); 
 
-  // --- useEffect til at lukke menuen ved klik udenfor ---
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
         if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -195,19 +180,16 @@ const ViewModeToggle = ({
   const inactiveClass = "text-gray-500 hover:text-black";
   const actionButtonBaseClass = "flex items-center justify-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-colors border";
   
-  // Handler til Canvas-knapper
   const handleAddCanvasItemClick = (type: CanvasCard['type']) => {
     onAddWidget(type); 
     setIsDropdownOpen(false); 
   };
 
-  // Handler til Grid-knap
   const handleAddGridItemClick = () => {
     setActiveTool('add'); 
     setIsDropdownOpen(false); 
   };
 
-  // Beregn om menuen har indhold
   const showCanvasOptions = activeTool === 'canvas' && canUseCanvas;
   const showGridOptions = (activeTool === 'grid' || activeTool === 'add') && isDraggable;
   const showMenuOptions = showCanvasOptions || showGridOptions;
@@ -241,7 +223,7 @@ const ViewModeToggle = ({
         {/* Højre side: Knapper */}
         <div className="flex items-center gap-2">
             
-            <div ref={dropdownRef} className="relative"> {/* relative er vigtig for dropdown-positionering */}
+            <div ref={dropdownRef} className="relative"> 
               {(isDraggable || activeTool === 'canvas') && (
                   <button 
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
@@ -254,7 +236,6 @@ const ViewModeToggle = ({
                   </button>
               )}
 
-              {/* OPDATERET Dropdown Menu (Position centreret + Oversættelser) */}
               {isDropdownOpen && (
                   <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-56 bg-white rounded-lg shadow-xl border z-10 p-1.5 space-y-1"> 
                       
@@ -328,7 +309,6 @@ export default function DashboardClient({
 
   const [activeTool, setActiveTool] = useState<'grid' | 'canvas' | 'add'>('grid');
   
-  // *** CANVAS STATES OG REFS ***
   const zoomControlRef = useRef<HTMLDivElement>(null); 
   const canvasRef = useRef<HTMLDivElement>(null); 
   const touchStartDist = useRef<number | null>(null); 
@@ -342,7 +322,6 @@ export default function DashboardClient({
   const MAX_SCALE = 3.0;
   const SCALE_STEP = 0.05; 
 
-  // ### OPDATERET STATE: Nu med widget-typer ###
   const [canvasCards, setCanvasCards] = useState<CanvasCard[]>([
     {
       id: 'card-1',
@@ -352,21 +331,18 @@ export default function DashboardClient({
         text: 'Dette er det første kort. Prøv at flytte mig.'
       },
       defaultPosition: { x: 40, y: 40 },
-      size: { w: 256, h: 192 }, // w-64, h-48
-      ref: React.createRef<HTMLDivElement>() // KORREKTION: fjerner 'null'
+      size: { w: 256, h: 192 }, 
+      ref: React.createRef<HTMLDivElement>() 
     },
     {
       id: 'card-2',
-      type: 'ai_readiness', // Dette er nu en rigtig widget
+      type: 'ai_readiness', 
       defaultPosition: { x: 350, y: 100 },
-      size: { w: 320, h: 288 }, // ### KORREKTION: Øget højde til h-72 (288px) ###
-      ref: React.createRef<HTMLDivElement>() // KORREKTION: fjerner 'null'
+      size: { w: 320, h: 288 }, 
+      ref: React.createRef<HTMLDivElement>() 
     }
   ]);
-  // ### SLUT PÅ OPDATERET STATE ###
 
-
-  // Adgangslogik (Uændret)
   const canUseCanvas = useMemo(() => 
     ['Elite', 'Enterprise'].includes(accessLevel) ||
     [UserRole.Tester, UserRole.Developer].includes(userRole),
@@ -380,42 +356,17 @@ export default function DashboardClient({
   
   const isDraggable = !isStaticGrid;
 
-  // Data (Uændret)
   const intelligentGrid: GridItem[] = [
-    {
-      id: 'ai-readiness',
-      priority: 'high',
-      type: 'ai_readiness',
-      data: {}, 
-    },
-    {
-      id: 'weekly-calendar',
-      priority: 'medium',
-      type: 'weekly_calendar',
-      data: {}, 
-    },
-    {
-      id: 'messages',
-      priority: 'medium',
-      type: 'message',
-      data: {
-        title: 'Ny ulæst besked (Forældregruppe U19)',
-        snippet: 'Hej Træner, angående kørsel til weekendens kamp...',
-      },
-    },
-    {
-      id: 'activity-feed',
-      priority: 'low',
-      type: 'activity',
-      data: {
-        feed: dashboardData.activityFeed,
-      },
-    },
+    { id: 'ai-readiness', priority: 'high', type: 'ai_readiness', data: {}, },
+    { id: 'weekly-calendar', priority: 'medium', type: 'weekly_calendar', data: {}, },
+    { id: 'messages', priority: 'medium', type: 'message', data: { title: 'Ny ulæst besked (Forældregruppe U19)', snippet: 'Hej Træner, angående kørsel til weekendens kamp...', },},
+    { id: 'activity-feed', priority: 'low', type: 'activity', data: { feed: dashboardData.activityFeed, },},
   ];
 
-  // Render-funktion (Uændret)
+ // Render-funktion (RETTET: Explicit typecast i switch-statement)
   const renderGridItem = (item: GridItem) => {
-    switch (item.type) {
+    // Tvinger 'item.type' til at være en af de kendte strenge, hvilket løser fejlen.
+    switch (item.type as 'ai_readiness' | 'weekly_calendar' | 'message' | 'activity') {
       case 'ai_readiness':
         return <AiReadinessWidget userData={{ subscriptionLevel: accessLevel }} lang={lang} />;
       case 'weekly_calendar':
@@ -429,23 +380,19 @@ export default function DashboardClient({
     }
   };
 
-  // --- LAYOUTS TIL 12-KOLONNER / 100px RÆKKER ---
   const layouts = {
-    // lg & md (12 kolonner grid): Asymmetrisk layout
     lg: [
-      { i: 'ai-readiness',     x: 0, y: 0, w: 3, h: 2, minW: 1, maxW: 4, minH: 1 }, // 25% bred, 300px høj
-      { i: 'weekly-calendar',  x: 3, y: 0, w: 6, h: 2, minW: 4, maxW: 8, minH: 1 }, // 50% bred, 300px høj
-      { i: 'messages',         x: 9, y: 0, w: 3, h: 2, minW: 2, maxW: 4, minH: 1 }, // 25% bred, 300px høj
-      { i: 'activity-feed',    x: 0, y: 3, w: 12, h: 2, minW: 4, maxW: 12, minH: 2 }, // 100% bred, 200px høj
+      { i: 'ai-readiness',     x: 0, y: 0, w: 3, h: 2, minW: 1, maxW: 4, minH: 1 }, 
+      { i: 'weekly-calendar',  x: 3, y: 0, w: 6, h: 2, minW: 4, maxW: 8, minH: 1 }, 
+      { i: 'messages',         x: 9, y: 0, w: 3, h: 2, minW: 2, maxW: 4, minH: 1 }, 
+      { i: 'activity-feed',    x: 0, y: 3, w: 12, h: 2, minW: 4, maxW: 12, minH: 2 }, 
     ],
-    // sm (6 kolonner grid): 
     sm: [
       { i: 'ai-readiness',     x: 0, y: 0, w: 3, h: 2, minH: 2 },
       { i: 'messages',         x: 3, y: 0, w: 3, h: 2, minH: 2 },
       { i: 'weekly-calendar',  x: 0, y: 3, w: 6, h: 2, minH: 2 },
       { i: 'activity-feed',    x: 0, y: 6, w: 6, h: 2, minH: 2 },
     ],
-    // xs (4 kolonner grid): Stabler pænt
     xs: [
       { i: 'ai-readiness',     x: 0, y: 0, w: 4, h: 2, minH: 2 },
       { i: 'weekly-calendar',  x: 0, y: 3, w: 4, h: 2, minH: 2 },
@@ -460,7 +407,6 @@ export default function DashboardClient({
 
   const gridElements = useMemo(() => {
     return intelligentGrid.map(item => (
-        // className="h-full" er TILFØJET for at fylde den nye faste celle-højde
         <div key={item.id} className="h-full">
             {renderGridItem(item)}
         </div>
@@ -469,18 +415,14 @@ export default function DashboardClient({
   
   // --- CANVAS FUNKTIONER ---
 
-  // ### KORREKTION: fjerner 'noPadding' fra komponent-kald ###
   const renderCanvasCardContent = (card: CanvasCard) => {
     switch (card.type) {
       case 'ai_readiness':
-        // Fejlen var her: noPadding er fjernet
         return <AiReadinessWidget userData={{ subscriptionLevel: accessLevel }} lang={lang} />;
       case 'weekly_calendar':
-        // Fejlen var her: noPadding er fjernet
         return <CalendarWidget translations={t} lang={lang} />;
       case 'note':
       default:
-        // Standard note-indhold
         return (
           <p className="text-sm text-gray-600 mt-2">
             {card.content?.text ?? '...'}
@@ -489,26 +431,22 @@ export default function DashboardClient({
     }
   };
 
-  // ### OPDATERET: TILFØJER NYE KORTTYPER ###
   const widgetTypes: CanvasCard['type'][] = ['note', 'ai_readiness', 'weekly_calendar'];
 
-  // --- OPDATERET addCardToCanvas ---
-  // Tager nu imod en specifik type fra dropdown-menuen
   const addCardToCanvas = (newType: CanvasCard['type']) => {
     const newX = 40 + (canvasCards.length % 5) * 50; 
     const newY = 40 + (canvasCards.length % 5) * 50;
     
-    let newSize = { w: 256, h: 192 }; // Standardstørrelse (note)
+    let newSize = { w: 256, h: 192 }; 
     let newContent = { title: 'Nyt Kort', text: 'Dette er et nyt kort...' };
 
     if (newType === 'ai_readiness') {
-      newSize = { w: 320, h: 288 }; // ### KORREKTION: Øget højde
+      newSize = { w: 320, h: 288 }; 
       newContent.title = 'AI Readiness';
     } else if (newType === 'weekly_calendar') {
-      newSize = { w: 400, h: 300 }; // w-100
+      newSize = { w: 400, h: 300 }; 
       newContent.title = 'Ugekalender';
     }
-    // Hvis newType er 'note', bruges standard-størrelsen og -indholdet
 
     setCanvasCards(prevCards => [
       ...prevCards,
@@ -518,23 +456,47 @@ export default function DashboardClient({
         content: newContent,
         defaultPosition: { x: newX, y: newY },
         size: newSize,
-        ref: React.createRef<HTMLDivElement>() // KORREKTION: fjerner 'null'
+        ref: React.createRef<HTMLDivElement>() 
       }
     ]);
   };
 
-  // FUNKTION TIL AT GEMME KORTPOSITION (Uændret)
   const handleCardStop = (cardId: string, e: DraggableEvent, data: DraggableData) => {
     setCanvasCards(prevCards => 
       prevCards.map(card => 
         card.id === cardId 
-          ? { ...card, defaultPosition: { x: data.x, y: data.y } } // Opdater positionen i state
+          ? { ...card, defaultPosition: { x: data.x, y: data.y } } 
+          : card
+      )
+    );
+  };
+
+  const handleDeleteCard = (cardId: string) => {
+    setCanvasCards(prevCards => prevCards.filter(card => card.id !== cardId));
+  };
+
+  const handleCardResize = (cardId: string, e: React.SyntheticEvent, data: ResizeCallbackData) => {
+    const { size } = data;
+    setCanvasCards(prevCards =>
+      prevCards.map(card =>
+        card.id === cardId
+          ? { ...card, size: { w: size.width, h: size.height } }
+          : card
+      )
+    );
+  };
+
+  // OPGAVE 3: Funktion til at starte/stoppe redigering
+  const handleEditCard = (cardId: string, editing: boolean) => {
+    setCanvasCards(prevCards => 
+      prevCards.map(card => 
+        card.id === cardId 
+          ? { ...card, isEditing: editing } // Toggler redigeringstilstand
           : card
       )
     );
   };
   
-  // getDistance (Uændret)
   const getDistance = (touches: React.TouchList) => {
     if (touches.length < 2) return null;
     const dx = touches[0].clientX - touches[1].clientX;
@@ -542,7 +504,6 @@ export default function DashboardClient({
     return Math.sqrt(dx * dx + dy * dy);
   };
   
-  // getCenter (Uændret)
   const getCenter = (touches: React.TouchList) => {
     if (touches.length === 0) return null;
     if (touches.length === 1) return { x: touches[0].clientX, y: touches[0].clientY };
@@ -553,9 +514,13 @@ export default function DashboardClient({
     };
   };
 
-  // --- 1. MOUSE PAN LOGIC (Uændret) ---
+  // --- MOUSE PAN LOGIC (OPDATERET) ---
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.target instanceof HTMLElement && !e.target.closest('.canvas-handle')) {
+    if (e.target instanceof HTMLElement && 
+        !e.target.closest('.canvas-handle') && 
+        !e.target.closest('.canvas-delete-btn') &&
+        !e.target.closest('.react-resizable-handle') 
+    ) {
         setIsDraggingCanvas(true);
         dragStartPoint.current = { x: e.clientX, y: e.clientY }; 
         e.preventDefault();
@@ -578,13 +543,16 @@ export default function DashboardClient({
     setIsDraggingCanvas(false);
   }, []);
   
-  // --- 2. TOUCH/GESTURE LOGIC (Uændret) ---
+  // --- TOUCH/GESTURE LOGIC (OPDATERET) ---
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (e.target instanceof HTMLElement && e.target.closest('.canvas-handle')) {
+    if (e.target instanceof HTMLElement && (
+      e.target.closest('.canvas-handle') || 
+      e.target.closest('.canvas-delete-btn') ||
+      e.target.closest('.react-resizable-handle') 
+    )) {
         return;
     }
     if (e.touches.length === 2) {
-        // To fingre: Starter zoom
         const distance = getDistance(e.touches)!;
         touchStartDist.current = distance;
         lastTouchCenter.current = getCenter(e.touches);
@@ -595,7 +563,6 @@ export default function DashboardClient({
     }
   }, []);
 
-  // --- RETTET: handleTouchMove (fra dit screenshot) ---
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (e.touches.length === 2 && touchStartDist.current !== null) {
         const newDistance = getDistance(e.touches)!;
@@ -606,13 +573,13 @@ export default function DashboardClient({
         setCanvasScale(parseFloat(newScale.toFixed(2)));
         touchStartDist.current = newDistance;
     } else if (isDraggingCanvas && e.touches.length === 1) {
-        const dx = e.touches[0].clientX - dragStartPoint.current.x; // <-- RETTET
-        const dy = e.touches[0].clientY - dragStartPoint.current.y; // <-- RETTET
+        const dx = e.touches[0].clientX - dragStartPoint.current.x; 
+        const dy = e.touches[0].clientY - dragStartPoint.current.y; 
         setCanvasPosition(prev => ({
           x: prev.x + dx,
           y: prev.y + dy,
         }));
-        dragStartPoint.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; // <-- RETTET
+        dragStartPoint.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; 
     }
   }, [canvasScale, MIN_SCALE, MAX_SCALE, isDraggingCanvas, SCALE_STEP]); 
 
@@ -622,7 +589,6 @@ export default function DashboardClient({
     setIsDraggingCanvas(false);
   }, []);
   
-  // --- 3. MOUSE/TOUCHPAD SCROLL ZOOM LOGIC (Uændret) ---
   const handleWheel = useCallback((e: React.WheelEvent) => {
     let delta = -e.deltaY / 1000; 
     if (Math.abs(e.deltaY) < 10) {
@@ -635,7 +601,6 @@ export default function DashboardClient({
     });
   }, [MIN_SCALE, MAX_SCALE]);
 
-  // --- WINDOW LISTENERS (Uændret) ---
   useEffect(() => {
     if (activeTool !== 'canvas' || !canUseCanvas) return;
     const mouseMove = (e: MouseEvent) => handleMouseMove(e as unknown as React.MouseEvent);
@@ -653,7 +618,6 @@ export default function DashboardClient({
     };
   }, [isDraggingCanvas, activeTool, canUseCanvas, handleMouseMove, handleMouseUp]);
   
-  // *** ROBUST SCROLL/TOUCH-LOCK EFFECT (Uændret) ***
   useEffect(() => {
     if (activeTool !== 'canvas' || !canvasRef.current) return;
     const canvasElement = canvasRef.current;
@@ -667,6 +631,9 @@ export default function DashboardClient({
     };
     const onTouchMove = (e: TouchEvent) => {
         if (e.target === canvasElement || canvasElement.contains(e.target as Node)) {
+            if (e.target instanceof HTMLElement && e.target.closest('.react-resizable-handle')) {
+              return;
+            }
             e.preventDefault();
             e.stopPropagation();
             handleTouchMove(e as unknown as React.TouchEvent<HTMLDivElement>);
@@ -689,7 +656,6 @@ export default function DashboardClient({
         <QuickAccessBar t={t} accessLevel={accessLevel} lang={lang} />
       </div>
       
-      {/* OPDATERET: Sender nu 't' med ned til ViewModeToggle */}
       <div className="mb-4">
         <ViewModeToggle 
           activeTool={activeTool}
@@ -697,7 +663,7 @@ export default function DashboardClient({
           canUseCanvas={canUseCanvas}
           isDraggable={isDraggable}
           onAddWidget={addCardToCanvas}
-          t={t} // <-- TILFØJET
+          t={t} 
         />
       </div>
       
@@ -751,56 +717,93 @@ export default function DashboardClient({
             className="absolute inset-0 origin-top-left transition-transform duration-50"
             style={{ transform: `translate(${canvasPosition.x}px, ${canvasPosition.y}px) scale(${canvasScale})` }}
           >
-            {/* ### KORREKTION HER: Fjerner .filter() og implementerer "kort-på-kort" løsning ### */}
+            
+{/* OPGAVE 2: *** KERNEN I RETTELSEN ER HER *** */}
             {canvasCards.map((card) => {
               
-              // Bestemmer om SmartWidget skal have padding
               const hasPadding = card.type === 'note';
               const title = card.type === 'note' ? card.content?.title : 
                             card.type === 'ai_readiness' ? 'AI Readiness' : 
                             card.type === 'weekly_calendar' ? 'Ugekalender' : 'Widget';
 
+              // Vi sikrer, at indholdet indeni Resizable altid fylder 100% af sin forælder (Resizable)
+              const innerContentStyle = { width: '100%', height: '100%' };
+
               return (
                 <Draggable 
                   key={card.id}
-                  nodeRef={card.ref} // Nu er card.ref garanteret at være en RefObject<HTMLDivElement>
+                  nodeRef={card.ref} 
                   handle=".canvas-handle" 
                   defaultPosition={card.defaultPosition}
                   scale={canvasScale} 
                   onStop={(e, data) => handleCardStop(card.id, e, data)}
+                  // Stop træk, når vi resizer ELLER sletter
+                  cancel=".react-resizable-handle, .canvas-delete-btn" 
                 >
-                  <div 
-                    ref={card.ref} 
-                    style={{ 
-                      width: `${card.size.w}px`, 
-                      height: `${card.size.h}px`,
-                      // Vi skal bruge 'absolute' for at Draggable kan placere kortet
-                      position: 'absolute' 
+                  {/* 1. YDRE DIV (Flyttes af Draggable) */}
+                  {/* Denne div SKAL have 'position: absolute' og størrelsen fra state */}
+                  <div
+                    ref={card.ref}
+                    style={{
+                      position: 'absolute',
+                      width: card.size.w,
+                      height: card.size.h,
                     }}
-                  > 
-                    {/* ### KORREKTION: Betinget rendering af SmartWidget ### */}
-                    {card.type === 'note' ? (
-                      // Hvis det er en 'note', pak den ind i SmartWidget
-                      <SmartWidget className="h-full w-full shadow-lg" noPadding={!hasPadding}>
-                        <div className="canvas-handle cursor-move mb-2 p-1 -m-1 rounded-t-lg bg-gray-100 border-b border-gray-200">
-                          <h3 className="font-semibold text-black text-sm">{title}</h3>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-2">
-                          {card.content?.text ?? '...'}
-                        </p>
-                      </SmartWidget>
-                    ) : (
-                      // For 'ai_readiness' og 'weekly_calendar', render dem direkte
-                      // Vi tilføjer manuelt et håndtag (via .canvas-handle) og skygge
-                      <div className="h-full w-full shadow-lg rounded-xl canvas-handle cursor-move">
-                        {card.type === 'ai_readiness' && (
-                          <AiReadinessWidget userData={{ subscriptionLevel: accessLevel }} lang={lang} />
+                    className="relative group" // Til slet-knappen
+                  >
+                    {/* 2. RESIZABLE (Styrer størrelsen) */}
+                    <Resizable
+                      width={card.size.w}
+                      height={card.size.h}
+                      onResizeStop={(e, data) => handleCardResize(card.id, e, data)}
+                      // RETTELSE HER: Vi bruger nu onResize til at følge trækket, og stopper flytte-events.
+                      onResize={(e, data) => handleCardResize(card.id, e, data)} // **Kritisk** for at opdatere størrelsen løbende
+                      onResizeStart={(e) => {
+                          e.stopPropagation(); // Vigtigt: Stopper Draggable's pan/zoom
+                      }} 
+                      resizeHandles={['se']} 
+                      minConstraints={[150, 100]}
+                    >
+                      {/* 3. INDRE DIV (Indholdet) */}
+                      {/* Denne skal have 100% og overflow-hidden. Den er nu barn af Resizable. */}
+                      <div className="w-full h-full overflow-hidden" style={innerContentStyle}>
+                        
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation(); 
+                            handleDeleteCard(card.id);
+                          }}
+                          className="canvas-delete-btn absolute top-2 right-2 z-10 p-1 bg-white rounded-full text-black shadow-md transition-all
+                                     opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white"
+                          aria-label="Slet kort"
+                        >
+                          <X className="w-3 h-3" strokeWidth={3} />
+                        </button>
+
+                        {/* Selve kort-indholdet */}
+                        {card.type === 'note' ? (
+                          <SmartWidget className="h-full w-full shadow-lg" noPadding={!hasPadding}>
+                            <div className="canvas-handle cursor-move mb-2 p-1 -m-1 rounded-t-lg bg-gray-100 border-b border-gray-200">
+                              <h3 className="font-semibold text-black text-sm">{title}</h3>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-2">
+                              {card.content?.text ?? '...'}
+                            </p>
+                          </SmartWidget>
+                        ) : (
+                          <div className="h-full w-full shadow-lg rounded-xl canvas-handle cursor-move">
+                            {card.type === 'ai_readiness' && (
+                              <AiReadinessWidget userData={{ subscriptionLevel: accessLevel }} lang={lang} />
+                            )}
+                            {card.type === 'weekly_calendar' && (
+                              <CalendarWidget translations={t} lang={lang} />
+                            )}
+                          </div>
                         )}
-                        {card.type === 'weekly_calendar' && (
-                          <CalendarWidget translations={t} lang={lang} />
-                        )}
+                        {/* Slut på kort-indhold */}
+
                       </div>
-                    )}
+                    </Resizable>
                   </div>
                 </Draggable>
               );

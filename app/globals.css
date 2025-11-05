@@ -26,4 +26,40 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}/* Tilføj dette i bunden af app/globals.css */
+
+/* Styling til react-resizable håndtag */
+.react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  bottom: 0;
+  right: 0;
+  background: none;
+  border: none;
+  cursor: se-resize;
+  padding: 0;
+}
+
+/* Visuelt ikon for resize-håndtaget (lille grå trekant) */
+.react-resizable-handle::after {
+  content: '';
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 8px 8px;
+  border-color: transparent transparent rgba(0, 0, 0, 0.4) transparent;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+/* Gør det tydeligere ved hover */
+.react-resizable-handle:hover::after,
+.react-resizable-handle:active::after {
+  opacity: 1;
+  /* RETTELSE: Brugt direkte hex-værdi i stedet for theme() */
+  border-color: transparent transparent #fa8f4d transparent;
 }
