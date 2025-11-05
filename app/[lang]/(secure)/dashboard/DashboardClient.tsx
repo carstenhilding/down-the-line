@@ -24,7 +24,7 @@ import {
   X,                
 } from 'lucide-react';
 import Draggable, { DraggableData, DraggableEvent } from 'react-draggable'; 
-import { Resizable, ResizeCallbackData } from 'react-resizable'; // Importeret
+import { Resizable, ResizeCallbackData } from 'react-resizable'; 
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import Link from 'next/link';
 import { UserRole, SubscriptionLevel } from '@/lib/server/data';
@@ -63,21 +63,23 @@ interface DashboardProps {
 type GridItem = {
   id: string;
   priority: 'high' | 'medium' | 'low';
-  type: 'ai_readiness' | 'weekly_calendar' | 'message' | 'activity';
+  type: 'ai_readiness' | 'weekly_calendar' | 'message' | 'activity'; 
   data: any;
 };
 
 type CanvasCard = {
   id: string;
-  type: 'note' | 'ai_readiness' | 'weekly_calendar'; // Typer af kort
-  content?: { // Valgfrit, bruges kun til 'note'
+  type: 'note' | 'ai_readiness' | 'weekly_calendar'; 
+  content?: { 
     title: string;
     text: string;
   };
   defaultPosition: { x: number; y: number };
-  size: { w: number; h: number }; // Størrelse på kortet
-  ref: React.RefObject<HTMLDivElement | null>; // Tillader null som værdi
-  isEditing?: boolean; // OPGAVE 3: Lokal state for at vide om kortet redigeres
+  size: { w: number; h: number }; 
+  ref: React.RefObject<HTMLDivElement | null>; 
+  isEditing?: boolean; 
+  titleRef?: HTMLInputElement | null; // OPGAVE 3: Midlertidig reference til input felt
+  textRef?: HTMLTextAreaElement | null; // OPGAVE 3: Midlertidig reference til textarea felt
 };
 
 // --- START: KOMPONENTER TIL LAYOUT ---
@@ -363,7 +365,7 @@ export default function DashboardClient({
     { id: 'activity-feed', priority: 'low', type: 'activity', data: { feed: dashboardData.activityFeed, },},
   ];
 
- // Render-funktion (RETTET: Explicit typecast i switch-statement)
+  // Render-funktion (RETTET: Explicit typecast i switch-statement)
   const renderGridItem = (item: GridItem) => {
     // Tvinger 'item.type' til at være en af de kendte strenge, hvilket løser fejlen.
     switch (item.type as 'ai_readiness' | 'weekly_calendar' | 'message' | 'activity') {
@@ -485,13 +487,32 @@ export default function DashboardClient({
       )
     );
   };
-
+  
   // OPGAVE 3: Funktion til at starte/stoppe redigering
   const handleEditCard = (cardId: string, editing: boolean) => {
     setCanvasCards(prevCards => 
       prevCards.map(card => 
         card.id === cardId 
           ? { ...card, isEditing: editing } // Toggler redigeringstilstand
+          : card
+      )
+    );
+  };
+
+  // OPGAVE 3: Funktion til at gemme indhold fra redigering
+  const handleSaveCardContent = (
+    cardId: string, 
+    newTitle: string, 
+    newText: string
+  ) => {
+    setCanvasCards(prevCards => 
+      prevCards.map(card => 
+        card.id === cardId && card.type === 'note'
+          ? { 
+              ...card, 
+              content: { title: newTitle, text: newText }, 
+              isEditing: false // Afslut redigering
+            } 
           : card
       )
     );
@@ -718,7 +739,7 @@ export default function DashboardClient({
             style={{ transform: `translate(${canvasPosition.x}px, ${canvasPosition.y}px) scale(${canvasScale})` }}
           >
             
-{/* OPGAVE 2: *** KERNEN I RETTELSEN ER HER *** */}
+            {/* OPGAVE 3: Canvas kort løkke med resize og redigeringslogik */}
             {canvasCards.map((card) => {
               
               const hasPadding = card.type === 'note';
@@ -752,11 +773,11 @@ export default function DashboardClient({
                     className="relative group" // Til slet-knappen
                   >
                     {/* 2. RESIZABLE (Styrer størrelsen) */}
+                    {/* Denne wrapper SKAL OGSÅ have størrelsen fra state */}
                     <Resizable
                       width={card.size.w}
                       height={card.size.h}
                       onResizeStop={(e, data) => handleCardResize(card.id, e, data)}
-                      // RETTELSE HER: Vi bruger nu onResize til at følge trækket, og stopper flytte-events.
                       onResize={(e, data) => handleCardResize(card.id, e, data)} // **Kritisk** for at opdatere størrelsen løbende
                       onResizeStart={(e) => {
                           e.stopPropagation(); // Vigtigt: Stopper Draggable's pan/zoom
@@ -782,23 +803,74 @@ export default function DashboardClient({
 
                         {/* Selve kort-indholdet */}
                         {card.type === 'note' ? (
+                          // Hvis det er en 'note', pak den ind i SmartWidget
                           <SmartWidget className="h-full w-full shadow-lg" noPadding={!hasPadding}>
-                            <div className="canvas-handle cursor-move mb-2 p-1 -m-1 rounded-t-lg bg-gray-100 border-b border-gray-200">
-                              <h3 className="font-semibold text-black text-sm">{title}</h3>
+                            
+                            {/* OPGAVE 3: Redigerbar Titel */}
+                            <div 
+                                className="canvas-handle cursor-move mb-2 p-1 -m-1 rounded-t-lg bg-gray-100 border-b border-gray-200"
+                                onDoubleClick={() => handleEditCard(card.id, true)} // Dobbeltklik starter redigering
+                            >
+                                {card.isEditing ? (
+                                    <input
+                                        type="text"
+                                        // OPGAVE 3: Type Guard for at sikre, at 'el' er en HTMLInputElement
+                                        ref={el => { if (el) card.titleRef = el; }} 
+                                        defaultValue={title}
+                                        className="w-full font-semibold text-black text-sm p-1 border-b border-gray-300 focus:outline-none"
+                                        placeholder={lang === 'da' ? 'Note Titel' : 'Note Title'}
+                                        onKeyDown={(e) => { // Tryk på Enter gemmer (UX)
+                                            if (e.key === 'Enter') handleSaveCardContent(card.id, (e.target as HTMLInputElement).value, card.content?.text ?? '');
+                                        }}
+                                        autoFocus
+                                    />
+                                ) : (
+                                    <h3 className="font-semibold text-black text-sm px-1 py-1">{title}</h3>
+                                )}
                             </div>
-                            <p className="text-sm text-gray-600 mt-2">
-                              {card.content?.text ?? '...'}
-                            </p>
+                            
+                            {/* OPGAVE 3: Redigerbar Tekst */}
+                            {card.isEditing ? (
+                                <textarea
+                                    // OPGAVE 3: Type Guard for at sikre, at 'el' er en HTMLTextAreaElement
+                                    ref={el => { if (el) card.textRef = el; }}
+                                    defaultValue={card.content?.text ?? '...'}
+                                    className="w-full h-auto flex-1 text-sm text-gray-700 p-1 resize-none focus:outline-none border-gray-300"
+                                    placeholder={lang === 'da' ? 'Indtast din note her...' : 'Enter your note here...'}
+                                    rows={5}
+                                />
+                            ) : (
+                                <p className="text-sm text-gray-600 mt-2 p-1">
+                                    {card.content?.text ?? '...'}
+                                </p>
+                            )}
+
+                            {/* OPGAVE 3: Afslut Redigering Knap (med gemme-logik) */}
+                            {card.isEditing && (
+                                <button
+                                    // OPGAVE 3: Gemmer indholdet og afslutter redigering
+                                    onClick={() => handleSaveCardContent(
+                                        card.id, 
+                                        card.titleRef?.value ?? card.content?.title ?? '',
+                                        card.textRef?.value ?? card.content?.text ?? ''
+                                    )}
+                                    className="absolute bottom-1 right-1 px-2 py-1 text-[10px] bg-orange-500 text-white rounded hover:bg-orange-600 z-20"
+                                >
+                                    {/* OPGAVE 3: Bruger nu den oversatte nøgle */}
+                                    {t.saveNoteButton ?? 'Udfør'} 
+                                </button>
+                            )}
+
                           </SmartWidget>
                         ) : (
-                          <div className="h-full w-full shadow-lg rounded-xl canvas-handle cursor-move">
-                            {card.type === 'ai_readiness' && (
-                              <AiReadinessWidget userData={{ subscriptionLevel: accessLevel }} lang={lang} />
-                            )}
-                            {card.type === 'weekly_calendar' && (
-                              <CalendarWidget translations={t} lang={lang} />
-                            )}
-                          </div>
+                            <div className="h-full w-full shadow-lg rounded-xl canvas-handle cursor-move">
+                                {card.type === 'ai_readiness' && (
+                                    <AiReadinessWidget userData={{ subscriptionLevel: accessLevel }} lang={lang} />
+                                )}
+                                {card.type === 'weekly_calendar' && (
+                                    <CalendarWidget translations={t} lang={lang} />
+                                )}
+                            </div>
                         )}
                         {/* Slut på kort-indhold */}
 
