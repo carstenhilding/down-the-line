@@ -29,10 +29,15 @@ import { Responsive, WidthProvider } from 'react-grid-layout';
 import Link from 'next/link';
 import { UserRole, SubscriptionLevel } from '@/lib/server/data';
 
+// --- NYE IMPORTS TIL OPGAVE 4 ---
+import { getAuth } from "firebase/auth"; // Til at få den aktuelle bruger
+// RETTELSE: Importerer nu de rigtige typer
+import { getDashboardLayout, saveDashboardLayout, CanvasCardPersist, DashboardSettings } from '@/lib/server/dashboard';
+
 // Importerer de komponenter, vi har flyttet
 import AiReadinessWidget from '@/components/dashboard/widgets/AiReadinessWidget';
 import CalendarWidget from '@/components/dashboard/widgets/CalendarWidget'; 
-import MessageWidget from '@/components/dashboard/widgets/MessageWidget';
+import MessageWidget from '@/components/dashboard/widgets/MessageWidget'; 
 import ActivityWidget from '@/components/dashboard/widgets/ActivityWidget';
 import { SmartWidget } from '@/components/dashboard/widgets/SmartWidget';
 
@@ -67,19 +72,12 @@ type GridItem = {
   data: any;
 };
 
-type CanvasCard = {
-  id: string;
-  type: 'note' | 'ai_readiness' | 'weekly_calendar'; 
-  content?: { 
-    title: string;
-    text: string;
-  };
-  defaultPosition: { x: number; y: number };
-  size: { w: number; h: number }; 
+// OPGAVE 4: CanvasCard udvides nu fra den persistente type
+type CanvasCard = CanvasCardPersist & {
   ref: React.RefObject<HTMLDivElement | null>; 
   isEditing?: boolean; 
-  titleRef?: HTMLInputElement | null; // OPGAVE 3: Midlertidig reference til input felt
-  textRef?: HTMLTextAreaElement | null; // OPGAVE 3: Midlertidig reference til textarea felt
+  titleRef?: HTMLInputElement | null; 
+  textRef?: HTMLTextAreaElement | null; 
 };
 
 // --- START: KOMPONENTER TIL LAYOUT ---
@@ -145,20 +143,22 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
 };
 
 
-// 2. View Mode Toggle Bar (Uændret)
+// 2. View Mode Toggle Bar (Opdateret med onSaveLayout)
 const ViewModeToggle = ({ 
   activeTool, 
-  setActiveTool, 
+  handleActiveToolChange, 
   canUseCanvas, 
   isDraggable,
   onAddWidget,
+  onSaveLayout, 
   t 
 }: { 
   activeTool: 'grid' | 'canvas' | 'add';
-  setActiveTool: (tool: 'grid' | 'canvas' | 'add') => void;
+  handleActiveToolChange: (tool: 'grid' | 'canvas' | 'add') => void; 
   canUseCanvas: boolean;
   isDraggable: boolean;
   onAddWidget: (type: CanvasCard['type']) => void; 
+  onSaveLayout: () => Promise<void>;
   t: any 
 }) => {
   
@@ -188,7 +188,7 @@ const ViewModeToggle = ({
   };
 
   const handleAddGridItemClick = () => {
-    setActiveTool('add'); 
+    handleActiveToolChange('add'); 
     setIsDropdownOpen(false); 
   };
 
@@ -202,7 +202,7 @@ const ViewModeToggle = ({
         {/* Venstre side: Toggles */}
         <div className="flex items-center space-x-2">
             <button 
-                onClick={() => setActiveTool('grid')}
+                onClick={() => handleActiveToolChange('grid')} 
                 className={`${toggleBaseClass} ${
                   (activeTool === 'grid' || activeTool === 'add') ? activeClass : inactiveClass
                 }`}
@@ -213,7 +213,7 @@ const ViewModeToggle = ({
             
             {canUseCanvas && (
                 <button 
-                    onClick={() => setActiveTool('canvas')}
+                    onClick={() => handleActiveToolChange('canvas')} 
                     className={`${toggleBaseClass} ${activeTool === 'canvas' ? activeClass : inactiveClass}`}
                 >
                     <View className="h-4 w-4" />
@@ -288,8 +288,11 @@ const ViewModeToggle = ({
             </div>
 
 
-            {isDraggable && (
-                <button className={`${actionButtonBaseClass} bg-orange-500 text-white border-orange-500 hover:bg-orange-600 hover:border-orange-600`}>
+            {isDraggable && activeTool === 'canvas' && ( // Vis kun Save Layout i Canvas-mode
+                <button 
+                    onClick={onSaveLayout} 
+                    className={`${actionButtonBaseClass} bg-orange-500 text-white border-orange-500 hover:bg-orange-600 hover:border-orange-600`}
+                >
                     Save Layout
                 </button>
             )}
@@ -309,7 +312,8 @@ export default function DashboardClient({
   const t = useMemo(() => dict.dashboard || {}, [dict]);
   const lang = useMemo(() => dict.lang as 'da' | 'en', [dict.lang]);
 
-  const [activeTool, setActiveTool] = useState<'grid' | 'canvas' | 'add'>('grid');
+  // OPGAVE 4 RETTELSE: Starter i 'grid', da useEffect nu håndterer indlæsning
+  const [activeTool, setActiveTool] = useState<'grid' | 'canvas' | 'add'>('grid'); 
   
   const zoomControlRef = useRef<HTMLDivElement>(null); 
   const canvasRef = useRef<HTMLDivElement>(null); 
@@ -318,32 +322,44 @@ export default function DashboardClient({
   
   const [canvasPosition, setCanvasPosition] = useState({ x: 0, y: 0 }); 
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
+  
+  // *** RETTELSE TIL "KAN IKKE GIVE SLIP"-FEJL ***
+  // Vi bruger en ref til at holde styr på dragging-status for at undgå "stale state" i event listeners
+  const isDraggingCanvasRef = useRef(isDraggingCanvas);
+  useEffect(() => {
+    isDraggingCanvasRef.current = isDraggingCanvas;
+  }, [isDraggingCanvas]);
+  
   const dragStartPoint = useRef({ x: 0, y: 0 });
   const [canvasScale, setCanvasScale] = useState(1); 
   const MIN_SCALE = 0.5;
   const MAX_SCALE = 3.0;
   const SCALE_STEP = 0.05; 
 
-  const [canvasCards, setCanvasCards] = useState<CanvasCard[]>([
+  // OPGAVE 4: Initialt standardlayout (hvis intet er gemt)
+  const defaultInitialLayout: CanvasCardPersist[] = useMemo(() => ([
     {
       id: 'card-1',
       type: 'note',
       content: {
         title: 'Øvelses-Kort (Kort 1)',
-        text: 'Dette er det første kort. Prøv at flytte mig.'
+        text: 'Dette er det første kort. Prøv at flytte mig.' // Denne tekst gemmes, indtil den overskrives
       },
       defaultPosition: { x: 40, y: 40 },
       size: { w: 256, h: 192 }, 
-      ref: React.createRef<HTMLDivElement>() 
     },
     {
       id: 'card-2',
       type: 'ai_readiness', 
+      content: null, // *** RETTELSE AF "undefined"-FEJL ***
       defaultPosition: { x: 350, y: 100 },
       size: { w: 320, h: 288 }, 
-      ref: React.createRef<HTMLDivElement>() 
     }
-  ]);
+  ]), []);
+
+  // Starter nu tom, da vi henter gemt layout
+  const [canvasCards, setCanvasCards] = useState<CanvasCard[]>([]);
+  const [isLoadingLayout, setIsLoadingLayout] = useState(true); // OPGAVE 4: Ny loading state
 
   const canUseCanvas = useMemo(() => 
     ['Elite', 'Enterprise'].includes(accessLevel) ||
@@ -365,7 +381,7 @@ export default function DashboardClient({
     { id: 'activity-feed', priority: 'low', type: 'activity', data: { feed: dashboardData.activityFeed, },},
   ];
 
-  // Render-funktion (RETTET: Explicit typecast i switch-statement)
+  // Render-funktion
   const renderGridItem = (item: GridItem) => {
     // Tvinger 'item.type' til at være en af de kendte strenge, hvilket løser fejlen.
     switch (item.type as 'ai_readiness' | 'weekly_calendar' | 'message' | 'activity') {
@@ -416,6 +432,77 @@ export default function DashboardClient({
   }, [intelligentGrid, t, lang, accessLevel]); 
   
   // --- CANVAS FUNKTIONER ---
+  
+  // *** NY AUTOSAVE FUNKTION ***
+  // Denne funktion gemmer BÅDE kort og activeTool til databasen
+  const autosaveCanvasLayout = useCallback(async (cardsToSave: CanvasCard[], toolToSave: 'grid' | 'canvas' | 'add') => {
+    const auth = getAuth();
+    // VIGTIGT: Vi bruger en statisk ID, da auth.currentUser kan være null ved første kørsel
+    const userId = 'dtl-dev-123'; 
+    
+    // Vi stripper de flygtige (volatile) variabler (refs, isEditing, titleRef, textRef)
+    const layoutToSave: CanvasCardPersist[] = cardsToSave.map(card => ({
+      id: card.id,
+      type: card.type,
+      // *** RETTELSE AF "undefined"-FEJL: Sikrer at content er null, ikke undefined ***
+      content: card.content || null, 
+      defaultPosition: card.defaultPosition,
+      size: card.size,
+    }));
+    
+    const settingsToSave: DashboardSettings = {
+        cards: layoutToSave,
+        activeTool: toolToSave
+    };
+    
+    // Kald Firestore-gemmefunktionen
+    await saveDashboardLayout(userId, settingsToSave);
+  }, []); 
+
+  // OPGAVE 4: Ny funktion der gemmer activeTool i localStorage (Trin 2.A)
+  const handleActiveToolChange = (tool: 'grid' | 'canvas' | 'add') => {
+    setActiveTool(tool); 
+    // Autosave når brugeren skifter værktøj
+    autosaveCanvasLayout(canvasCards, tool);
+  };
+
+
+  // OPGAVE 4: Funktion til at læse layout ved opstart (INKL. activeTool)
+  useEffect(() => {
+    const auth = getAuth();
+    const user = auth.currentUser; 
+    
+    const userId = user?.uid || 'dtl-dev-123'; 
+
+    async function loadLayout() {
+      // Henter BÅDE kort og visning fra Firestore
+      const savedSettings = await getDashboardLayout(userId);
+      
+      let initialLayout: CanvasCardPersist[] = defaultInitialLayout;
+      let initialTool: 'grid' | 'canvas' | 'add' = 'grid';
+
+      if (savedSettings) {
+          // Sikrer at 'cards' ikke er undefined
+          initialLayout = savedSettings.cards && savedSettings.cards.length > 0 ? savedSettings.cards : defaultInitialLayout;
+          initialTool = savedSettings.activeTool || 'grid';
+      }
+
+      const cardsWithRefs: CanvasCard[] = initialLayout.map(card => ({
+        ...card,
+        ref: React.createRef<HTMLDivElement>(),
+        isEditing: false, 
+      }));
+
+      // Sæt BEGGE states FØR loading er færdig
+      setCanvasCards(cardsWithRefs);
+      setActiveTool(initialTool); 
+      
+      // Først nu er vi færdige med at indlæse
+      setIsLoadingLayout(false);
+    }
+    
+    loadLayout();
+  }, [defaultInitialLayout]); // Kører kun én gang ved opstart
 
   const renderCanvasCardContent = (card: CanvasCard) => {
     switch (card.type) {
@@ -440,52 +527,71 @@ export default function DashboardClient({
     const newY = 40 + (canvasCards.length % 5) * 50;
     
     let newSize = { w: 256, h: 192 }; 
-    let newContent = { title: 'Nyt Kort', text: 'Dette er et nyt kort...' };
+    // *** RETTELSE AF "undefined"-FEJL ***
+    let newContent: { title: string, text: string } | null = { title: 'Nyt Kort', text: 'Dette er et nyt kort...' };
 
     if (newType === 'ai_readiness') {
       newSize = { w: 320, h: 288 }; 
-      newContent.title = 'AI Readiness';
+      newContent = null; // AI Readiness har ikke 'content'
     } else if (newType === 'weekly_calendar') {
       newSize = { w: 400, h: 300 }; 
-      newContent.title = 'Ugekalender';
+      newContent = null; // Kalender har ikke 'content'
     }
 
-    setCanvasCards(prevCards => [
-      ...prevCards,
-      {
-        id: `card-${Date.now()}`,
-        type: newType,
-        content: newContent,
-        defaultPosition: { x: newX, y: newY },
-        size: newSize,
-        ref: React.createRef<HTMLDivElement>() 
-      }
-    ]);
+    setCanvasCards(prevCards => {
+        const newCard: CanvasCard = {
+            id: `card-${Date.now()}`,
+            type: newType,
+            content: newContent,
+            defaultPosition: { x: newX, y: newY },
+            size: newSize,
+            ref: React.createRef<HTMLDivElement>(), 
+            isEditing: newType === 'note' ? true : false,
+        };
+        const newCards = [...prevCards, newCard];
+        autosaveCanvasLayout(newCards, activeTool); // *** AUTOSAVE EFTER TILFØJELSE ***
+        return newCards;
+    });
   };
 
   const handleCardStop = (cardId: string, e: DraggableEvent, data: DraggableData) => {
-    setCanvasCards(prevCards => 
-      prevCards.map(card => 
-        card.id === cardId 
-          ? { ...card, defaultPosition: { x: data.x, y: data.y } } 
-          : card
-      )
-    );
+    setCanvasCards(prevCards => {
+        const newCards = prevCards.map(card => 
+            card.id === cardId 
+                ? { ...card, defaultPosition: { x: data.x, y: data.y } } 
+                : card
+        );
+        autosaveCanvasLayout(newCards, activeTool); // *** AUTOSAVE EFTER FLYTNING ***
+        return newCards;
+    });
   };
 
   const handleDeleteCard = (cardId: string) => {
-    setCanvasCards(prevCards => prevCards.filter(card => card.id !== cardId));
+    setCanvasCards(prevCards => {
+        const newCards = prevCards.filter(card => card.id !== cardId);
+        autosaveCanvasLayout(newCards, activeTool); // *** AUTOSAVE EFTER SLETNING ***
+        return newCards;
+    });
   };
 
   const handleCardResize = (cardId: string, e: React.SyntheticEvent, data: ResizeCallbackData) => {
     const { size } = data;
-    setCanvasCards(prevCards =>
-      prevCards.map(card =>
-        card.id === cardId
-          ? { ...card, size: { w: size.width, h: size.height } }
-          : card
-      )
-    );
+    // Tjekker om eventet er "stop" for at undgå at gemme på hvert resize-skridt
+    const isResizeStop = (e.type === 'mouseup' || e.type === 'touchend' || e.type === 'mouseleave');
+    
+    setCanvasCards(prevCards => {
+        const newCards = prevCards.map(card =>
+            card.id === cardId
+                ? { ...card, size: { w: size.width, h: size.height } }
+                : card
+        );
+        
+        if (isResizeStop) {
+            autosaveCanvasLayout(newCards, activeTool); // *** AUTOSAVE VED RESIZE STOP ***
+        }
+        
+        return newCards;
+    });
   };
   
   // OPGAVE 3: Funktion til at starte/stoppe redigering
@@ -493,29 +599,38 @@ export default function DashboardClient({
     setCanvasCards(prevCards => 
       prevCards.map(card => 
         card.id === cardId 
-          ? { ...card, isEditing: editing } // Toggler redigeringstilstand
+          ? { ...card, isEditing: editing } 
           : card
       )
     );
   };
 
-  // OPGAVE 3: Funktion til at gemme indhold fra redigering
+  // OPGAVE 3/4: Funktion til at gemme indhold fra redigering (NU MED AUTOSAVE)
   const handleSaveCardContent = (
     cardId: string, 
     newTitle: string, 
     newText: string
   ) => {
-    setCanvasCards(prevCards => 
-      prevCards.map(card => 
-        card.id === cardId && card.type === 'note'
-          ? { 
-              ...card, 
-              content: { title: newTitle, text: newText }, 
-              isEditing: false // Afslut redigering
-            } 
-          : card
-      )
-    );
+    setCanvasCards(prevCards => {
+        const newCards = prevCards.map(card => 
+            card.id === cardId && card.type === 'note'
+                ? { 
+                    ...card, 
+                    content: { title: newTitle, text: newText }, 
+                    isEditing: false 
+                } 
+                : card
+        );
+        autosaveCanvasLayout(newCards, activeTool); // *** AUTOSAVE EFTER REDIGERING ***
+        return newCards;
+    });
+  };
+
+  // OPGAVE 4: Funktion til at gemme layout (knyttet til knap)
+  const handleSaveLayout = async () => {
+    // Layout er allerede autosavet. Vi kalder den igen for at være sikker.
+    await autosaveCanvasLayout(canvasCards, activeTool);
+    alert('Layout Gemt!'); 
   };
   
   const getDistance = (touches: React.TouchList) => {
@@ -535,7 +650,46 @@ export default function DashboardClient({
     };
   };
 
-  // --- MOUSE PAN LOGIC (OPDATERET) ---
+  // --- MOUSE PAN LOGIC ---
+
+  // *** RETTELSE TIL "KAN IKKE GIVE SLIP"-FEJL ***
+  // Vi bruger useCallback uden dependencies for stabile funktioner
+  const handleMouseUp = useCallback(() => {
+    setIsDraggingCanvas(false);
+  }, []);
+
+  // Vi bruger en ref til at få den *aktuelle* state-værdi inde i event listeneren
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDraggingCanvasRef.current) return; // Tjekker ref i stedet for state
+    
+    const dx = e.clientX - dragStartPoint.current.x;
+    const dy = e.clientY - dragStartPoint.current.y;
+    setCanvasPosition(prev => ({
+      x: prev.x + dx,
+      y: prev.y + dy,
+    }));
+    dragStartPoint.current = { x: e.clientX, y: e.clientY }; 
+    e.preventDefault();
+  }, []); // Ingen dependencies, da vi bruger refs
+
+  // Denne useEffect håndterer nu kun at tilføje/fjerne de stabile listeners
+  useEffect(() => {
+    if (activeTool !== 'canvas' || !canUseCanvas) return;
+
+    const onMove = (e: MouseEvent) => handleMouseMove(e as unknown as React.MouseEvent);
+    const onUp = () => handleMouseUp();
+
+    // Vi tilføjer listeners, når canvas er aktivt
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+
+    // Vi fjerner dem, når komponenten cleaner op (hvis activeTool ændres)
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [activeTool, canUseCanvas, handleMouseMove, handleMouseUp]); // Dependencies er stabile
+  
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.target instanceof HTMLElement && 
         !e.target.closest('.canvas-handle') && 
@@ -547,24 +701,8 @@ export default function DashboardClient({
         e.preventDefault();
     }
   }, []);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDraggingCanvas) return;
-    const dx = e.clientX - dragStartPoint.current.x;
-    const dy = e.clientY - dragStartPoint.current.y;
-    setCanvasPosition(prev => ({
-      x: prev.x + dx,
-      y: prev.y + dy,
-    }));
-    dragStartPoint.current = { x: e.clientX, y: e.clientY }; 
-    e.preventDefault();
-  }, [isDraggingCanvas]);
-
-  const handleMouseUp = useCallback(() => {
-    setIsDraggingCanvas(false);
-  }, []);
   
-  // --- TOUCH/GESTURE LOGIC (OPDATERET) ---
+  // --- TOUCH/GESTURE LOGIC ---
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.target instanceof HTMLElement && (
       e.target.closest('.canvas-handle') || 
@@ -593,7 +731,7 @@ export default function DashboardClient({
         const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScaleRaw));
         setCanvasScale(parseFloat(newScale.toFixed(2)));
         touchStartDist.current = newDistance;
-    } else if (isDraggingCanvas && e.touches.length === 1) {
+    } else if (isDraggingCanvasRef.current && e.touches.length === 1) { // Bruger ref
         const dx = e.touches[0].clientX - dragStartPoint.current.x; 
         const dy = e.touches[0].clientY - dragStartPoint.current.y; 
         setCanvasPosition(prev => ({
@@ -602,7 +740,7 @@ export default function DashboardClient({
         }));
         dragStartPoint.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; 
     }
-  }, [canvasScale, MIN_SCALE, MAX_SCALE, isDraggingCanvas, SCALE_STEP]); 
+  }, [canvasScale, MIN_SCALE, MAX_SCALE]); 
 
   const handleTouchEnd = useCallback(() => {
     touchStartDist.current = null;
@@ -622,22 +760,6 @@ export default function DashboardClient({
     });
   }, [MIN_SCALE, MAX_SCALE]);
 
-  useEffect(() => {
-    if (activeTool !== 'canvas' || !canUseCanvas) return;
-    const mouseMove = (e: MouseEvent) => handleMouseMove(e as unknown as React.MouseEvent);
-    const mouseUp = handleMouseUp;
-    if (isDraggingCanvas) {
-      window.addEventListener('mousemove', mouseMove);
-      window.addEventListener('mouseup', mouseUp);
-    } else {
-      window.removeEventListener('mousemove', mouseMove);
-      window.removeEventListener('mouseup', mouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', mouseMove);
-      window.removeEventListener('mouseup', mouseUp);
-    };
-  }, [isDraggingCanvas, activeTool, canUseCanvas, handleMouseMove, handleMouseUp]);
   
   useEffect(() => {
     if (activeTool !== 'canvas' || !canvasRef.current) return;
@@ -658,7 +780,7 @@ export default function DashboardClient({
             e.preventDefault();
             e.stopPropagation();
             handleTouchMove(e as unknown as React.TouchEvent<HTMLDivElement>);
-        }
+        };
     };
 
     canvasElement.addEventListener('wheel', onWheel, { passive: false });
@@ -670,6 +792,15 @@ export default function DashboardClient({
   }, [activeTool, canvasRef, handleWheel, handleTouchMove]); 
   
   
+  // OPGAVE 4: Viser loading, mens layout indlæses
+  if (isLoadingLayout) {
+    return (
+      <div className="flex justify-center items-center h-[500px] text-gray-500 text-lg">
+        {lang === 'da' ? 'Indlæser dit personlige dashboard...' : 'Loading your personal dashboard...'}
+      </div>
+    );
+  }
+
   // Selve return-statement (OPDATERET)
   return (
     <> 
@@ -680,10 +811,11 @@ export default function DashboardClient({
       <div className="mb-4">
         <ViewModeToggle 
           activeTool={activeTool}
-          setActiveTool={setActiveTool}
+          handleActiveToolChange={handleActiveToolChange} 
           canUseCanvas={canUseCanvas}
           isDraggable={isDraggable}
           onAddWidget={addCardToCanvas}
+          onSaveLayout={handleSaveLayout} 
           t={t} 
         />
       </div>
@@ -696,14 +828,14 @@ export default function DashboardClient({
             cols={{ lg: 12, md: 12, sm: 6, xs: 4, xxs: 2 }} 
             rowHeight={100}
             isDraggable={isDraggable}
-            isResizable={isDraggable}
+            isResizable={isDraggable} 
             margin={[16, 16]} 
           >
             {gridElements}
           </ResponsiveGridLayout>
       )}
 
-      {/* FLYTBAR ZOOM KONTROL UI (Uændret) */}
+      {/* FLYTBAR ZOOM KONTROL UI */}
       {activeTool === 'canvas' && canUseCanvas && (
         <Draggable 
             nodeRef={zoomControlRef} 
@@ -739,7 +871,7 @@ export default function DashboardClient({
             style={{ transform: `translate(${canvasPosition.x}px, ${canvasPosition.y}px) scale(${canvasScale})` }}
           >
             
-            {/* OPGAVE 3: Canvas kort løkke med resize og redigeringslogik */}
+            {/* OPGAVE 3/4: Canvas kort løkke med persistence og redigeringslogik */}
             {canvasCards.map((card) => {
               
               const hasPadding = card.type === 'note';
@@ -856,7 +988,6 @@ export default function DashboardClient({
                                     )}
                                     className="absolute bottom-1 right-1 px-2 py-1 text-[10px] bg-orange-500 text-white rounded hover:bg-orange-600 z-20"
                                 >
-                                    {/* OPGAVE 3: Bruger nu den oversatte nøgle */}
                                     {t.saveNoteButton ?? 'Udfør'} 
                                 </button>
                             )}
