@@ -31,7 +31,6 @@ import { UserRole, SubscriptionLevel } from '@/lib/server/data';
 
 // --- NYE IMPORTS TIL OPGAVE 4 ---
 import { getAuth } from "firebase/auth"; // Til at få den aktuelle bruger
-// RETTELSE: Importerer nu de rigtige typer
 import { getDashboardLayout, saveDashboardLayout, CanvasCardPersist, DashboardSettings } from '@/lib/server/dashboard';
 
 // Importerer de komponenter, vi har flyttet
@@ -324,7 +323,6 @@ export default function DashboardClient({
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
   
   // *** RETTELSE TIL "KAN IKKE GIVE SLIP"-FEJL ***
-  // Vi bruger en ref til at holde styr på dragging-status for at undgå "stale state" i event listeners
   const isDraggingCanvasRef = useRef(isDraggingCanvas);
   useEffect(() => {
     isDraggingCanvasRef.current = isDraggingCanvas;
@@ -336,14 +334,15 @@ export default function DashboardClient({
   const MAX_SCALE = 3.0;
   const SCALE_STEP = 0.05; 
 
-  // OPGAVE 4: Initialt standardlayout (hvis intet er gemt)
+  // OPGAVE 4/5: Initialt standardlayout (hvis intet er gemt)
   const defaultInitialLayout: CanvasCardPersist[] = useMemo(() => ([
     {
       id: 'card-1',
       type: 'note',
+      // *** RETTELSE TRIN 5.1: Tom note ***
       content: {
-        title: 'Øvelses-Kort (Kort 1)',
-        text: 'Dette er det første kort. Prøv at flytte mig.' // Denne tekst gemmes, indtil den overskrives
+        title: 'Note',
+        text: '' 
       },
       defaultPosition: { x: 40, y: 40 },
       size: { w: 256, h: 192 }, 
@@ -351,7 +350,7 @@ export default function DashboardClient({
     {
       id: 'card-2',
       type: 'ai_readiness', 
-      content: null, // *** RETTELSE AF "undefined"-FEJL ***
+      content: null, 
       defaultPosition: { x: 350, y: 100 },
       size: { w: 320, h: 288 }, 
     }
@@ -383,7 +382,6 @@ export default function DashboardClient({
 
   // Render-funktion
   const renderGridItem = (item: GridItem) => {
-    // Tvinger 'item.type' til at være en af de kendte strenge, hvilket løser fejlen.
     switch (item.type as 'ai_readiness' | 'weekly_calendar' | 'message' | 'activity') {
       case 'ai_readiness':
         return <AiReadinessWidget userData={{ subscriptionLevel: accessLevel }} lang={lang} />;
@@ -434,17 +432,13 @@ export default function DashboardClient({
   // --- CANVAS FUNKTIONER ---
   
   // *** NY AUTOSAVE FUNKTION ***
-  // Denne funktion gemmer BÅDE kort og activeTool til databasen
   const autosaveCanvasLayout = useCallback(async (cardsToSave: CanvasCard[], toolToSave: 'grid' | 'canvas' | 'add') => {
     const auth = getAuth();
-    // VIGTIGT: Vi bruger en statisk ID, da auth.currentUser kan være null ved første kørsel
-    const userId = 'dtl-dev-123'; 
+    const userId = auth.currentUser?.uid || 'dtl-dev-123'; 
     
-    // Vi stripper de flygtige (volatile) variabler (refs, isEditing, titleRef, textRef)
     const layoutToSave: CanvasCardPersist[] = cardsToSave.map(card => ({
       id: card.id,
       type: card.type,
-      // *** RETTELSE AF "undefined"-FEJL: Sikrer at content er null, ikke undefined ***
       content: card.content || null, 
       defaultPosition: card.defaultPosition,
       size: card.size,
@@ -455,14 +449,12 @@ export default function DashboardClient({
         activeTool: toolToSave
     };
     
-    // Kald Firestore-gemmefunktionen
     await saveDashboardLayout(userId, settingsToSave);
   }, []); 
 
-  // OPGAVE 4: Ny funktion der gemmer activeTool i localStorage (Trin 2.A)
+  // OPGAVE 4: Ny funktion der gemmer activeTool
   const handleActiveToolChange = (tool: 'grid' | 'canvas' | 'add') => {
     setActiveTool(tool); 
-    // Autosave når brugeren skifter værktøj
     autosaveCanvasLayout(canvasCards, tool);
   };
 
@@ -475,14 +467,12 @@ export default function DashboardClient({
     const userId = user?.uid || 'dtl-dev-123'; 
 
     async function loadLayout() {
-      // Henter BÅDE kort og visning fra Firestore
       const savedSettings = await getDashboardLayout(userId);
       
       let initialLayout: CanvasCardPersist[] = defaultInitialLayout;
       let initialTool: 'grid' | 'canvas' | 'add' = 'grid';
 
       if (savedSettings) {
-          // Sikrer at 'cards' ikke er undefined
           initialLayout = savedSettings.cards && savedSettings.cards.length > 0 ? savedSettings.cards : defaultInitialLayout;
           initialTool = savedSettings.activeTool || 'grid';
       }
@@ -493,11 +483,9 @@ export default function DashboardClient({
         isEditing: false, 
       }));
 
-      // Sæt BEGGE states FØR loading er færdig
       setCanvasCards(cardsWithRefs);
       setActiveTool(initialTool); 
       
-      // Først nu er vi færdige med at indlæse
       setIsLoadingLayout(false);
     }
     
@@ -527,15 +515,18 @@ export default function DashboardClient({
     const newY = 40 + (canvasCards.length % 5) * 50;
     
     let newSize = { w: 256, h: 192 }; 
-    // *** RETTELSE AF "undefined"-FEJL ***
-    let newContent: { title: string, text: string } | null = { title: 'Nyt Kort', text: 'Dette er et nyt kort...' };
+    // *** RETTELSE TRIN 5.1: Nye noter starter tomme ***
+    let newContent: { title: string, text: string } | null = null; 
 
-    if (newType === 'ai_readiness') {
+    if (newType === 'note') {
+        newSize = { w: 256, h: 192 };
+        newContent = { title: 'Note', text: '' }; // Starter tom
+    } else if (newType === 'ai_readiness') {
       newSize = { w: 320, h: 288 }; 
-      newContent = null; // AI Readiness har ikke 'content'
+      newContent = null; 
     } else if (newType === 'weekly_calendar') {
       newSize = { w: 400, h: 300 }; 
-      newContent = null; // Kalender har ikke 'content'
+      newContent = null;
     }
 
     setCanvasCards(prevCards => {
@@ -546,7 +537,7 @@ export default function DashboardClient({
             defaultPosition: { x: newX, y: newY },
             size: newSize,
             ref: React.createRef<HTMLDivElement>(), 
-            isEditing: newType === 'note' ? true : false,
+            isEditing: newType === 'note' ? true : false, // Start note i redigeringstilstand
         };
         const newCards = [...prevCards, newCard];
         autosaveCanvasLayout(newCards, activeTool); // *** AUTOSAVE EFTER TILFØJELSE ***
@@ -653,14 +644,12 @@ export default function DashboardClient({
   // --- MOUSE PAN LOGIC ---
 
   // *** RETTELSE TIL "KAN IKKE GIVE SLIP"-FEJL ***
-  // Vi bruger useCallback uden dependencies for stabile funktioner
   const handleMouseUp = useCallback(() => {
     setIsDraggingCanvas(false);
   }, []);
 
-  // Vi bruger en ref til at få den *aktuelle* state-værdi inde i event listeneren
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDraggingCanvasRef.current) return; // Tjekker ref i stedet for state
+    if (!isDraggingCanvasRef.current) return; 
     
     const dx = e.clientX - dragStartPoint.current.x;
     const dy = e.clientY - dragStartPoint.current.y;
@@ -670,25 +659,22 @@ export default function DashboardClient({
     }));
     dragStartPoint.current = { x: e.clientX, y: e.clientY }; 
     e.preventDefault();
-  }, []); // Ingen dependencies, da vi bruger refs
+  }, []); 
 
-  // Denne useEffect håndterer nu kun at tilføje/fjerne de stabile listeners
   useEffect(() => {
     if (activeTool !== 'canvas' || !canUseCanvas) return;
 
     const onMove = (e: MouseEvent) => handleMouseMove(e as unknown as React.MouseEvent);
     const onUp = () => handleMouseUp();
 
-    // Vi tilføjer listeners, når canvas er aktivt
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
 
-    // Vi fjerner dem, når komponenten cleaner op (hvis activeTool ændres)
     return () => {
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
     };
-  }, [activeTool, canUseCanvas, handleMouseMove, handleMouseUp]); // Dependencies er stabile
+  }, [activeTool, canUseCanvas, handleMouseMove, handleMouseUp]); 
   
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.target instanceof HTMLElement && 
@@ -773,10 +759,10 @@ export default function DashboardClient({
         }
     };
     const onTouchMove = (e: TouchEvent) => {
+        if (e.target instanceof HTMLElement && e.target.closest('.react-resizable-handle')) {
+          return;
+        }
         if (e.target === canvasElement || canvasElement.contains(e.target as Node)) {
-            if (e.target instanceof HTMLElement && e.target.closest('.react-resizable-handle')) {
-              return;
-            }
             e.preventDefault();
             e.stopPropagation();
             handleTouchMove(e as unknown as React.TouchEvent<HTMLDivElement>);
@@ -871,11 +857,10 @@ export default function DashboardClient({
             style={{ transform: `translate(${canvasPosition.x}px, ${canvasPosition.y}px) scale(${canvasScale})` }}
           >
             
-            {/* OPGAVE 3/4: Canvas kort løkke med persistence og redigeringslogik */}
+            {/* OPGAVE 3/4/5: Canvas kort løkke med "Post-it" design */}
             {canvasCards.map((card) => {
               
-              const hasPadding = card.type === 'note';
-              const title = card.type === 'note' ? card.content?.title : 
+              const title = card.type === 'note' ? (card.content?.title || (lang === 'da' ? 'Note' : 'Note')) : 
                             card.type === 'ai_readiness' ? 'AI Readiness' : 
                             card.type === 'weekly_calendar' ? 'Ugekalender' : 'Widget';
 
@@ -935,65 +920,72 @@ export default function DashboardClient({
 
                         {/* Selve kort-indholdet */}
                         {card.type === 'note' ? (
-                          // Hvis det er en 'note', pak den ind i SmartWidget
-                          <SmartWidget className="h-full w-full shadow-lg" noPadding={!hasPadding}>
-                            
-                            {/* OPGAVE 3: Redigerbar Titel */}
-                            <div 
-                                className="canvas-handle cursor-move mb-2 p-1 -m-1 rounded-t-lg bg-gray-100 border-b border-gray-200"
-                                onDoubleClick={() => handleEditCard(card.id, true)} // Dobbeltklik starter redigering
-                            >
-                                {card.isEditing ? (
-                                    <input
+                          // OPGAVE 5.1: "WOW" Post-it Redesign
+                          // *** RETTELSE: Anvender CSS variabel [font-family:var(--font-permanent-marker),cursive] ***
+                          <div 
+                            className="canvas-handle h-full w-full bg-yellow-200 shadow-lg p-4 flex flex-col text-black transform -rotate-1 cursor-move [font-family:var(--font-permanent-marker),cursive]"
+                            onDoubleClick={(e) => {
+                                e.stopPropagation(); 
+                                handleEditCard(card.id, true);
+                            }}
+                          >
+                            {card.isEditing ? (
+                              <>
+                                {/* Redigerbar Titel */}
+                                <input
                                         type="text"
-                                        // OPGAVE 3: Type Guard for at sikre, at 'el' er en HTMLInputElement
                                         ref={el => { if (el) card.titleRef = el; }} 
                                         defaultValue={title}
-                                        className="w-full font-semibold text-black text-sm p-1 border-b border-gray-300 focus:outline-none"
+                                        className="[font-family:var(--font-permanent-marker),cursive] w-full text-black text-lg p-1 bg-transparent border-b border-yellow-400 focus:outline-none focus:border-orange-500" // <--- RETTET HER
                                         placeholder={lang === 'da' ? 'Note Titel' : 'Note Title'}
-                                        onKeyDown={(e) => { // Tryk på Enter gemmer (UX)
-                                            if (e.key === 'Enter') handleSaveCardContent(card.id, (e.target as HTMLInputElement).value, card.content?.text ?? '');
-                                        }}
-                                        autoFocus
-                                    />
-                                ) : (
-                                    <h3 className="font-semibold text-black text-sm px-1 py-1">{title}</h3>
-                                )}
-                            </div>
-                            
-                            {/* OPGAVE 3: Redigerbar Tekst */}
-                            {card.isEditing ? (
-                                <textarea
-                                    // OPGAVE 3: Type Guard for at sikre, at 'el' er en HTMLTextAreaElement
-                                    ref={el => { if (el) card.textRef = el; }}
-                                    defaultValue={card.content?.text ?? '...'}
-                                    className="w-full h-auto flex-1 text-sm text-gray-700 p-1 resize-none focus:outline-none border-gray-300"
-                                    placeholder={lang === 'da' ? 'Indtast din note her...' : 'Enter your note here...'}
-                                    rows={5}
+                                    onKeyDown={(e) => { 
+                                        if (e.key === 'Enter') handleSaveCardContent(card.id, (e.target as HTMLInputElement).value, card.content?.text ?? '');
+                                    }}
+                                    autoFocus
+                                    onDoubleClick={(e) => e.stopPropagation()} 
+                                    onClick={(e) => e.stopPropagation()} 
+                                    onMouseDown={(e) => e.stopPropagation()} 
                                 />
-                            ) : (
-                                <p className="text-sm text-gray-600 mt-2 p-1">
-                                    {card.content?.text ?? '...'}
-                                </p>
-                            )}
-
-                            {/* OPGAVE 3: Afslut Redigering Knap (med gemme-logik) */}
-                            {card.isEditing && (
+                                {/* Redigerbar Tekst */}
+                                <textarea
+                                    ref={el => { if (el) card.textRef = el; }}
+                                    defaultValue={card.content?.text ?? ''}
+                                    className="[font-family:var(--font-permanent-marker),cursive] w-full h-full flex-1 text-sm text-gray-800 p-1 bg-transparent resize-none focus:outline-none mt-2" // <--- RETTELSE HER
+                                    placeholder={lang === 'da' ? 'Note Titel' : 'Note Title'}
+                                    onDoubleClick={(e) => e.stopPropagation()} 
+                                    onClick={(e) => e.stopPropagation()} 
+                                    onMouseDown={(e) => e.stopPropagation()} 
+                                />
+                                {/* Udfør Knap */}
                                 <button
-                                    // OPGAVE 3: Gemmer indholdet og afslutter redigering
-                                    onClick={() => handleSaveCardContent(
-                                        card.id, 
-                                        card.titleRef?.value ?? card.content?.title ?? '',
-                                        card.textRef?.value ?? card.content?.text ?? ''
-                                    )}
-                                    className="absolute bottom-1 right-1 px-2 py-1 text-[10px] bg-orange-500 text-white rounded hover:bg-orange-600 z-20"
+                                    onClick={(e) => {
+                                        e.stopPropagation(); 
+                                        handleSaveCardContent(
+                                            card.id, 
+                                            card.titleRef?.value ?? card.content?.title ?? '',
+                                            card.textRef?.value ?? card.content?.text ?? ''
+                                        );
+                                    }}
+                                    onMouseDown={(e) => e.stopPropagation()} 
+                                    className="mt-2 px-3 py-1 text-xs bg-black text-white rounded hover:bg-gray-800 z-20 self-end"
                                 >
                                     {t.saveNoteButton ?? 'Udfør'} 
                                 </button>
+                              </>
+                            ) : (
+                              <>
+                                {/* Visnings-Titel */}
+                                <h3 className="text-black text-lg p-1">{title}</h3>
+                                
+                                {/* Visnings-Tekst (uden placeholder) */}
+                                <p className="text-sm text-gray-800 mt-2 p-1 whitespace-pre-wrap"> 
+                                  {card.content?.text}
+                                </p>
+                              </>
                             )}
-
-                          </SmartWidget>
+                          </div>
                         ) : (
+                            // Andet kort-indhold (AI Readiness, Kalender) - UÆNDRET
                             <div className="h-full w-full shadow-lg rounded-xl canvas-handle cursor-move">
                                 {card.type === 'ai_readiness' && (
                                     <AiReadinessWidget userData={{ subscriptionLevel: accessLevel }} lang={lang} />

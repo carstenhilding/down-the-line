@@ -8,8 +8,9 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        // Din eksisterende font-definition, som forbliver uændret
         sans: ['var(--font-inter)'],
+        // *** TRIN 5.1 (RETTET): Bruger nu en CSS Variabel ***
+        marker: ['var(--font-permanent-marker)', 'cursive'],
       },
       colors: {
         orange: {
@@ -30,7 +31,6 @@ const config: Config = {
     },
   },
   plugins: [
-    // NYT: Tilføjer container queries plugin
     require('@tailwindcss/container-queries'), 
   ],
 };

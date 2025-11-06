@@ -26,9 +26,9 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-}/* Tilføj dette i bunden af app/globals.css */
+}
 
-/* Styling til react-resizable håndtag */
+/* Styling til react-resizable håndtag (Fra Opgave 2) */
 .react-resizable-handle {
   position: absolute;
   width: 20px;
@@ -60,6 +60,5 @@ body {
 .react-resizable-handle:hover::after,
 .react-resizable-handle:active::after {
   opacity: 1;
-  /* RETTELSE: Brugt direkte hex-værdi i stedet for theme() */
-  border-color: transparent transparent #fa8f4d transparent;
+  border-color: transparent transparent #fa8f4d transparent; /* Orange farve */
 }

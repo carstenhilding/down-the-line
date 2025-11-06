@@ -1,6 +1,7 @@
 "use client"; // Skal bruge "use client" for at bruge usePathname
 
-import { Inter } from 'next/font/google';
+// *** TRIN 5.1 (RETTELSE): Importer Permanent_Marker ***
+import { Inter, Permanent_Marker } from 'next/font/google'; 
 import '../globals.css';
 import Header from '../../components/Header';
 import { LanguageProvider, Language } from '../../components/LanguageContext';
@@ -12,6 +13,14 @@ import { usePathname } from 'next/navigation'; // Importér usePathname
 const inter = Inter({ 
   subsets: ['latin'],
   variable: '--font-inter',
+});
+
+// *** TRIN 5.1 (RETTELSE): Initialiser Permanent_Marker ***
+const permanentMarker = Permanent_Marker({
+  subsets: ['latin'],
+  weight: '400', // Den har kun 400-vægt
+  variable: '--font-permanent-marker', // Definerer CSS-variablen
+  display: 'swap', // Sørger for, at tekst er synlig, mens den indlæses
 });
 
 export default function RootLayout({
@@ -30,7 +39,8 @@ export default function RootLayout({
   const isSecureRoute = pathname.includes('/dashboard') || pathname.includes('/trainer');
 
   return (
-    <html lang={lang} className={`${inter.variable}`}> 
+    // *** TRIN 5.1 (RETTELSE): Tilføj font-variablen til <html> ***
+    <html lang={lang} className={`${inter.variable} ${permanentMarker.variable}`}> 
       <body className={inter.className}>
         <LanguageProvider initialLang={lang}>
           
