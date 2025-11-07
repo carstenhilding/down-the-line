@@ -29,8 +29,8 @@ import { Responsive, WidthProvider } from 'react-grid-layout';
 import Link from 'next/link';
 import { UserRole, SubscriptionLevel } from '@/lib/server/data';
 
-// --- NYE IMPORTS TIL OPGAVE 4 ---
-import { getAuth } from "firebase/auth"; // Til at få den aktuelle bruger
+// --- RETTELSE: Importer onAuthStateChanged ---
+import { getAuth, onAuthStateChanged } from "firebase/auth"; 
 import { getDashboardLayout, saveDashboardLayout, CanvasCardPersist, DashboardSettings } from '@/lib/server/dashboard';
 
 // Importerer de komponenter, vi har flyttet
@@ -427,15 +427,17 @@ export default function DashboardClient({
   
   // --- CANVAS FUNKTIONER ---
   
-  // *** AUTOSAVE FUNKTION (Uændret) ***
+  // *** AUTOSAVE FUNKTION (RETTET) ***
   const autosaveCanvasLayout = useCallback(async (cardsToSave: CanvasCard[], toolToSave: 'grid' | 'canvas' | 'add') => {
     const auth = getAuth();
+    // RETTELSE: Bruger ægte UID, hvis den er der, ellers mock.
     const userId = auth.currentUser?.uid || 'dtl-dev-123'; 
     
     const layoutToSave: CanvasCardPersist[] = cardsToSave.map(card => ({
       id: card.id,
       type: card.type,
-      content: card.content || null, 
+      // RETTELSE: Gemmer KUN content for noter, ellers null.
+      content: card.type === 'note' ? card.content : null, 
       defaultPosition: card.defaultPosition,
       size: card.size,
     }));
@@ -446,47 +448,74 @@ export default function DashboardClient({
     };
     
     await saveDashboardLayout(userId, settingsToSave);
+  // RETTELSE: Fjernet dependencies. Denne funktion skal være stabil.
   }, []); 
 
   // OPGAVE 4: Ny funktion der gemmer activeTool
   const handleActiveToolChange = (tool: 'grid' | 'canvas' | 'add') => {
     setActiveTool(tool); 
+    // Gemmer den nye tool state, men med den *nuværende* kort-tilstand.
     autosaveCanvasLayout(canvasCards, tool);
   };
 
 
-  // OPGAVE 4: Funktion til at læse layout ved opstart (INKL. activeTool)
+  // ==================================================================
+  // ### DEN ENDELIGE RETTELSE ER HER ###
+  // Denne funktion venter nu på, at Firebase Auth er klar.
+  // ==================================================================
   useEffect(() => {
     const auth = getAuth();
-    const user = auth.currentUser; 
     
-    const userId = user?.uid || 'dtl-dev-123'; 
-
-    async function loadLayout() {
-      const savedSettings = await getDashboardLayout(userId);
+    // Sætter en listener op, der fyrer, når Firebase kender login-statussen
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       
-      let initialLayout: CanvasCardPersist[] = defaultInitialLayout;
-      let initialTool: 'grid' | 'canvas' | 'add' = 'grid';
-
-      if (savedSettings) {
-          initialLayout = savedSettings.cards && savedSettings.cards.length > 0 ? savedSettings.cards : defaultInitialLayout;
-          initialTool = savedSettings.activeTool || 'grid';
+      // Bestem hvilket UserID der skal bruges
+      let userId_to_load: string;
+      if (user) {
+        // Bruger er logget ind (f.eks. Super Admin)
+        userId_to_load = user.uid;
+      } else {
+        // Bruger er ikke logget ind (eller er ved at logge ud)
+        // Vi falder tilbage til mock-ID'et for udvikling
+        userId_to_load = 'dtl-dev-123';
       }
 
+      // 1. HENT GEMTE DATA med det korrekte ID
+      const savedSettings = await getDashboardLayout(userId_to_load);
+      
+      let initialLayout: CanvasCardPersist[];
+      let initialTool: 'grid' | 'canvas' | 'add';
+
+      // 2. BESLUT HVILKET LAYOUT DER SKAL VISES
+      if (savedSettings && savedSettings.cards && savedSettings.cards.length > 0) {
+          // Hvis der er gemt data: Brug det.
+          initialLayout = savedSettings.cards;
+          initialTool = savedSettings.activeTool || 'canvas'; // Gå til canvas, hvis det var sidst
+      } else {
+          // Hvis der IKKE er gemt data: Brug standardlayoutet.
+          initialLayout = defaultInitialLayout;
+          initialTool = 'grid'; // Start på grid
+      }
+
+      // 3. FORBERED KORTENE TIL RENDERING
       const cardsWithRefs: CanvasCard[] = initialLayout.map(card => ({
         ...card,
         ref: React.createRef<HTMLDivElement>(),
         isEditing: false, 
+        isNew: false, // Sørger for, at de ikke fader ind
       }));
 
+      // 4. OPDATER STATE OG VIS SIDEN
       setCanvasCards(cardsWithRefs);
       setActiveTool(initialTool); 
-      
-      setIsLoadingLayout(false);
-    }
+      setIsLoadingLayout(false); // Fjerner loading-skærmen
+    });
+
+    // Ryd op i listeneren, når komponenten forsvinder
+    return () => unsubscribe();
     
-    loadLayout();
-  }, [defaultInitialLayout]); // Kører kun én gang ved opstart
+  // Kører kun én gang, når komponenten mounter
+  }, [defaultInitialLayout]); // defaultInitialLayout er stabil (fra useMemo)
 
   const renderCanvasCardContent = (card: CanvasCard) => {
     switch (card.type) {
@@ -779,7 +808,7 @@ export default function DashboardClient({
   }, [activeTool, canvasRef, handleWheel, handleTouchMove]); 
   
   
-  // OPGAVE 4: Viser loading, mens layout indlæses
+  // OPGAVE 4: Viser loading, mens layout indlæses (RETTELSE)
   if (isLoadingLayout) {
     return (
       <div className="flex justify-center items-center h-[500px] text-gray-500 text-lg">
