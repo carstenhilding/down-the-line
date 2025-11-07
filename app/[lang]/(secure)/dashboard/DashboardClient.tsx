@@ -31,7 +31,7 @@ import { UserRole, SubscriptionLevel } from '@/lib/server/data';
 
 // --- RETTELSE: Importer onAuthStateChanged ---
 import { getAuth, onAuthStateChanged } from "firebase/auth"; 
-import { getDashboardLayout, saveDashboardLayout, CanvasCardPersist, DashboardSettings } from '@/lib/server/dashboard';
+import { getDashboardLayout, saveDashboardLayout, CanvasCardPersist, DashboardSettings, CanvasState } from '@/lib/server/dashboard';
 
 // Importerer de komponenter, vi har flyttet
 import AiReadinessWidget from '@/components/dashboard/widgets/AiReadinessWidget';
@@ -430,13 +430,11 @@ export default function DashboardClient({
   // *** AUTOSAVE FUNKTION (RETTET) ***
   const autosaveCanvasLayout = useCallback(async (cardsToSave: CanvasCard[], toolToSave: 'grid' | 'canvas' | 'add') => {
     const auth = getAuth();
-    // RETTELSE: Bruger ægte UID, hvis den er der, ellers mock.
     const userId = auth.currentUser?.uid || 'dtl-dev-123'; 
     
     const layoutToSave: CanvasCardPersist[] = cardsToSave.map(card => ({
       id: card.id,
       type: card.type,
-      // RETTELSE: Gemmer KUN content for noter, ellers null.
       content: card.type === 'note' ? card.content : null, 
       defaultPosition: card.defaultPosition,
       size: card.size,
@@ -444,17 +442,18 @@ export default function DashboardClient({
     
     const settingsToSave: DashboardSettings = {
         cards: layoutToSave,
-        activeTool: toolToSave
+        activeTool: toolToSave,
+        // RETTELSE: Gemmer den aktuelle zoom og position
+        canvasState: { zoom: canvasScale, position: canvasPosition } 
     };
     
     await saveDashboardLayout(userId, settingsToSave);
-  // RETTELSE: Fjernet dependencies. Denne funktion skal være stabil.
-  }, []); 
+  // RETTELSE: Tilføjet dependencies, så zoom/pan gemmes korrekt.
+  }, [canvasScale, canvasPosition]); 
 
   // OPGAVE 4: Ny funktion der gemmer activeTool
   const handleActiveToolChange = (tool: 'grid' | 'canvas' | 'add') => {
     setActiveTool(tool); 
-    // Gemmer den nye tool state, men med den *nuværende* kort-tilstand.
     autosaveCanvasLayout(canvasCards, tool);
   };
 
@@ -485,16 +484,26 @@ export default function DashboardClient({
       
       let initialLayout: CanvasCardPersist[];
       let initialTool: 'grid' | 'canvas' | 'add';
+      let initialZoom = 1;
+      let initialPosition = { x: 0, y: 0 };
 
       // 2. BESLUT HVILKET LAYOUT DER SKAL VISES
-      if (savedSettings && savedSettings.cards && savedSettings.cards.length > 0) {
-          // Hvis der er gemt data: Brug det.
-          initialLayout = savedSettings.cards;
-          initialTool = savedSettings.activeTool || 'canvas'; // Gå til canvas, hvis det var sidst
+      if (savedSettings) {
+          if (savedSettings.cards && savedSettings.cards.length > 0) {
+              initialLayout = savedSettings.cards;
+              initialTool = savedSettings.activeTool || 'canvas'; 
+          } else {
+              initialLayout = defaultInitialLayout;
+              initialTool = 'grid'; 
+          }
+          // Tjek for gemt zoom/pan
+          if (savedSettings.canvasState) {
+              initialZoom = savedSettings.canvasState.zoom;
+              initialPosition = savedSettings.canvasState.position;
+          }
       } else {
-          // Hvis der IKKE er gemt data: Brug standardlayoutet.
-          initialLayout = defaultInitialLayout;
-          initialTool = 'grid'; // Start på grid
+           initialLayout = defaultInitialLayout;
+           initialTool = 'grid'; 
       }
 
       // 3. FORBERED KORTENE TIL RENDERING
@@ -502,20 +511,24 @@ export default function DashboardClient({
         ...card,
         ref: React.createRef<HTMLDivElement>(),
         isEditing: false, 
-        isNew: false, // Sørger for, at de ikke fader ind
+        isNew: false, 
       }));
 
       // 4. OPDATER STATE OG VIS SIDEN
       setCanvasCards(cardsWithRefs);
-      setActiveTool(initialTool); 
+      setActiveTool(initialTool);
+      setCanvasScale(initialZoom);
+      setCanvasPosition(initialPosition);
+
       setIsLoadingLayout(false); // Fjerner loading-skærmen
-    });
+    
+    }); // <--- DENNE MANGLENDE PARENTES VAR FEJLEN
 
     // Ryd op i listeneren, når komponenten forsvinder
     return () => unsubscribe();
     
   // Kører kun én gang, når komponenten mounter
-  }, [defaultInitialLayout]); // defaultInitialLayout er stabil (fra useMemo)
+  }, [defaultInitialLayout]); 
 
   const renderCanvasCardContent = (card: CanvasCard) => {
     switch (card.type) {
@@ -535,7 +548,7 @@ export default function DashboardClient({
 
   const widgetTypes: CanvasCard['type'][] = ['note', 'ai_readiness', 'weekly_calendar'];
 
-  // *** ÆNDRING 2 (Opgave 5.3): `addCardToCanvas` opdateret ***
+  // *** `addCardToCanvas` (Uændret) ***
   const addCardToCanvas = (newType: CanvasCard['type']) => {
     const newX = 40 + (canvasCards.length % 5) * 50; 
     const newY = 40 + (canvasCards.length % 5) * 50;

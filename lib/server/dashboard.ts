@@ -17,10 +17,17 @@ export interface CanvasCardPersist {
   size: { w: number; h: number };
 }
 
+// NYT interface for zoom/pan
+export interface CanvasState {
+  zoom: number;
+  position: { x: number; y: number };
+}
+
 // OPGAVE 4 RETTELSE: Vi gemmer også visningstilstanden
 export interface DashboardSettings {
     cards: CanvasCardPersist[];
     activeTool: 'grid' | 'canvas' | 'add';
+    canvasState?: CanvasState; // Tilføjet (valgfri for bagudkompatibilitet)
 }
 
 /**
