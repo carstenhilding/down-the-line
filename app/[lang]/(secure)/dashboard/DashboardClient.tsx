@@ -77,6 +77,7 @@ type CanvasCard = CanvasCardPersist & {
   isEditing?: boolean; 
   titleRef?: HTMLInputElement | null; 
   textRef?: HTMLTextAreaElement | null; 
+  isNew?: boolean; // <-- ÆNDRING 1 (Opgave 5.3): Tilføjet for fade-in
 };
 
 // --- START: KOMPONENTER TIL LAYOUT ---
@@ -142,7 +143,7 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
 };
 
 
-// 2. View Mode Toggle Bar (Opdateret med onSaveLayout)
+// 2. View Mode Toggle Bar (Uændret)
 const ViewModeToggle = ({ 
   activeTool, 
   handleActiveToolChange, 
@@ -311,7 +312,6 @@ export default function DashboardClient({
   const t = useMemo(() => dict.dashboard || {}, [dict]);
   const lang = useMemo(() => dict.lang as 'da' | 'en', [dict.lang]);
 
-  // OPGAVE 4 RETTELSE: Starter i 'grid', da useEffect nu håndterer indlæsning
   const [activeTool, setActiveTool] = useState<'grid' | 'canvas' | 'add'>('grid'); 
   
   const zoomControlRef = useRef<HTMLDivElement>(null); 
@@ -322,7 +322,6 @@ export default function DashboardClient({
   const [canvasPosition, setCanvasPosition] = useState({ x: 0, y: 0 }); 
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
   
-  // *** RETTELSE TIL "KAN IKKE GIVE SLIP"-FEJL ***
   const isDraggingCanvasRef = useRef(isDraggingCanvas);
   useEffect(() => {
     isDraggingCanvasRef.current = isDraggingCanvas;
@@ -334,12 +333,10 @@ export default function DashboardClient({
   const MAX_SCALE = 3.0;
   const SCALE_STEP = 0.05; 
 
-  // OPGAVE 4/5: Initialt standardlayout (hvis intet er gemt)
   const defaultInitialLayout: CanvasCardPersist[] = useMemo(() => ([
     {
       id: 'card-1',
       type: 'note',
-      // *** RETTELSE TRIN 5.1: Tom note ***
       content: {
         title: 'Note',
         text: '' 
@@ -356,9 +353,8 @@ export default function DashboardClient({
     }
   ]), []);
 
-  // Starter nu tom, da vi henter gemt layout
   const [canvasCards, setCanvasCards] = useState<CanvasCard[]>([]);
-  const [isLoadingLayout, setIsLoadingLayout] = useState(true); // OPGAVE 4: Ny loading state
+  const [isLoadingLayout, setIsLoadingLayout] = useState(true); 
 
   const canUseCanvas = useMemo(() => 
     ['Elite', 'Enterprise'].includes(accessLevel) ||
@@ -431,7 +427,7 @@ export default function DashboardClient({
   
   // --- CANVAS FUNKTIONER ---
   
-  // *** NY AUTOSAVE FUNKTION ***
+  // *** AUTOSAVE FUNKTION (Uændret) ***
   const autosaveCanvasLayout = useCallback(async (cardsToSave: CanvasCard[], toolToSave: 'grid' | 'canvas' | 'add') => {
     const auth = getAuth();
     const userId = auth.currentUser?.uid || 'dtl-dev-123'; 
@@ -510,17 +506,17 @@ export default function DashboardClient({
 
   const widgetTypes: CanvasCard['type'][] = ['note', 'ai_readiness', 'weekly_calendar'];
 
+  // *** ÆNDRING 2 (Opgave 5.3): `addCardToCanvas` opdateret ***
   const addCardToCanvas = (newType: CanvasCard['type']) => {
     const newX = 40 + (canvasCards.length % 5) * 50; 
     const newY = 40 + (canvasCards.length % 5) * 50;
     
     let newSize = { w: 256, h: 192 }; 
-    // *** RETTELSE TRIN 5.1: Nye noter starter tomme ***
     let newContent: { title: string, text: string } | null = null; 
 
     if (newType === 'note') {
         newSize = { w: 256, h: 192 };
-        newContent = { title: 'Note', text: '' }; // Starter tom
+        newContent = { title: 'Note', text: '' }; 
     } else if (newType === 'ai_readiness') {
       newSize = { w: 320, h: 288 }; 
       newContent = null; 
@@ -529,20 +525,35 @@ export default function DashboardClient({
       newContent = null;
     }
 
+    // Opret det nye kort
+    const newCardId = `card-${Date.now()}`;
+    const newCard: CanvasCard = {
+        id: newCardId,
+        type: newType,
+        content: newContent,
+        defaultPosition: { x: newX, y: newY },
+        size: newSize,
+        ref: React.createRef<HTMLDivElement>(), 
+        isEditing: newType === 'note' ? true : false, 
+        isNew: true, // Markér som ny
+    };
+
+    // Tilføj kortet til state (stadig usynligt)
     setCanvasCards(prevCards => {
-        const newCard: CanvasCard = {
-            id: `card-${Date.now()}`,
-            type: newType,
-            content: newContent,
-            defaultPosition: { x: newX, y: newY },
-            size: newSize,
-            ref: React.createRef<HTMLDivElement>(), 
-            isEditing: newType === 'note' ? true : false, // Start note i redigeringstilstand
-        };
         const newCards = [...prevCards, newCard];
-        autosaveCanvasLayout(newCards, activeTool); // *** AUTOSAVE EFTER TILFØJELSE ***
+        autosaveCanvasLayout(newCards, activeTool); // Autosave
         return newCards;
     });
+
+    // Tving React til at "male" kortet som usynligt FØRST,
+    // og fjern derefter 'isNew' flaget for at starte CSS transition (fade-in).
+    setTimeout(() => {
+        setCanvasCards(prevCards => 
+            prevCards.map(card => 
+                card.id === newCardId ? { ...card, isNew: false } : card
+            )
+        );
+    }, 50); // 50ms forsinkelse er nok til at CSS kan nå at se 'opacity-0'
   };
 
   const handleCardStop = (cardId: string, e: DraggableEvent, data: DraggableData) => {
@@ -552,7 +563,7 @@ export default function DashboardClient({
                 ? { ...card, defaultPosition: { x: data.x, y: data.y } } 
                 : card
         );
-        autosaveCanvasLayout(newCards, activeTool); // *** AUTOSAVE EFTER FLYTNING ***
+        autosaveCanvasLayout(newCards, activeTool); 
         return newCards;
     });
   };
@@ -560,14 +571,13 @@ export default function DashboardClient({
   const handleDeleteCard = (cardId: string) => {
     setCanvasCards(prevCards => {
         const newCards = prevCards.filter(card => card.id !== cardId);
-        autosaveCanvasLayout(newCards, activeTool); // *** AUTOSAVE EFTER SLETNING ***
+        autosaveCanvasLayout(newCards, activeTool); 
         return newCards;
     });
   };
 
   const handleCardResize = (cardId: string, e: React.SyntheticEvent, data: ResizeCallbackData) => {
     const { size } = data;
-    // Tjekker om eventet er "stop" for at undgå at gemme på hvert resize-skridt
     const isResizeStop = (e.type === 'mouseup' || e.type === 'touchend' || e.type === 'mouseleave');
     
     setCanvasCards(prevCards => {
@@ -578,14 +588,13 @@ export default function DashboardClient({
         );
         
         if (isResizeStop) {
-            autosaveCanvasLayout(newCards, activeTool); // *** AUTOSAVE VED RESIZE STOP ***
+            autosaveCanvasLayout(newCards, activeTool); 
         }
         
         return newCards;
     });
   };
   
-  // OPGAVE 3: Funktion til at starte/stoppe redigering
   const handleEditCard = (cardId: string, editing: boolean) => {
     setCanvasCards(prevCards => 
       prevCards.map(card => 
@@ -596,7 +605,6 @@ export default function DashboardClient({
     );
   };
 
-  // OPGAVE 3/4: Funktion til at gemme indhold fra redigering (NU MED AUTOSAVE)
   const handleSaveCardContent = (
     cardId: string, 
     newTitle: string, 
@@ -612,14 +620,12 @@ export default function DashboardClient({
                 } 
                 : card
         );
-        autosaveCanvasLayout(newCards, activeTool); // *** AUTOSAVE EFTER REDIGERING ***
+        autosaveCanvasLayout(newCards, activeTool); 
         return newCards;
     });
   };
 
-  // OPGAVE 4: Funktion til at gemme layout (knyttet til knap)
   const handleSaveLayout = async () => {
-    // Layout er allerede autosavet. Vi kalder den igen for at være sikker.
     await autosaveCanvasLayout(canvasCards, activeTool);
     alert('Layout Gemt!'); 
   };
@@ -641,9 +647,7 @@ export default function DashboardClient({
     };
   };
 
-  // --- MOUSE PAN LOGIC ---
-
-  // *** RETTELSE TIL "KAN IKKE GIVE SLIP"-FEJL ***
+  // --- MOUSE PAN LOGIC (Uændret) ---
   const handleMouseUp = useCallback(() => {
     setIsDraggingCanvas(false);
   }, []);
@@ -663,13 +667,10 @@ export default function DashboardClient({
 
   useEffect(() => {
     if (activeTool !== 'canvas' || !canUseCanvas) return;
-
     const onMove = (e: MouseEvent) => handleMouseMove(e as unknown as React.MouseEvent);
     const onUp = () => handleMouseUp();
-
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
-
     return () => {
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
@@ -688,7 +689,7 @@ export default function DashboardClient({
     }
   }, []);
   
-  // --- TOUCH/GESTURE LOGIC ---
+  // --- TOUCH/GESTURE LOGIC (Uændret) ---
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.target instanceof HTMLElement && (
       e.target.closest('.canvas-handle') || 
@@ -857,14 +858,13 @@ export default function DashboardClient({
             style={{ transform: `translate(${canvasPosition.x}px, ${canvasPosition.y}px) scale(${canvasScale})` }}
           >
             
-            {/* OPGAVE 3/4/5: Canvas kort løkke med "Post-it" design */}
+            {/* *** ÆNDRING 3 (Opgave 5.3): Canvas kort løkke med "Fade-in" *** */}
             {canvasCards.map((card) => {
               
               const title = card.type === 'note' ? (card.content?.title || (lang === 'da' ? 'Note' : 'Note')) : 
                             card.type === 'ai_readiness' ? 'AI Readiness' : 
                             card.type === 'weekly_calendar' ? 'Ugekalender' : 'Widget';
 
-              // Vi sikrer, at indholdet indeni Resizable altid fylder 100% af sin forælder (Resizable)
               const innerContentStyle = { width: '100%', height: '100%' };
 
               return (
@@ -875,11 +875,8 @@ export default function DashboardClient({
                   defaultPosition={card.defaultPosition}
                   scale={canvasScale} 
                   onStop={(e, data) => handleCardStop(card.id, e, data)}
-                  // Stop træk, når vi resizer ELLER sletter
                   cancel=".react-resizable-handle, .canvas-delete-btn" 
                 >
-                  {/* 1. YDRE DIV (Flyttes af Draggable) */}
-                  {/* Denne div SKAL have 'position: absolute' og størrelsen fra state */}
                   <div
                     ref={card.ref}
                     style={{
@@ -887,23 +884,22 @@ export default function DashboardClient({
                       width: card.size.w,
                       height: card.size.h,
                     }}
-                    className="relative group" // Til slet-knappen
+                    // *** Tilføjet fade-in logik ***
+                    className={`relative group transition-opacity duration-300 ease-in-out ${
+                        card.isNew ? 'opacity-0' : 'opacity-100'
+                    }`}
                   >
-                    {/* 2. RESIZABLE (Styrer størrelsen) */}
-                    {/* Denne wrapper SKAL OGSÅ have størrelsen fra state */}
                     <Resizable
                       width={card.size.w}
                       height={card.size.h}
                       onResizeStop={(e, data) => handleCardResize(card.id, e, data)}
-                      onResize={(e, data) => handleCardResize(card.id, e, data)} // **Kritisk** for at opdatere størrelsen løbende
+                      onResize={(e, data) => handleCardResize(card.id, e, data)} 
                       onResizeStart={(e) => {
-                          e.stopPropagation(); // Vigtigt: Stopper Draggable's pan/zoom
+                          e.stopPropagation(); 
                       }} 
                       resizeHandles={['se']} 
                       minConstraints={[150, 100]}
                     >
-                      {/* 3. INDRE DIV (Indholdet) */}
-                      {/* Denne skal have 100% og overflow-hidden. Den er nu barn af Resizable. */}
                       <div className="w-full h-full overflow-hidden" style={innerContentStyle}>
                         
                         <button
@@ -918,10 +914,8 @@ export default function DashboardClient({
                           <X className="w-3 h-3" strokeWidth={3} />
                         </button>
 
-                        {/* Selve kort-indholdet */}
+                        {/* Selve kort-indholdet (Uændret fra Opgave 5.1) */}
                         {card.type === 'note' ? (
-                          // OPGAVE 5.1: "WOW" Post-it Redesign
-                          // *** RETTELSE: Anvender CSS variabel [font-family:var(--font-permanent-marker),cursive] ***
                           <div 
                             className="canvas-handle h-full w-full bg-yellow-200 shadow-lg p-4 flex flex-col text-black transform -rotate-1 cursor-move [font-family:var(--font-permanent-marker),cursive]"
                             onDoubleClick={(e) => {
@@ -931,13 +925,12 @@ export default function DashboardClient({
                           >
                             {card.isEditing ? (
                               <>
-                                {/* Redigerbar Titel */}
                                 <input
-                                        type="text"
-                                        ref={el => { if (el) card.titleRef = el; }} 
-                                        defaultValue={title}
-                                        className="[font-family:var(--font-permanent-marker),cursive] w-full text-black text-lg p-1 bg-transparent border-b border-yellow-400 focus:outline-none focus:border-orange-500" // <--- RETTET HER
-                                        placeholder={lang === 'da' ? 'Note Titel' : 'Note Title'}
+                                    type="text"
+                                    ref={el => { if (el) card.titleRef = el; }} 
+                                    defaultValue={title}
+                                    className="[font-family:var(--font-permanent-marker),cursive] w-full text-black text-lg p-1 bg-transparent border-b border-yellow-400 focus:outline-none focus:border-orange-500" 
+                                    placeholder={lang === 'da' ? 'Note Titel' : 'Note Title'}
                                     onKeyDown={(e) => { 
                                         if (e.key === 'Enter') handleSaveCardContent(card.id, (e.target as HTMLInputElement).value, card.content?.text ?? '');
                                     }}
@@ -946,17 +939,15 @@ export default function DashboardClient({
                                     onClick={(e) => e.stopPropagation()} 
                                     onMouseDown={(e) => e.stopPropagation()} 
                                 />
-                                {/* Redigerbar Tekst */}
                                 <textarea
                                     ref={el => { if (el) card.textRef = el; }}
                                     defaultValue={card.content?.text ?? ''}
-                                    className="[font-family:var(--font-permanent-marker),cursive] w-full h-full flex-1 text-sm text-gray-800 p-1 bg-transparent resize-none focus:outline-none mt-2" // <--- RETTELSE HER
+                                    className="[font-family:var(--font-permanent-marker),cursive] w-full h-full flex-1 text-sm text-gray-800 p-1 bg-transparent resize-none focus:outline-none mt-2" 
                                     placeholder={lang === 'da' ? 'Note Titel' : 'Note Title'}
                                     onDoubleClick={(e) => e.stopPropagation()} 
                                     onClick={(e) => e.stopPropagation()} 
                                     onMouseDown={(e) => e.stopPropagation()} 
                                 />
-                                {/* Udfør Knap */}
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation(); 
@@ -974,10 +965,7 @@ export default function DashboardClient({
                               </>
                             ) : (
                               <>
-                                {/* Visnings-Titel */}
                                 <h3 className="text-black text-lg p-1">{title}</h3>
-                                
-                                {/* Visnings-Tekst (uden placeholder) */}
                                 <p className="text-sm text-gray-800 mt-2 p-1 whitespace-pre-wrap"> 
                                   {card.content?.text}
                                 </p>
@@ -985,7 +973,6 @@ export default function DashboardClient({
                             )}
                           </div>
                         ) : (
-                            // Andet kort-indhold (AI Readiness, Kalender) - UÆNDRET
                             <div className="h-full w-full shadow-lg rounded-xl canvas-handle cursor-move">
                                 {card.type === 'ai_readiness' && (
                                     <AiReadinessWidget userData={{ subscriptionLevel: accessLevel }} lang={lang} />
