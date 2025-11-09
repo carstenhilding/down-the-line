@@ -1,3 +1,5 @@
+/* carstenhilding/down-the-line/down-the-line-bd20e924628d93cb5910197a8e498179e025d797/app/globals.css */
+
 /* Tailwind skal indlæses EFTER de andre imports */
 @import "tailwindcss";
 
@@ -61,4 +63,41 @@ body {
 .react-resizable-handle:active::after {
   opacity: 1;
   border-color: transparent transparent #fa8f4d transparent; /* Orange farve */
+}
+
+/* --- NYE KLASSER TIL OPGAVE 6 (CANVAS BAGGRUNDE) --- */
+
+/* Standard grå baggrund */
+.canvas-bg-default {
+  background-color: #f3f4f6; /* bg-gray-100 */
+}
+
+/* Ny "dot-grid" baggrund (Miro-stil) */
+.canvas-bg-dots {
+  background-color: #f3f4f6; /* Fallback farve */
+  /* Opretter et mønster af små grå prikker */
+  background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* --- NYE KLASSER TIL NOTE-FARVER --- */
+.note-bg-yellow { 
+  background-color: #fef9c3; /* Tailwind yellow-100 */
+  border-color: #fef08a; /* yellow-200 */
+}
+.note-bg-blue { 
+  background-color: #dbeafe; /* Tailwind blue-100 */
+  border-color: #bfdbfe; /* blue-200 */
+}
+.note-bg-pink { 
+  background-color: #fce7f3; /* Tailwind pink-100 */
+  border-color: #fbcfe8; /* pink-200 */
+}
+
+/* KLASSER TIL NOTE-SKRIFTTYPE */
+.note-font-marker {
+  font-family: var(--font-permanent-marker), cursive;
+}
+.note-font-sans {
+  font-family: var(--font-inter), sans-serif;
 }

@@ -18,7 +18,6 @@ export const secureI18n = {
       loading: "Loading dashboard...",
       welcomeTitle: "Welcome",
       logoutButton: "Log Out",
-      // NYE KNAPPER OG VÆRDIER
       createSessionTitle: "Create Session", 
       sessionPlannerSubtitle: "Session Planner", 
       createDrillTitle: "Create Drill", 
@@ -27,7 +26,6 @@ export const secureI18n = {
       playerSubtitle: "Player", 
       videoAnalysisTitle: "Video Analysis", 
       analysisRoomSubtitle: "Analysis Room", 
-
       createTrainingDesc: "Access the advanced training planner to design your next session.",
       viewTrainingTitle: "Session Library",
       viewTrainingDesc: "Review your saved drills, animations, and session plans.",
@@ -40,12 +38,17 @@ export const secureI18n = {
       readiness: "Readiness",
       top_scorer: "Top Scorer",
       injured_absent: "Injured & Absent",
-      saveNoteButton: "Done", // <-- NY LINJE
-      // --- TILFØJET HER (ENGELSK) ---
+      saveNoteButton: "Done", 
       addNote: "Add Note",
-      addAiReadiness: "Add AI Readiness",
-      addWeeklyCalendar: "Add Weekly Calendar",
-      addGridWidget: "Add Widget (Grid)"
+      addAiReadiness: "+ AI Readiness",
+      addWeeklyCalendar: "+ Weekly Calendar",
+      addGridWidget: "Add Widget (Grid)",
+      changeBackground: "Change Background",
+      saveLayout: "Save Layout",
+      addWidgetTitle: "Add Widget",
+      widgetAdded: "Already on canvas",
+      // NY LINJE
+      toggleFont: "Toggle Font"
     },
 
     // Sidebar Menu
@@ -106,7 +109,6 @@ export const secureI18n = {
       loading: "Indlæser dashboard...",
       welcomeTitle: "Velkommen",
       logoutButton: "Log Ud",
-      // NYE KNAPPER OG VÆRDIER
       createSessionTitle: "Træningsplan", 
       sessionPlannerSubtitle: "Træning Planlægning", 
       createDrillTitle: "Tegn Øvelse", 
@@ -115,7 +117,6 @@ export const secureI18n = {
       playerSubtitle: "Spiller", 
       videoAnalysisTitle: "Video Analyse", 
       analysisRoomSubtitle: "Analysis Room", 
-
       createTrainingDesc: "Adgang til den avancerede træningsplanlægger for at designe dit næste træningspas.",
       viewTrainingTitle: "Øvelsesbibliotek",
       viewTrainingDesc: "Gennemse dine gemte øvelser, animationer og træningsplaner.",
@@ -128,13 +129,17 @@ export const secureI18n = {
       readiness: "Klarhed",
       top_scorer: "Topscorer",
       injured_absent: "Skadet & Fravær",
-      saveNoteButton: "Udfør", // <-- NY LINJE
-      
-      // --- TILFØJET HER (DANSK) ---
+      saveNoteButton: "Udfør", 
       addNote: "Tilføj Note",
-      addAiReadiness: "Tilføj AI Readiness",
-      addWeeklyCalendar: "Tilføj Ugekalender",
-      addGridWidget: "Tilføj Widget (Grid)"
+      addAiReadiness: "+ AI Readiness",
+      addWeeklyCalendar: "+ Ugekalender",
+      addGridWidget: "Tilføj Widget (Grid)",
+      changeBackground: "Skift Baggrund",
+      saveLayout: "Gem Layout",
+      addWidgetTitle: "Tilføj Widget",
+      widgetAdded: "Allerede på canvas",
+      // NY LINJE
+      toggleFont: "Skift Skrifttype"
     },
 
     // Sidebar Menu
@@ -156,7 +161,6 @@ export const secureI18n = {
       animation_studio: "Animation Studio",
       animation_studio_desc: "Bring dine øvelser til live med animation",
       weeks_focus: "Ugens Fokus (Periodisering)",
-      // KORREKTION: Fjernede det vildfarne "s" fra linjen nedenfor
       weeks_focus_desc: "I denne uge (Uge 42) er det primære fokus på <1>Defensiv Organisation</1>, med sekundært fokus på hurtige omstillinger efter boldtab.",
       upcoming_sessions: "Kommende Træninger",
       my_libraries: "Mine Biblioteker",

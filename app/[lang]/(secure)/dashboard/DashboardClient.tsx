@@ -21,7 +21,10 @@ import {
   Package,          
   Zap,              
   Calendar,         
-  X,                
+  X,
+  Image as ImageIcon,
+  Save, 
+  RefreshCcw, // NYT IKON for skift skrifttype
 } from 'lucide-react';
 import Draggable, { DraggableData, DraggableEvent } from 'react-draggable'; 
 import { Resizable, ResizeCallbackData } from 'react-resizable'; 
@@ -29,9 +32,18 @@ import { Responsive, WidthProvider } from 'react-grid-layout';
 import Link from 'next/link';
 import { UserRole, SubscriptionLevel } from '@/lib/server/data';
 
-// --- RETTELSE: Importer onAuthStateChanged ---
 import { getAuth, onAuthStateChanged } from "firebase/auth"; 
-import { getDashboardLayout, saveDashboardLayout, CanvasCardPersist, DashboardSettings, CanvasState } from '@/lib/server/dashboard';
+// OPDATERET: Importerer de nye typer
+import { 
+  getDashboardLayout, 
+  saveDashboardLayout, 
+  CanvasCardPersist, 
+  DashboardSettings, 
+  CanvasState, 
+  CanvasBackground,
+  NoteColor,
+  NoteFont
+} from '@/lib/server/dashboard';
 
 // Importerer de komponenter, vi har flyttet
 import AiReadinessWidget from '@/components/dashboard/widgets/AiReadinessWidget';
@@ -39,6 +51,9 @@ import CalendarWidget from '@/components/dashboard/widgets/CalendarWidget';
 import MessageWidget from '@/components/dashboard/widgets/MessageWidget'; 
 import ActivityWidget from '@/components/dashboard/widgets/ActivityWidget';
 import { SmartWidget } from '@/components/dashboard/widgets/SmartWidget';
+
+// NYT (OPGAVE 7): Importer den nye værktøjslinje
+import CanvasToolbar from '@/components/dashboard/CanvasToolbar';
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -71,14 +86,43 @@ type GridItem = {
   data: any;
 };
 
-// OPGAVE 4: CanvasCard udvides nu fra den persistente type
-type CanvasCard = CanvasCardPersist & {
+// OPDATERET: Denne type matcher nu den nye datastruktur
+type CanvasCard = Omit<CanvasCardPersist, 'content'> & {
   ref: React.RefObject<HTMLDivElement | null>; 
   isEditing?: boolean; 
   titleRef?: HTMLInputElement | null; 
   textRef?: HTMLTextAreaElement | null; 
-  isNew?: boolean; // <-- ÆNDRING 1 (Opgave 5.3): Tilføjet for fade-in
+  isNew?: boolean; 
+  // Gør content specifikt for denne klient-komponent
+  content: { 
+    title: string;
+    text: string;
+    color: NoteColor;
+    font: NoteFont;
+  } | null; 
 };
+
+// ==================================================================
+// ### RETTELSE: FUNKTIONER FLYTTET UD ###
+// Disse to funktioner er flyttet uden for komponenten for at fjerne TS-fejl
+// ==================================================================
+const getDistance = (touches: React.TouchList) => {
+  if (touches.length < 2) return null;
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
+const getCenter = (touches: React.TouchList) => {
+  if (touches.length === 0) return null;
+  if (touches.length === 1) return { x: touches[0].clientX, y: touches[0].clientY };
+  
+  return {
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2,
+  };
+};
+
 
 // --- START: KOMPONENTER TIL LAYOUT ---
 
@@ -143,58 +187,22 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
 };
 
 
-// 2. View Mode Toggle Bar (Uændret)
+// 2. View Mode Toggle Bar (RETTET: Har nu kun Grid/Canvas knapper)
 const ViewModeToggle = ({ 
   activeTool, 
   handleActiveToolChange, 
   canUseCanvas, 
-  isDraggable,
-  onAddWidget,
-  onSaveLayout, 
   t 
 }: { 
   activeTool: 'grid' | 'canvas' | 'add';
   handleActiveToolChange: (tool: 'grid' | 'canvas' | 'add') => void; 
   canUseCanvas: boolean;
-  isDraggable: boolean;
-  onAddWidget: (type: CanvasCard['type']) => void; 
-  onSaveLayout: () => Promise<void>;
   t: any 
 }) => {
   
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null); 
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-            setIsDropdownOpen(false); 
-        }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []); 
-
   const toggleBaseClass = "flex items-center justify-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold transition-colors";
   const activeClass = "text-orange-500";
   const inactiveClass = "text-gray-500 hover:text-black";
-  const actionButtonBaseClass = "flex items-center justify-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-colors border";
-  
-  const handleAddCanvasItemClick = (type: CanvasCard['type']) => {
-    onAddWidget(type); 
-    setIsDropdownOpen(false); 
-  };
-
-  const handleAddGridItemClick = () => {
-    handleActiveToolChange('add'); 
-    setIsDropdownOpen(false); 
-  };
-
-  const showCanvasOptions = activeTool === 'canvas' && canUseCanvas;
-  const showGridOptions = (activeTool === 'grid' || activeTool === 'add') && isDraggable;
-  const showMenuOptions = showCanvasOptions || showGridOptions;
 
   return (
     <div className="flex items-center justify-between mb-4">
@@ -222,85 +230,98 @@ const ViewModeToggle = ({
             )}
         </div>
 
-        {/* Højre side: Knapper */}
+        {/* Højre side: FJERNET (Knapper er flyttet til CanvasToolbar) */}
         <div className="flex items-center gap-2">
-            
-            <div ref={dropdownRef} className="relative"> 
-              {(isDraggable || activeTool === 'canvas') && (
-                  <button 
-                      onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
-                      className={`${toggleBaseClass} ${
-                        isDropdownOpen || activeTool === 'add' ? activeClass : inactiveClass
-                      }`}
-                  >
-                      <PlusCircle className="h-4 w-4" />
-                      Widget
-                  </button>
-              )}
-
-              {isDropdownOpen && (
-                  <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-56 bg-white rounded-lg shadow-xl border z-10 p-1.5 space-y-1"> 
-                      
-                      {showCanvasOptions && (
-                          <>
-                              <button 
-                                  onClick={() => handleAddCanvasItemClick('note')}
-                                  className="flex items-center w-full text-left px-2 py-1.5 text-xs text-gray-800 rounded-md hover:bg-orange-500 hover:text-white group"
-                              >
-                                  <StickyNote className="h-4 w-4 mr-3 text-gray-500 group-hover:text-white" />
-                                  {t.addNote ?? 'Tilføj Note'}
-                              </button>
-                              <button 
-                                  onClick={() => handleAddCanvasItemClick('ai_readiness')}
-                                  className="flex items-center w-full text-left px-2 py-1.5 text-xs text-gray-800 rounded-md hover:bg-orange-500 hover:text-white group"
-                              >
-                                  <Zap className="h-4 w-4 mr-3 text-gray-500 group-hover:text-white" />
-                                  {t.addAiReadiness ?? 'Tilføj AI Readiness'}
-                              </button>
-                              <button 
-                                  onClick={() => handleAddCanvasItemClick('weekly_calendar')}
-                                  className="flex items-center w-full text-left px-2 py-1.5 text-xs text-gray-800 rounded-md hover:bg-orange-500 hover:text-white group"
-                              >
-                                  <Calendar className="h-4 w-4 mr-3 text-gray-500 group-hover:text-white" />
-                                  {t.addWeeklyCalendar ?? 'Tilføj Ugekalender'}
-                              </button>
-                          </>
-                      )}
-
-                      {showGridOptions && (
-                          <>
-                              <button 
-                                  onClick={handleAddGridItemClick} 
-                                  className="flex items-center w-full text-left px-2 py-1.5 text-xs text-gray-800 rounded-md hover:bg-orange-500 hover:text-white group"
-                              >
-                                  <Package className="h-4 w-4 mr-3 text-gray-500 group-hover:text-white" />
-                                  {t.addGridWidget ?? 'Tilføj Widget (Grid)'}
-                              </button>
-                          </>
-                      )}
-
-                      {!showMenuOptions && (
-                           <p className="p-2 text-xs text-center text-gray-500">Ingen handlinger tilgængelige her.</p>
-                      )}
-                      
-                  </div>
-              )}
-            </div>
-
-
-            {isDraggable && activeTool === 'canvas' && ( // Vis kun Save Layout i Canvas-mode
-                <button 
-                    onClick={onSaveLayout} 
-                    className={`${actionButtonBaseClass} bg-orange-500 text-white border-orange-500 hover:bg-orange-600 hover:border-orange-600`}
-                >
-                    Save Layout
-                </button>
-            )}
+            {/* Tom */}
         </div>
     </div>
   );
 };
 // === SLUT PÅ TOGGLE BAR ===
+
+
+// ==================================================================
+// ### OPDATERET (OPGAVE 7): WIDGET POPUP-MENU (MERE KOMPAKT) ###
+// ==================================================================
+const WidgetModal = ({
+  t,
+  onClose,
+  onAddWidget,
+  currentCards,
+}: {
+  t: any;
+  onClose: () => void;
+  onAddWidget: (type: CanvasCardPersist['type']) => void;
+  currentCards: CanvasCard[];
+}) => {
+  
+  const availableWidgets: { type: CanvasCardPersist['type']; name: string; icon: React.ElementType }[] = [
+    { type: 'ai_readiness', name: t.addAiReadiness, icon: Zap },
+    { type: 'weekly_calendar', name: t.addWeeklyCalendar, icon: Calendar },
+  ];
+
+  const addedWidgetTypes = useMemo(() => 
+    new Set(currentCards.map(card => card.type)),
+    [currentCards]
+  );
+
+  return (
+    // Baggrund (overlay)
+    <div 
+      className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+      onClick={onClose} // Lukker, hvis man klikker på baggrunden
+    >
+      {/* Selve popup-menuen (OPDATERET: smallere og mindre padding) */}
+      <div 
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-50 w-full max-w-xs" // max-w-sm -> max-w-xs
+        onClick={(e) => e.stopPropagation()} // Stopper lukning, hvis man klikker i menuen
+      >
+        <div className="p-3 border-b border-gray-200 flex justify-between items-center"> {/* p-4 -> p-3 */}
+          <h3 className="text-base font-semibold text-black">{t.addWidgetTitle ?? 'Tilføj Widget'}</h3> {/* text-lg -> text-base */}
+          <button
+            onClick={onClose}
+            className="p-1 rounded-full text-gray-500 hover:bg-gray-100"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* OPDATERET: mindre padding og spacing */}
+        <div className="p-2 space-y-1"> 
+          {availableWidgets.map((widget) => {
+            const isAdded = addedWidgetTypes.has(widget.type);
+            // const Icon = widget.icon; // FJERNET
+
+            return (
+              <button
+                key={widget.type}
+                onClick={() => {
+                  if (!isAdded) {
+                    onAddWidget(widget.type);
+                    onClose();
+                  }
+                }}
+                disabled={isAdded} // Deaktiverer knappen, hvis den er tilføjet
+                className="flex items-center w-full p-2 rounded-lg transition-colors 
+                           disabled:opacity-50 disabled:cursor-not-allowed
+                           hover:bg-gray-50" // p-3 -> p-2
+              >
+                {/* FJERNET: Ikon-div'en er fjernet */}
+                
+                <span className={`font-medium text-sm ${isAdded ? 'text-gray-400' : 'text-black'}`}> {/* font-semibold -> font-medium text-sm */}
+                  {widget.name} {/* Viser nu "+ AI Readiness" osv. */}
+                </span>
+
+                {/* FJERNET: "(Already on canvas)" teksten er fjernet */}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+// === SLUT PÅ WIDGET MODAL ===
 
 
 export default function DashboardClient({
@@ -314,7 +335,6 @@ export default function DashboardClient({
 
   const [activeTool, setActiveTool] = useState<'grid' | 'canvas' | 'add'>('grid'); 
   
-  const zoomControlRef = useRef<HTMLDivElement>(null); 
   const canvasRef = useRef<HTMLDivElement>(null); 
   const touchStartDist = useRef<number | null>(null); 
   const lastTouchCenter = useRef<{ x: number; y: number } | null>(null); 
@@ -333,29 +353,38 @@ export default function DashboardClient({
   const MAX_SCALE = 3.0;
   const SCALE_STEP = 0.05; 
 
-  const defaultInitialLayout: CanvasCardPersist[] = useMemo(() => ([
+  // OPDATERET: Default note har nu farve og font
+  const defaultInitialLayout: CanvasCard[] = useMemo(() => ([
     {
       id: 'card-1',
       type: 'note',
       content: {
         title: 'Note',
-        text: '' 
+        text: '',
+        color: 'yellow',
+        font: 'marker'
       },
       defaultPosition: { x: 40, y: 40 },
-      size: { w: 256, h: 192 }, 
+      size: { w: 256, h: 192 },
+      ref: React.createRef<HTMLDivElement>() // Tilføjet ref her
     },
     {
       id: 'card-2',
       type: 'ai_readiness', 
       content: null, 
       defaultPosition: { x: 350, y: 100 },
-      size: { w: 320, h: 288 }, 
+      size: { w: 320, h: 288 },
+      ref: React.createRef<HTMLDivElement>() // Tilføjet ref her
     }
   ]), []);
 
   const [canvasCards, setCanvasCards] = useState<CanvasCard[]>([]);
   const [isLoadingLayout, setIsLoadingLayout] = useState(true); 
 
+  const [canvasBackground, setCanvasBackground] = useState<CanvasBackground>('default');
+  
+  const [isWidgetModalOpen, setIsWidgetModalOpen] = useState(false);
+  
   const canUseCanvas = useMemo(() => 
     ['Elite', 'Enterprise'].includes(accessLevel) ||
     [UserRole.Tester, UserRole.Developer].includes(userRole),
@@ -427,14 +456,22 @@ export default function DashboardClient({
   
   // --- CANVAS FUNKTIONER ---
   
-  // *** AUTOSAVE FUNKTION (RETTET) ***
-  const autosaveCanvasLayout = useCallback(async (cardsToSave: CanvasCard[], toolToSave: 'grid' | 'canvas' | 'add') => {
+  // *** AUTOSAVE FUNKTION (OPDATERET) ***
+  const autosaveCanvasLayout = useCallback(async (
+    cardsToSave: CanvasCard[], 
+    toolToSave: 'grid' | 'canvas' | 'add',
+    bgToSave?: CanvasBackground,
+    scaleToSave?: number,
+    posToSave?: { x: number, y: number }
+  ) => {
     const auth = getAuth();
     const userId = auth.currentUser?.uid || 'dtl-dev-123'; 
     
+    // OPDATERET: Mapper den nye CanvasCard-type tilbage til Persist-typen
     const layoutToSave: CanvasCardPersist[] = cardsToSave.map(card => ({
       id: card.id,
       type: card.type,
+      // Sikrer, at 'content' gemmes korrekt for noter, og 'null' for andre
       content: card.type === 'note' ? card.content : null, 
       defaultPosition: card.defaultPosition,
       size: card.size,
@@ -443,15 +480,16 @@ export default function DashboardClient({
     const settingsToSave: DashboardSettings = {
         cards: layoutToSave,
         activeTool: toolToSave,
-        // RETTELSE: Gemmer den aktuelle zoom og position
-        canvasState: { zoom: canvasScale, position: canvasPosition } 
+        canvasState: { 
+          zoom: scaleToSave ?? canvasScale, 
+          position: posToSave ?? canvasPosition, 
+          background: bgToSave ?? canvasBackground 
+        } 
     };
     
     await saveDashboardLayout(userId, settingsToSave);
-  // RETTELSE: Tilføjet dependencies, så zoom/pan gemmes korrekt.
-  }, [canvasScale, canvasPosition]); 
+  }, [canvasScale, canvasPosition, canvasBackground]); 
 
-  // OPGAVE 4: Ny funktion der gemmer activeTool
   const handleActiveToolChange = (tool: 'grid' | 'canvas' | 'add') => {
     setActiveTool(tool); 
     autosaveCanvasLayout(canvasCards, tool);
@@ -459,35 +497,28 @@ export default function DashboardClient({
 
 
   // ==================================================================
-  // ### DEN ENDELIGE RETTELSE ER HER ###
-  // Denne funktion venter nu på, at Firebase Auth er klar.
+  // ### KORREKT INDLÆSNING (OPDATERET) ###
   // ==================================================================
   useEffect(() => {
     const auth = getAuth();
     
-    // Sætter en listener op, der fyrer, når Firebase kender login-statussen
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       
-      // Bestem hvilket UserID der skal bruges
       let userId_to_load: string;
       if (user) {
-        // Bruger er logget ind (f.eks. Super Admin)
         userId_to_load = user.uid;
       } else {
-        // Bruger er ikke logget ind (eller er ved at logge ud)
-        // Vi falder tilbage til mock-ID'et for udvikling
         userId_to_load = 'dtl-dev-123';
       }
 
-      // 1. HENT GEMTE DATA med det korrekte ID
       const savedSettings = await getDashboardLayout(userId_to_load);
       
       let initialLayout: CanvasCardPersist[];
       let initialTool: 'grid' | 'canvas' | 'add';
       let initialZoom = 1;
       let initialPosition = { x: 0, y: 0 };
+      let initialBackground: CanvasBackground = 'default';
 
-      // 2. BESLUT HVILKET LAYOUT DER SKAL VISES
       if (savedSettings) {
           if (savedSettings.cards && savedSettings.cards.length > 0) {
               initialLayout = savedSettings.cards;
@@ -496,38 +527,54 @@ export default function DashboardClient({
               initialLayout = defaultInitialLayout;
               initialTool = 'grid'; 
           }
-          // Tjek for gemt zoom/pan
+          
           if (savedSettings.canvasState) {
               initialZoom = savedSettings.canvasState.zoom;
               initialPosition = savedSettings.canvasState.position;
+              if (savedSettings.canvasState.background) {
+                  initialBackground = savedSettings.canvasState.background;
+              }
           }
       } else {
            initialLayout = defaultInitialLayout;
            initialTool = 'grid'; 
       }
 
-      // 3. FORBERED KORTENE TIL RENDERING
-      const cardsWithRefs: CanvasCard[] = initialLayout.map(card => ({
-        ...card,
-        ref: React.createRef<HTMLDivElement>(),
-        isEditing: false, 
-        isNew: false, 
-      }));
+      // OPDATERET: Giver alle kort de nye felter (color/font)
+      const cardsWithRefs: CanvasCard[] = initialLayout.map(card => {
+        // Giver standardværdier til gamle kort, der måske ikke har dem
+        const defaultNoteContent = {
+          title: 'Note',
+          text: '',
+          color: 'yellow' as NoteColor,
+          font: 'marker' as NoteFont
+        };
 
-      // 4. OPDATER STATE OG VIS SIDEN
+        return {
+          ...card,
+          ref: React.createRef<HTMLDivElement>(),
+          isEditing: false, 
+          isNew: false, 
+          // Sikrer, at 'content' er korrekt
+          content: card.type === 'note' 
+            ? { ...defaultNoteContent, ...(card.content as CanvasCard['content']) } 
+            : null,
+        };
+      });
+
+      // OPDATER STATE
       setCanvasCards(cardsWithRefs);
       setActiveTool(initialTool);
       setCanvasScale(initialZoom);
       setCanvasPosition(initialPosition);
+      setCanvasBackground(initialBackground); 
 
-      setIsLoadingLayout(false); // Fjerner loading-skærmen
+      setIsLoadingLayout(false); 
     
-    }); // <--- DENNE MANGLENDE PARENTES VAR FEJLEN
+    }); 
 
-    // Ryd op i listeneren, når komponenten forsvinder
     return () => unsubscribe();
     
-  // Kører kun én gang, når komponenten mounter
   }, [defaultInitialLayout]); 
 
   const renderCanvasCardContent = (card: CanvasCard) => {
@@ -536,29 +583,35 @@ export default function DashboardClient({
         return <AiReadinessWidget userData={{ subscriptionLevel: accessLevel }} lang={lang} />;
       case 'weekly_calendar':
         return <CalendarWidget translations={t} lang={lang} />;
-      case 'note':
+      
+      // NOTE: 'note'-rendering er nu flyttet direkte ind i .map() længere nede
+      
       default:
-        return (
-          <p className="text-sm text-gray-600 mt-2">
-            {card.content?.text ?? '...'}
-          </p>
-        );
+        return null;
     }
   };
 
   const widgetTypes: CanvasCard['type'][] = ['note', 'ai_readiness', 'weekly_calendar'];
 
-  // *** `addCardToCanvas` (Uændret) ***
-  const addCardToCanvas = (newType: CanvasCard['type']) => {
+  // *** `addCardToCanvas` (OPDATERET) ***
+  const addCardToCanvas = (
+    newType: CanvasCardPersist['type'], 
+    options?: { color?: NoteColor, font?: NoteFont }
+  ) => {
     const newX = 40 + (canvasCards.length % 5) * 50; 
     const newY = 40 + (canvasCards.length % 5) * 50;
     
     let newSize = { w: 256, h: 192 }; 
-    let newContent: { title: string, text: string } | null = null; 
+    let newContent: CanvasCard['content'] = null;
 
     if (newType === 'note') {
         newSize = { w: 256, h: 192 };
-        newContent = { title: 'Note', text: '' }; 
+        newContent = { 
+          title: 'Note', // Standardtitel
+          text: '', 
+          color: options?.color || 'yellow', // Brug valgt farve
+          font: options?.font || 'marker'   // Brug valgt skrift
+        }; 
     } else if (newType === 'ai_readiness') {
       newSize = { w: 320, h: 288 }; 
       newContent = null; 
@@ -567,7 +620,6 @@ export default function DashboardClient({
       newContent = null;
     }
 
-    // Opret det nye kort
     const newCardId = `card-${Date.now()}`;
     const newCard: CanvasCard = {
         id: newCardId,
@@ -580,22 +632,19 @@ export default function DashboardClient({
         isNew: true, // Markér som ny
     };
 
-    // Tilføj kortet til state (stadig usynligt)
     setCanvasCards(prevCards => {
         const newCards = [...prevCards, newCard];
         autosaveCanvasLayout(newCards, activeTool); // Autosave
         return newCards;
     });
 
-    // Tving React til at "male" kortet som usynligt FØRST,
-    // og fjern derefter 'isNew' flaget for at starte CSS transition (fade-in).
     setTimeout(() => {
         setCanvasCards(prevCards => 
             prevCards.map(card => 
                 card.id === newCardId ? { ...card, isNew: false } : card
             )
         );
-    }, 50); // 50ms forsinkelse er nok til at CSS kan nå at se 'opacity-0'
+    }, 50); 
   };
 
   const handleCardStop = (cardId: string, e: DraggableEvent, data: DraggableData) => {
@@ -647,6 +696,7 @@ export default function DashboardClient({
     );
   };
 
+  // OPDATERET: Gemmer nu også farve og font
   const handleSaveCardContent = (
     cardId: string, 
     newTitle: string, 
@@ -654,10 +704,14 @@ export default function DashboardClient({
   ) => {
     setCanvasCards(prevCards => {
         const newCards = prevCards.map(card => 
-            card.id === cardId && card.type === 'note'
+            card.id === cardId && card.type === 'note' && card.content
                 ? { 
                     ...card, 
-                    content: { title: newTitle, text: newText }, 
+                    content: { 
+                      ...card.content, // Beholder farve og font
+                      title: newTitle, 
+                      text: newText 
+                    }, 
                     isEditing: false 
                 } 
                 : card
@@ -667,32 +721,46 @@ export default function DashboardClient({
     });
   };
 
+  // NY HANDLER: Til at skifte skrifttype
+  const handleToggleNoteFont = (cardId: string) => {
+    setCanvasCards(prevCards => {
+      const newCards = prevCards.map(card => {
+        if (card.id === cardId && card.type === 'note' && card.content) {
+          const newFont: NoteFont = card.content.font === 'marker' ? 'sans' : 'marker';
+          return {
+            ...card,
+            content: {
+              ...card.content,
+              font: newFont,
+            }
+          };
+        }
+        return card;
+      });
+      
+      // Gem ændringen
+      autosaveCanvasLayout(newCards, activeTool);
+      return newCards;
+    });
+  };
+
+
   const handleSaveLayout = async () => {
     await autosaveCanvasLayout(canvasCards, activeTool);
     alert('Layout Gemt!'); 
   };
   
-  const getDistance = (touches: React.TouchList) => {
-    if (touches.length < 2) return null;
-    const dx = touches[0].clientX - touches[1].clientX;
-    const dy = touches[0].clientY - touches[1].clientY;
-    return Math.sqrt(dx * dx + dy * dy);
-  };
-  
-  const getCenter = (touches: React.TouchList) => {
-    if (touches.length === 0) return null;
-    if (touches.length === 1) return { x: touches[0].clientX, y: touches[0].clientY };
-    
-    return {
-        x: (touches[0].clientX + touches[1].clientX) / 2,
-        y: (touches[0].clientY + touches[1].clientY) / 2,
-    };
+  const handleChangeBackground = () => {
+    const newBackground = canvasBackground === 'default' ? 'dots' : 'default';
+    setCanvasBackground(newBackground);
+    autosaveCanvasLayout(canvasCards, activeTool, newBackground);
   };
 
   // --- MOUSE PAN LOGIC (Uændret) ---
   const handleMouseUp = useCallback(() => {
     setIsDraggingCanvas(false);
-  }, []);
+    autosaveCanvasLayout(canvasCards, activeTool);
+  }, [autosaveCanvasLayout, canvasCards, activeTool]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDraggingCanvasRef.current) return; 
@@ -740,6 +808,7 @@ export default function DashboardClient({
     )) {
         return;
     }
+
     if (e.touches.length === 2) {
         const distance = getDistance(e.touches)!;
         touchStartDist.current = distance;
@@ -751,6 +820,7 @@ export default function DashboardClient({
     }
   }, []);
 
+  // RETTELSE: Fjerner rød streg
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (e.touches.length === 2 && touchStartDist.current !== null) {
         const newDistance = getDistance(e.touches)!;
@@ -760,13 +830,14 @@ export default function DashboardClient({
         const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScaleRaw));
         setCanvasScale(parseFloat(newScale.toFixed(2)));
         touchStartDist.current = newDistance;
-    } else if (isDraggingCanvasRef.current && e.touches.length === 1) { // Bruger ref
+    } else if (isDraggingCanvasRef.current && e.touches.length === 1 && e.touches[0]) { // TILFØJET TJEK
         const dx = e.touches[0].clientX - dragStartPoint.current.x; 
         const dy = e.touches[0].clientY - dragStartPoint.current.y; 
         setCanvasPosition(prev => ({
           x: prev.x + dx,
           y: prev.y + dy,
         }));
+        // OPDATERET: Bruger touches[0] sikkert
         dragStartPoint.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; 
     }
   }, [canvasScale, MIN_SCALE, MAX_SCALE]); 
@@ -775,7 +846,8 @@ export default function DashboardClient({
     touchStartDist.current = null;
     lastTouchCenter.current = null;
     setIsDraggingCanvas(false);
-  }, []);
+    autosaveCanvasLayout(canvasCards, activeTool);
+  }, [autosaveCanvasLayout, canvasCards, activeTool]);
   
   const handleWheel = useCallback((e: React.WheelEvent) => {
     let delta = -e.deltaY / 1000; 
@@ -785,9 +857,12 @@ export default function DashboardClient({
     setCanvasScale(prevScale => {
         let newScale = prevScale + delta;
         newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+        
+        autosaveCanvasLayout(canvasCards, activeTool, canvasBackground, newScale, canvasPosition);
+        
         return parseFloat(newScale.toFixed(2));
     });
-  }, [MIN_SCALE, MAX_SCALE]);
+  }, [MIN_SCALE, MAX_SCALE, autosaveCanvasLayout, canvasCards, activeTool, canvasBackground, canvasPosition]); 
 
   
   useEffect(() => {
@@ -821,10 +896,15 @@ export default function DashboardClient({
   }, [activeTool, canvasRef, handleWheel, handleTouchMove]); 
   
   
-  // OPGAVE 4: Viser loading, mens layout indlæses (RETTELSE)
+  const canvasBgClass = useMemo(() => {
+    if (canvasBackground === 'dots') return 'canvas-bg-dots';
+    return 'canvas-bg-default';
+  }, [canvasBackground]);
+
+
   if (isLoadingLayout) {
     return (
-      <div className="flex justify-center items-center h-[500px] text-gray-500 text-lg">
+      <div className="flex justify-center items-center h-[800px] text-gray-500 text-lg">
         {lang === 'da' ? 'Indlæser dit personlige dashboard...' : 'Loading your personal dashboard...'}
       </div>
     );
@@ -833,18 +913,26 @@ export default function DashboardClient({
   // Selve return-statement (OPDATERET)
   return (
     <> 
+      {/* NYT: Viser popup-menuen, hvis den er åben */}
+      {isWidgetModalOpen && (
+        <WidgetModal 
+          t={t}
+          onClose={() => setIsWidgetModalOpen(false)}
+          onAddWidget={addCardToCanvas}
+          currentCards={canvasCards}
+        />
+      )}
+
       <div className="mb-4">
         <QuickAccessBar t={t} accessLevel={accessLevel} lang={lang} />
       </div>
       
+      {/* OPDATERET: Fjerner props der er flyttet til toolbar */}
       <div className="mb-4">
         <ViewModeToggle 
           activeTool={activeTool}
           handleActiveToolChange={handleActiveToolChange} 
           canUseCanvas={canUseCanvas}
-          isDraggable={isDraggable}
-          onAddWidget={addCardToCanvas}
-          onSaveLayout={handleSaveLayout} 
           t={t} 
         />
       </div>
@@ -864,50 +952,42 @@ export default function DashboardClient({
           </ResponsiveGridLayout>
       )}
 
-      {/* FLYTBAR ZOOM KONTROL UI */}
-      {activeTool === 'canvas' && canUseCanvas && (
-        <Draggable 
-            nodeRef={zoomControlRef} 
-            handle=".zoom-control" 
-            bounds="body" 
-        >
-            <div 
-                ref={zoomControlRef} 
-                className="fixed bottom-4 left-4 z-50 cursor-grab" 
-            >
-                <div className="zoom-control flex flex-col items-center space-y-2 bg-white/20 backdrop-blur-sm p-1.5 rounded-xl shadow-lg border border-white/30 cursor-move">
-                    <div className="text-xs font-semibold text-white px-2 py-1 rounded select-none">
-                        Zoom: {Math.round(canvasScale * 100)}%
-                    </div>
-                </div>
-            </div>
-        </Draggable>
-      )}
-
       {activeTool === 'canvas' && canUseCanvas && (
         <div 
           ref={canvasRef} 
-          className="relative w-full h-[800px] bg-gray-100 rounded-lg touch-none border border-gray-300 overflow-hidden" 
+          className={`relative w-full h-[800px] rounded-lg touch-none border border-gray-300 overflow-hidden ${canvasBgClass}`} 
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart} 
           onTouchEnd={handleTouchEnd}     
           style={{ cursor: isDraggingCanvas ? 'grabbing' : 'grab' }}
         >
+            
+          {/* NYT: Værktøjslinjen (OPGAVE 7) */}
+          <CanvasToolbar 
+            onAddWidget={addCardToCanvas} // Til Note-knappen
+            onOpenWidgetModal={() => setIsWidgetModalOpen(true)} // Til Widget-knappen
+            onChangeBackground={handleChangeBackground}
+            onSaveLayout={handleSaveLayout}
+            t={t}
+          />
 
-          {/* Canvas Indhold: Transformeres for Pan og Zoom */}
+          {/* Canvas Indhold */}
           <div
             className="absolute inset-0 origin-top-left transition-transform duration-50"
             style={{ transform: `translate(${canvasPosition.x}px, ${canvasPosition.y}px) scale(${canvasScale})` }}
           >
             
-            {/* *** ÆNDRING 3 (Opgave 5.3): Canvas kort løkke med "Fade-in" *** */}
             {canvasCards.map((card) => {
               
-              const title = card.type === 'note' ? (card.content?.title || (lang === 'da' ? 'Note' : 'Note')) : 
+              const title = (card.type === 'note' && card.content) ? card.content.title :
                             card.type === 'ai_readiness' ? 'AI Readiness' : 
                             card.type === 'weekly_calendar' ? 'Ugekalender' : 'Widget';
 
               const innerContentStyle = { width: '100%', height: '100%' };
+
+              // OPDATERET: Definerer dynamiske klasser for noter
+              const noteBgClass = card.type === 'note' ? `note-bg-${card.content?.color || 'yellow'}` : 'bg-white';
+              const noteFontClass = card.type === 'note' ? `note-font-${card.content?.font || 'marker'}` : '';
 
               return (
                 <Draggable 
@@ -926,7 +1006,6 @@ export default function DashboardClient({
                       width: card.size.w,
                       height: card.size.h,
                     }}
-                    // *** Tilføjet fade-in logik ***
                     className={`relative group transition-opacity duration-300 ease-in-out ${
                         card.isNew ? 'opacity-0' : 'opacity-100'
                     }`}
@@ -956,10 +1035,12 @@ export default function DashboardClient({
                           <X className="w-3 h-3" strokeWidth={3} />
                         </button>
 
-                        {/* Selve kort-indholdet (Uændret fra Opgave 5.1) */}
-                        {card.type === 'note' ? (
+                        {/* OPDATERET: Rendering af Note-kort er nu flyttet herned */}
+                        {card.type === 'note' && card.content ? (
                           <div 
-                            className="canvas-handle h-full w-full bg-yellow-200 shadow-lg p-4 flex flex-col text-black transform -rotate-1 cursor-move [font-family:var(--font-permanent-marker),cursive]"
+                            // Anvender dynamisk farve og font
+                            className={`canvas-handle h-full w-full shadow-lg p-4 flex flex-col text-black transform -rotate-1 cursor-move 
+                                        ${noteBgClass} ${noteFontClass}`}
                             onDoubleClick={(e) => {
                                 e.stopPropagation(); 
                                 handleEditCard(card.id, true);
@@ -971,7 +1052,8 @@ export default function DashboardClient({
                                     type="text"
                                     ref={el => { if (el) card.titleRef = el; }} 
                                     defaultValue={title}
-                                    className="[font-family:var(--font-permanent-marker),cursive] w-full text-black text-lg p-1 bg-transparent border-b border-yellow-400 focus:outline-none focus:border-orange-500" 
+                                    // Anvender dynamisk font
+                                    className={`${noteFontClass} w-full text-black text-lg p-1 bg-transparent border-b border-gray-500/30 focus:outline-none focus:border-orange-500`} 
                                     placeholder={lang === 'da' ? 'Note Titel' : 'Note Title'}
                                     onKeyDown={(e) => { 
                                         if (e.key === 'Enter') handleSaveCardContent(card.id, (e.target as HTMLInputElement).value, card.content?.text ?? '');
@@ -983,38 +1065,54 @@ export default function DashboardClient({
                                 />
                                 <textarea
                                     ref={el => { if (el) card.textRef = el; }}
-                                    defaultValue={card.content?.text ?? ''}
-                                    className="[font-family:var(--font-permanent-marker),cursive] w-full h-full flex-1 text-sm text-gray-800 p-1 bg-transparent resize-none focus:outline-none mt-2" 
-                                    placeholder={lang === 'da' ? 'Note Titel' : 'Note Title'}
+                                    defaultValue={card.content.text}
+                                    // Anvender dynamisk font
+                                    className={`${noteFontClass} w-full h-full flex-1 text-sm text-gray-800 p-1 bg-transparent resize-none focus:outline-none mt-2`} 
+                                    placeholder={lang === 'da' ? 'Note Tekst' : 'Note Text'}
                                     onDoubleClick={(e) => e.stopPropagation()} 
                                     onClick={(e) => e.stopPropagation()} 
                                     onMouseDown={(e) => e.stopPropagation()} 
                                 />
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation(); 
-                                        handleSaveCardContent(
-                                            card.id, 
-                                            card.titleRef?.value ?? card.content?.title ?? '',
-                                            card.textRef?.value ?? card.content?.text ?? ''
-                                        );
-                                    }}
-                                    onMouseDown={(e) => e.stopPropagation()} 
-                                    className="mt-2 px-3 py-1 text-xs bg-black text-white rounded hover:bg-gray-800 z-20 self-end"
-                                >
-                                    {t.saveNoteButton ?? 'Udfør'} 
-                                </button>
+                                {/* NYT: Knapper til redigering */}
+                                <div className="flex justify-between items-center mt-2">
+                                  <button
+                                      title={t.toggleFont ?? 'Skift Skrifttype'}
+                                      onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleToggleNoteFont(card.id);
+                                      }}
+                                      onMouseDown={(e) => e.stopPropagation()}
+                                      className="p-1.5 text-black rounded hover:bg-black/10 z-20"
+                                  >
+                                      <RefreshCcw className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                      onClick={(e) => {
+                                          e.stopPropagation(); 
+                                          handleSaveCardContent(
+                                              card.id, 
+                                              card.titleRef?.value ?? card.content?.title ?? '',
+                                              card.textRef?.value ?? card.content?.text ?? ''
+                                          );
+                                      }}
+                                      onMouseDown={(e) => e.stopPropagation()} 
+                                      className="px-3 py-1 text-xs bg-black text-white rounded hover:bg-gray-800 z-20 self-end"
+                                  >
+                                      {t.saveNoteButton ?? 'Udfør'} 
+                                  </button>
+                                </div>
                               </>
                             ) : (
                               <>
                                 <h3 className="text-black text-lg p-1">{title}</h3>
                                 <p className="text-sm text-gray-800 mt-2 p-1 whitespace-pre-wrap"> 
-                                  {card.content?.text}
+                                  {card.content.text}
                                 </p>
                               </>
                             )}
                           </div>
                         ) : (
+                          // Rendering for andre widgets (AI, Kalender)
                             <div className="h-full w-full shadow-lg rounded-xl canvas-handle cursor-move">
                                 {card.type === 'ai_readiness' && (
                                     <AiReadinessWidget userData={{ subscriptionLevel: accessLevel }} lang={lang} />

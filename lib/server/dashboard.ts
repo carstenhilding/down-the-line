@@ -1,33 +1,41 @@
-// lib/server/dashboard.ts - Service til Dashboard Persistens
-// Denne bruger nu rigtig Firestore
-
+// lib/server/dashboard.ts
 import { db } from '@/firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+
+// NYE TYPER: Definerer de tilladte stilarter for en note
+export type NoteColor = 'yellow' | 'blue' | 'pink';
+export type NoteFont = 'marker' | 'sans';
 
 // --- Type Definition for gemt Canvas Data ---
 export interface CanvasCardPersist {
   id: string;
   type: 'note' | 'ai_readiness' | 'weekly_calendar';
-  // RETTELSE: Vi tillader 'null' i stedet for 'undefined' for Firebase
+  // OPDATERET: 'content' for 'note' indeholder nu farve og skrifttype
   content: { 
     title: string;
     text: string;
-  } | null; // <--- RETTELSE HER
+    color: NoteColor; // <-- NY
+    font: NoteFont;   // <-- NY
+  } | null; 
   defaultPosition: { x: number; y: number };
   size: { w: number; h: number };
 }
 
-// NYT interface for zoom/pan
+// NY TYPE: Definerer de tilladte baggrunde
+export type CanvasBackground = 'default' | 'dots';
+
+// NYT interface for zoom/pan (og baggrund)
 export interface CanvasState {
   zoom: number;
   position: { x: number; y: number };
+  background?: CanvasBackground; // Tilføjet (valgfri for bagudkompatibilitet)
 }
 
 // OPGAVE 4 RETTELSE: Vi gemmer også visningstilstanden
 export interface DashboardSettings {
     cards: CanvasCardPersist[];
     activeTool: 'grid' | 'canvas' | 'add';
-    canvasState?: CanvasState; // Tilføjet (valgfri for bagudkompatibilitet)
+    canvasState?: CanvasState; // OPDATERET (indeholder nu også baggrund)
 }
 
 /**
