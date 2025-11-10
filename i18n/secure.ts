@@ -47,8 +47,10 @@ export const secureI18n = {
       saveLayout: "Save Layout",
       addWidgetTitle: "Add Widget",
       widgetAdded: "Already on canvas",
-      // NY LINJE
-      toggleFont: "Toggle Font"
+      toggleFont: "Toggle Font",
+      // NYE LINJER (OPGAVE 7)
+      toggleConnections: "Toggle Connections",
+      clearConnections: "Clear All Connections"
     },
 
     // Sidebar Menu
@@ -138,8 +140,10 @@ export const secureI18n = {
       saveLayout: "Gem Layout",
       addWidgetTitle: "Tilføj Widget",
       widgetAdded: "Allerede på canvas",
-      // NY LINJE
-      toggleFont: "Skift Skrifttype"
+      toggleFont: "Skift Skrifttype",
+      // NYE LINJER (OPGAVE 7)
+      toggleConnections: "Slå Forbindelser til",
+      clearConnections: "Ryd Alle Forbindelser"
     },
 
     // Sidebar Menu

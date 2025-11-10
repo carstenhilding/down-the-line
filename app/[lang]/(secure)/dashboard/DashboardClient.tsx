@@ -24,7 +24,9 @@ import {
   X,
   Image as ImageIcon,
   Save, 
-  RefreshCcw, // NYT IKON for skift skrifttype
+  RefreshCcw, 
+  Share2,
+  Trash2, 
 } from 'lucide-react';
 import Draggable, { DraggableData, DraggableEvent } from 'react-draggable'; 
 import { Resizable, ResizeCallbackData } from 'react-resizable'; 
@@ -33,7 +35,6 @@ import Link from 'next/link';
 import { UserRole, SubscriptionLevel } from '@/lib/server/data';
 
 import { getAuth, onAuthStateChanged } from "firebase/auth"; 
-// OPDATERET: Importerer de nye typer
 import { 
   getDashboardLayout, 
   saveDashboardLayout, 
@@ -42,7 +43,9 @@ import {
   CanvasState, 
   CanvasBackground,
   NoteColor,
-  NoteFont
+  NoteFont,
+  Connection, 
+  ConnectionPointId 
 } from '@/lib/server/dashboard';
 
 // Importerer de komponenter, vi har flyttet
@@ -51,17 +54,20 @@ import CalendarWidget from '@/components/dashboard/widgets/CalendarWidget';
 import MessageWidget from '@/components/dashboard/widgets/MessageWidget'; 
 import ActivityWidget from '@/components/dashboard/widgets/ActivityWidget';
 import { SmartWidget } from '@/components/dashboard/widgets/SmartWidget';
-
-// NYT (OPGAVE 7): Importer den nye værktøjslinje
 import CanvasToolbar from '@/components/dashboard/CanvasToolbar';
+// RETTELSE: Fjernet '.tsx' fra importen
+import ConnectionArrow from '@/components/dashboard/ConnectionArrow';
+
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
-// Opretter den "rigtige" ResponsiveGridLayout
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-// --- TYPE DEFINITIONER ---
+// ==================================================================
+// ### RETTELSE: ALLE TYPER OG INTERFACES ER FLYTTET UD HERTIL ###
+// ==================================================================
+
 interface SecureTranslations {
   dashboard: any;
   lang?: 'da' | 'en';
@@ -86,14 +92,12 @@ type GridItem = {
   data: any;
 };
 
-// OPDATERET: Denne type matcher nu den nye datastruktur
 type CanvasCard = Omit<CanvasCardPersist, 'content'> & {
   ref: React.RefObject<HTMLDivElement | null>; 
   isEditing?: boolean; 
   titleRef?: HTMLInputElement | null; 
   textRef?: HTMLTextAreaElement | null; 
   isNew?: boolean; 
-  // Gør content specifikt for denne klient-komponent
   content: { 
     title: string;
     text: string;
@@ -102,10 +106,9 @@ type CanvasCard = Omit<CanvasCardPersist, 'content'> & {
   } | null; 
 };
 
-// ==================================================================
-// ### RETTELSE: FUNKTIONER FLYTTET UD ###
-// Disse to funktioner er flyttet uden for komponenten for at fjerne TS-fejl
-// ==================================================================
+// --- Hjælpefunktioner ---
+
+// Til touch-events
 const getDistance = (touches: React.TouchList) => {
   if (touches.length < 2) return null;
   const dx = touches[0].clientX - touches[1].clientX;
@@ -123,10 +126,63 @@ const getCenter = (touches: React.TouchList) => {
   };
 };
 
+// --- NYE Hjælpefunktioner til Pile-beregning ---
+type Point = { x: number; y: number };
 
-// --- START: KOMPONENTER TIL LAYOUT ---
+// Beregner afstanden mellem to punkter
+function getPointsDistance(p1: Point, p2: Point): number {
+  return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+}
 
-// 1. Quick Access Bar (Uændret)
+// Finder de 4 ankerpunkter på et kort
+function getCardAnchorPoints(card: CanvasCard): Record<ConnectionPointId, Point> {
+    const { x, y } = card.defaultPosition;
+    const { w, h } = card.size;
+    return {
+        top:    { x: x + w / 2, y: y },
+        right:  { x: x + w, y: y + h / 2 },
+        bottom: { x: x + w / 2, y: y + h },
+        left:   { x: x, y: y + h / 2 },
+    };
+};
+
+// Finder det "bedste" start- og slutpunkt for en pil mellem to kort
+function getOptimalConnection(fromCard: CanvasCard, toCard: CanvasCard): { start: Point, end: Point, fromPoint: ConnectionPointId, toPoint: ConnectionPointId } {
+    const fromPoints = getCardAnchorPoints(fromCard);
+    const toPoints = getCardAnchorPoints(toCard);
+
+    let minDistance = Infinity;
+    let bestStart = fromPoints.right;
+    let bestEnd = toPoints.left;
+    let bestFromKey: ConnectionPointId = 'right';
+    let bestToKey: ConnectionPointId = 'left';
+
+    // Tjek alle 16 kombinationer (4x4)
+    (Object.keys(fromPoints) as ConnectionPointId[]).forEach(fromKey => {
+      (Object.keys(toPoints) as ConnectionPointId[]).forEach(toKey => {
+        const distance = getPointsDistance(fromPoints[fromKey], toPoints[toKey]);
+        if (distance < minDistance) {
+          minDistance = distance;
+          bestStart = fromPoints[fromKey];
+          bestEnd = toPoints[toKey];
+          bestFromKey = fromKey;
+          bestToKey = toKey;
+        }
+      });
+    });
+
+    return { start: bestStart, end: bestEnd, fromPoint: bestFromKey, toPoint: bestToKey };
+}
+
+// Finder det specifikke ankerpunkt, der bruges, når man starter en pil
+const getCardPointPosition = (card: CanvasCard, pointId: ConnectionPointId): Point => {
+    return getCardAnchorPoints(card)[pointId];
+};
+
+
+// --- START: SUB-KOMPONENTER (Flyttet ud) ---
+
+// 1. Quick Access Bar
 const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: SubscriptionLevel, lang: 'da' | 'en' }) => {
     const isPremium = ['Expert', 'Complete', 'Elite', 'Enterprise'].includes(accessLevel);
     const buttonClass = "flex items-center justify-between p-2 sm:p-3 text-xs sm:text-sm bg-black text-white transition duration-200 shadow-xl rounded-lg border-2 border-black group hover:-translate-y-1 hover:shadow-2xl";
@@ -187,7 +243,7 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
 };
 
 
-// 2. View Mode Toggle Bar (RETTET: Har nu kun Grid/Canvas knapper)
+// 2. View Mode Toggle Bar
 const ViewModeToggle = ({ 
   activeTool, 
   handleActiveToolChange, 
@@ -237,12 +293,8 @@ const ViewModeToggle = ({
     </div>
   );
 };
-// === SLUT PÅ TOGGLE BAR ===
 
-
-// ==================================================================
-// ### OPDATERET (OPGAVE 7): WIDGET POPUP-MENU (MERE KOMPAKT) ###
-// ==================================================================
+// 3. Widget Popup Menu
 const WidgetModal = ({
   t,
   onClose,
@@ -266,18 +318,16 @@ const WidgetModal = ({
   );
 
   return (
-    // Baggrund (overlay)
     <div 
       className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
-      onClick={onClose} // Lukker, hvis man klikker på baggrunden
+      onClick={onClose} 
     >
-      {/* Selve popup-menuen (OPDATERET: smallere og mindre padding) */}
       <div 
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-50 w-full max-w-xs" // max-w-sm -> max-w-xs
-        onClick={(e) => e.stopPropagation()} // Stopper lukning, hvis man klikker i menuen
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-50 w-full max-w-xs"
+        onClick={(e) => e.stopPropagation()} 
       >
-        <div className="p-3 border-b border-gray-200 flex justify-between items-center"> {/* p-4 -> p-3 */}
-          <h3 className="text-base font-semibold text-black">{t.addWidgetTitle ?? 'Tilføj Widget'}</h3> {/* text-lg -> text-base */}
+        <div className="p-3 border-b border-gray-200 flex justify-between items-center"> 
+          <h3 className="text-base font-semibold text-black">{t.addWidgetTitle ?? 'Tilføj Widget'}</h3> 
           <button
             onClick={onClose}
             className="p-1 rounded-full text-gray-500 hover:bg-gray-100"
@@ -286,12 +336,10 @@ const WidgetModal = ({
           </button>
         </div>
 
-        {/* OPDATERET: mindre padding og spacing */}
         <div className="p-2 space-y-1"> 
           {availableWidgets.map((widget) => {
             const isAdded = addedWidgetTypes.has(widget.type);
-            // const Icon = widget.icon; // FJERNET
-
+            
             return (
               <button
                 key={widget.type}
@@ -301,18 +349,14 @@ const WidgetModal = ({
                     onClose();
                   }
                 }}
-                disabled={isAdded} // Deaktiverer knappen, hvis den er tilføjet
+                disabled={isAdded} 
                 className="flex items-center w-full p-2 rounded-lg transition-colors 
                            disabled:opacity-50 disabled:cursor-not-allowed
-                           hover:bg-gray-50" // p-3 -> p-2
+                           hover:bg-gray-50" 
               >
-                {/* FJERNET: Ikon-div'en er fjernet */}
-                
-                <span className={`font-medium text-sm ${isAdded ? 'text-gray-400' : 'text-black'}`}> {/* font-semibold -> font-medium text-sm */}
-                  {widget.name} {/* Viser nu "+ AI Readiness" osv. */}
+                <span className={`font-medium text-sm ${isAdded ? 'text-gray-400' : 'text-black'}`}> 
+                  {widget.name} 
                 </span>
-
-                {/* FJERNET: "(Already on canvas)" teksten er fjernet */}
               </button>
             );
           })}
@@ -321,15 +365,47 @@ const WidgetModal = ({
     </div>
   );
 };
-// === SLUT PÅ WIDGET MODAL ===
+
+// 4. Connection Point (Forbindelses-prik)
+const ConnectionPoint = ({ 
+  cardId, 
+  pointId, 
+  position,
+  onMouseDown,
+  onMouseUp
+}: { 
+  cardId: string;
+  pointId: ConnectionPointId;
+  position: string; 
+  onMouseDown: (e: React.MouseEvent, cardId: string, pointId: ConnectionPointId) => void;
+  onMouseUp: (e: React.MouseEvent, cardId: string, pointId: ConnectionPointId) => void;
+}) => (
+  <div
+    onMouseDown={(e) => {
+      e.stopPropagation(); 
+      onMouseDown(e, cardId, pointId); 
+    }}
+    onMouseUp={(e) => { 
+      e.stopPropagation();
+      onMouseUp(e, cardId, pointId);
+    }}
+    data-cardid={cardId}
+    data-pointid={pointId}
+    className={`connection-point absolute w-3 h-3 bg-white border-2 border-orange-500 rounded-full cursor-pointer z-20 
+               ${position} pointer-events-auto`} 
+  />
+);
 
 
+// ==================================================================
+// ### HOVEDKOMPONENT: DashboardClient ###
+// ==================================================================
 export default function DashboardClient({
   dict,
   dashboardData,
   accessLevel,
   userRole,
-}: DashboardProps) {
+}: DashboardProps) { // <-- Fejl er løst
   const t = useMemo(() => dict.dashboard || {}, [dict]);
   const lang = useMemo(() => dict.lang as 'da' | 'en', [dict.lang]);
 
@@ -353,7 +429,6 @@ export default function DashboardClient({
   const MAX_SCALE = 3.0;
   const SCALE_STEP = 0.05; 
 
-  // OPDATERET: Default note har nu farve og font
   const defaultInitialLayout: CanvasCard[] = useMemo(() => ([
     {
       id: 'card-1',
@@ -366,7 +441,7 @@ export default function DashboardClient({
       },
       defaultPosition: { x: 40, y: 40 },
       size: { w: 256, h: 192 },
-      ref: React.createRef<HTMLDivElement>() // Tilføjet ref her
+      ref: React.createRef<HTMLDivElement>() 
     },
     {
       id: 'card-2',
@@ -374,7 +449,7 @@ export default function DashboardClient({
       content: null, 
       defaultPosition: { x: 350, y: 100 },
       size: { w: 320, h: 288 },
-      ref: React.createRef<HTMLDivElement>() // Tilføjet ref her
+      ref: React.createRef<HTMLDivElement>() 
     }
   ]), []);
 
@@ -385,12 +460,21 @@ export default function DashboardClient({
   
   const [isWidgetModalOpen, setIsWidgetModalOpen] = useState(false);
   
+  const [isConnecting, setIsConnecting] = useState(false); 
+  const [connections, setConnections] = useState<Connection[]>([]); 
+  const [tempArrow, setTempArrow] = useState<{ 
+    fromId: string; 
+    fromPoint: ConnectionPointId;
+    end: { x: number, y: number } 
+  } | null>(null); 
+
+
   const canUseCanvas = useMemo(() => 
     ['Elite', 'Enterprise'].includes(accessLevel) ||
     [UserRole.Tester, UserRole.Developer].includes(userRole),
     [accessLevel, userRole]
   );
-
+  
   const isStaticGrid = useMemo(() => 
     ['Starter', 'Advanced', 'Essential'].includes(accessLevel),
     [accessLevel]
@@ -405,7 +489,6 @@ export default function DashboardClient({
     { id: 'activity-feed', priority: 'low', type: 'activity', data: { feed: dashboardData.activityFeed, },},
   ];
 
-  // Render-funktion
   const renderGridItem = (item: GridItem) => {
     switch (item.type as 'ai_readiness' | 'weekly_calendar' | 'message' | 'activity') {
       case 'ai_readiness':
@@ -456,22 +539,20 @@ export default function DashboardClient({
   
   // --- CANVAS FUNKTIONER ---
   
-  // *** AUTOSAVE FUNKTION (OPDATERET) ***
   const autosaveCanvasLayout = useCallback(async (
     cardsToSave: CanvasCard[], 
     toolToSave: 'grid' | 'canvas' | 'add',
     bgToSave?: CanvasBackground,
     scaleToSave?: number,
-    posToSave?: { x: number, y: number }
+    posToSave?: { x: number, y: number },
+    connectionsToSave?: Connection[] 
   ) => {
     const auth = getAuth();
     const userId = auth.currentUser?.uid || 'dtl-dev-123'; 
     
-    // OPDATERET: Mapper den nye CanvasCard-type tilbage til Persist-typen
     const layoutToSave: CanvasCardPersist[] = cardsToSave.map(card => ({
       id: card.id,
       type: card.type,
-      // Sikrer, at 'content' gemmes korrekt for noter, og 'null' for andre
       content: card.type === 'note' ? card.content : null, 
       defaultPosition: card.defaultPosition,
       size: card.size,
@@ -484,21 +565,19 @@ export default function DashboardClient({
           zoom: scaleToSave ?? canvasScale, 
           position: posToSave ?? canvasPosition, 
           background: bgToSave ?? canvasBackground 
-        } 
+        },
+        connections: connectionsToSave ?? connections 
     };
     
     await saveDashboardLayout(userId, settingsToSave);
-  }, [canvasScale, canvasPosition, canvasBackground]); 
+  }, [canvasScale, canvasPosition, canvasBackground, connections]); 
 
-  const handleActiveToolChange = (tool: 'grid' | 'canvas' | 'add') => {
+  const handleActiveToolChange = useCallback((tool: 'grid' | 'canvas' | 'add') => {
     setActiveTool(tool); 
-    autosaveCanvasLayout(canvasCards, tool);
-  };
+    autosaveCanvasLayout(canvasCards, tool, canvasBackground, canvasScale, canvasPosition, connections);
+  }, [autosaveCanvasLayout, canvasCards, canvasBackground, canvasScale, canvasPosition, connections]);
 
 
-  // ==================================================================
-  // ### KORREKT INDLÆSNING (OPDATERET) ###
-  // ==================================================================
   useEffect(() => {
     const auth = getAuth();
     
@@ -518,6 +597,7 @@ export default function DashboardClient({
       let initialZoom = 1;
       let initialPosition = { x: 0, y: 0 };
       let initialBackground: CanvasBackground = 'default';
+      let initialConnections: Connection[] = []; 
 
       if (savedSettings) {
           if (savedSettings.cards && savedSettings.cards.length > 0) {
@@ -535,14 +615,15 @@ export default function DashboardClient({
                   initialBackground = savedSettings.canvasState.background;
               }
           }
+          if (savedSettings.connections) {
+              initialConnections = savedSettings.connections;
+          }
       } else {
            initialLayout = defaultInitialLayout;
            initialTool = 'grid'; 
       }
 
-      // OPDATERET: Giver alle kort de nye felter (color/font)
       const cardsWithRefs: CanvasCard[] = initialLayout.map(card => {
-        // Giver standardværdier til gamle kort, der måske ikke har dem
         const defaultNoteContent = {
           title: 'Note',
           text: '',
@@ -555,7 +636,6 @@ export default function DashboardClient({
           ref: React.createRef<HTMLDivElement>(),
           isEditing: false, 
           isNew: false, 
-          // Sikrer, at 'content' er korrekt
           content: card.type === 'note' 
             ? { ...defaultNoteContent, ...(card.content as CanvasCard['content']) } 
             : null,
@@ -568,6 +648,7 @@ export default function DashboardClient({
       setCanvasScale(initialZoom);
       setCanvasPosition(initialPosition);
       setCanvasBackground(initialBackground); 
+      setConnections(initialConnections); 
 
       setIsLoadingLayout(false); 
     
@@ -577,23 +658,6 @@ export default function DashboardClient({
     
   }, [defaultInitialLayout]); 
 
-  const renderCanvasCardContent = (card: CanvasCard) => {
-    switch (card.type) {
-      case 'ai_readiness':
-        return <AiReadinessWidget userData={{ subscriptionLevel: accessLevel }} lang={lang} />;
-      case 'weekly_calendar':
-        return <CalendarWidget translations={t} lang={lang} />;
-      
-      // NOTE: 'note'-rendering er nu flyttet direkte ind i .map() længere nede
-      
-      default:
-        return null;
-    }
-  };
-
-  const widgetTypes: CanvasCard['type'][] = ['note', 'ai_readiness', 'weekly_calendar'];
-
-  // *** `addCardToCanvas` (OPDATERET) ***
   const addCardToCanvas = (
     newType: CanvasCardPersist['type'], 
     options?: { color?: NoteColor, font?: NoteFont }
@@ -603,14 +667,13 @@ export default function DashboardClient({
     
     let newSize = { w: 256, h: 192 }; 
     let newContent: CanvasCard['content'] = null;
-
     if (newType === 'note') {
         newSize = { w: 256, h: 192 };
         newContent = { 
-          title: 'Note', // Standardtitel
+          title: 'Note',
           text: '', 
-          color: options?.color || 'yellow', // Brug valgt farve
-          font: options?.font || 'marker'   // Brug valgt skrift
+          color: options?.color || 'yellow', 
+          font: options?.font || 'marker'
         }; 
     } else if (newType === 'ai_readiness') {
       newSize = { w: 320, h: 288 }; 
@@ -619,7 +682,6 @@ export default function DashboardClient({
       newSize = { w: 400, h: 300 }; 
       newContent = null;
     }
-
     const newCardId = `card-${Date.now()}`;
     const newCard: CanvasCard = {
         id: newCardId,
@@ -629,12 +691,12 @@ export default function DashboardClient({
         size: newSize,
         ref: React.createRef<HTMLDivElement>(), 
         isEditing: newType === 'note' ? true : false, 
-        isNew: true, // Markér som ny
+        isNew: true, 
     };
 
     setCanvasCards(prevCards => {
         const newCards = [...prevCards, newCard];
-        autosaveCanvasLayout(newCards, activeTool); // Autosave
+        autosaveCanvasLayout(newCards, activeTool, canvasBackground, canvasScale, canvasPosition, connections); 
         return newCards;
     });
 
@@ -654,7 +716,7 @@ export default function DashboardClient({
                 ? { ...card, defaultPosition: { x: data.x, y: data.y } } 
                 : card
         );
-        autosaveCanvasLayout(newCards, activeTool); 
+        autosaveCanvasLayout(newCards, activeTool, canvasBackground, canvasScale, canvasPosition, connections); 
         return newCards;
     });
   };
@@ -662,7 +724,9 @@ export default function DashboardClient({
   const handleDeleteCard = (cardId: string) => {
     setCanvasCards(prevCards => {
         const newCards = prevCards.filter(card => card.id !== cardId);
-        autosaveCanvasLayout(newCards, activeTool); 
+        const newConnections = connections.filter(c => c.fromId !== cardId && c.toId !== cardId);
+        setConnections(newConnections);
+        autosaveCanvasLayout(newCards, activeTool, canvasBackground, canvasScale, canvasPosition, newConnections);
         return newCards;
     });
   };
@@ -679,7 +743,7 @@ export default function DashboardClient({
         );
         
         if (isResizeStop) {
-            autosaveCanvasLayout(newCards, activeTool); 
+            autosaveCanvasLayout(newCards, activeTool, canvasBackground, canvasScale, canvasPosition, connections); 
         }
         
         return newCards;
@@ -696,7 +760,6 @@ export default function DashboardClient({
     );
   };
 
-  // OPDATERET: Gemmer nu også farve og font
   const handleSaveCardContent = (
     cardId: string, 
     newTitle: string, 
@@ -708,7 +771,7 @@ export default function DashboardClient({
                 ? { 
                     ...card, 
                     content: { 
-                      ...card.content, // Beholder farve og font
+                      ...card.content, 
                       title: newTitle, 
                       text: newText 
                     }, 
@@ -716,12 +779,11 @@ export default function DashboardClient({
                 } 
                 : card
         );
-        autosaveCanvasLayout(newCards, activeTool); 
+        autosaveCanvasLayout(newCards, activeTool, canvasBackground, canvasScale, canvasPosition, connections); 
         return newCards;
     });
   };
 
-  // NY HANDLER: Til at skifte skrifttype
   const handleToggleNoteFont = (cardId: string) => {
     setCanvasCards(prevCards => {
       const newCards = prevCards.map(card => {
@@ -738,116 +800,220 @@ export default function DashboardClient({
         return card;
       });
       
-      // Gem ændringen
-      autosaveCanvasLayout(newCards, activeTool);
+      autosaveCanvasLayout(newCards, activeTool, canvasBackground, canvasScale, canvasPosition, connections);
       return newCards;
     });
   };
 
 
-  const handleSaveLayout = async () => {
-    await autosaveCanvasLayout(canvasCards, activeTool);
+  const handleSaveLayout = useCallback(async () => {
+    await autosaveCanvasLayout(canvasCards, activeTool, canvasBackground, canvasScale, canvasPosition, connections);
     alert('Layout Gemt!'); 
-  };
+  }, [autosaveCanvasLayout, canvasCards, activeTool, canvasBackground, canvasScale, canvasPosition, connections]);
   
-  const handleChangeBackground = () => {
+  const handleChangeBackground = useCallback(() => {
     const newBackground = canvasBackground === 'default' ? 'dots' : 'default';
     setCanvasBackground(newBackground);
-    autosaveCanvasLayout(canvasCards, activeTool, newBackground);
+    autosaveCanvasLayout(canvasCards, activeTool, newBackground, canvasScale, canvasPosition, connections);
+  }, [canvasBackground, canvasCards, activeTool, canvasScale, canvasPosition, autosaveCanvasLayout, connections]);
+
+  // --- NYE HANDLERE TIL OPGAVE 7 (FORBINDELSER) ---
+  const handleToggleConnections = () => {
+    setIsConnecting(prev => !prev);
+    setTempArrow(null); 
+  };
+  
+  const handleClearConnections = () => {
+    setConnections([]);
+    autosaveCanvasLayout(canvasCards, activeTool, canvasBackground, canvasScale, canvasPosition, []);
   };
 
-  // --- MOUSE PAN LOGIC (Uændret) ---
-  const handleMouseUp = useCallback(() => {
-    setIsDraggingCanvas(false);
-    autosaveCanvasLayout(canvasCards, activeTool);
-  }, [autosaveCanvasLayout, canvasCards, activeTool]);
+  const handleConnectionStart = useCallback((e: React.MouseEvent, fromId: string, fromPoint: ConnectionPointId) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const card = canvasCards.find(c => c.id === fromId);
+    if (!card) return;
+    
+    const startPos = getCardPointPosition(card, fromPoint);
+    
+    setTempArrow({
+      fromId: fromId,
+      fromPoint: fromPoint,
+      end: { x: startPos.x, y: startPos.y }
+    });
+  }, [canvasCards]); 
+
+  const handleConnectionEnd = useCallback((e: React.MouseEvent, toId: string, toPoint: ConnectionPointId) => {
+    e.preventDefault();
+    e.stopPropagation(); // Stop eventet fra at boble til lærredets onMouseUp
+
+    if (tempArrow && tempArrow.fromId !== toId) {
+      const newConnection: Connection = {
+        id: `conn-${Date.now()}`,
+        fromId: tempArrow.fromId,
+        toId: toId,
+        fromPoint: tempArrow.fromPoint,
+        toPoint: toPoint,
+      };
+      
+      const newConnections = [...connections, newConnection];
+      setConnections(newConnections);
+      autosaveCanvasLayout(canvasCards, activeTool, canvasBackground, canvasScale, canvasPosition, newConnections);
+    }
+    
+    setTempArrow(null); // Stop med at tegne
+  }, [tempArrow, connections, canvasCards, activeTool, canvasBackground, canvasScale, canvasPosition, autosaveCanvasLayout]);
+
+  // --- OPDATEREDE MUSE-HANDLERE ---
+
+  // RETTELSE (Race condition): Denne funktion modtager nu eventet (e)
+  const handleMouseUp = useCallback((e: React.MouseEvent) => { 
+    // Tjek om vi er færdige med at panorere
+    if (isDraggingCanvasRef.current) { 
+      setIsDraggingCanvas(false);
+      autosaveCanvasLayout(canvasCards, activeTool, canvasBackground, canvasScale, canvasPosition, connections);
+    }
+
+    // RETTELSE (Video-bug): Tjek om vi er ved at tegne en pil
+    if (tempArrow) {
+      // Tjek om vi slap musen oven på et forbindelsespunkt
+      const target = e.target as HTMLElement;
+      // 'closest' vil finde sig selv eller en forælder
+      const targetIsConnectionPoint = target.closest('.connection-point');
+
+      // Annuller KUN pilen, hvis vi slap musen på baggrunden (IKKE et punkt)
+      if (!targetIsConnectionPoint) {
+        setTempArrow(null);
+      }
+      // Hvis vi slap på et punkt, vil handleConnectionEnd() køre (fra ConnectionPoint-komponenten)
+      // og den vil selv kalde setTempArrow(null).
+    }
+  }, [autosaveCanvasLayout, canvasCards, activeTool, canvasBackground, canvasScale, canvasPosition, connections, tempArrow]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDraggingCanvasRef.current) return; 
-    
-    const dx = e.clientX - dragStartPoint.current.x;
-    const dy = e.clientY - dragStartPoint.current.y;
-    setCanvasPosition(prev => ({
-      x: prev.x + dx,
-      y: prev.y + dy,
-    }));
-    dragStartPoint.current = { x: e.clientX, y: e.clientY }; 
-    e.preventDefault();
-  }, []); 
+    // Håndter panorering af lærred
+    if (isDraggingCanvasRef.current) { 
+      const dx = e.clientX - dragStartPoint.current.x;
+      const dy = e.clientY - dragStartPoint.current.y;
+      setCanvasPosition(prev => ({
+        x: prev.x + dx,
+        y: prev.y + dy,
+      }));
+      dragStartPoint.current = { x: e.clientX, y: e.clientY }; 
+      e.preventDefault(); // Forhindrer tekst-markering under panorering
+      return;
+    }
 
+    // Håndter tegning af midlertidig pil
+    if (tempArrow && canvasRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      const mouseX = (e.clientX - canvasRect.left - canvasPosition.x) / canvasScale;
+      const mouseY = (e.clientY - canvasRect.top - canvasPosition.y) / canvasScale;
+      
+      setTempArrow(prev => prev ? ({ ...prev, end: { x: mouseX, y: mouseY } }) : null);
+    }
+  }, [canvasScale, canvasPosition, tempArrow]); 
+
+  // RETTELSE: Fjerner 'handleMouseUp' fra denne listener
   useEffect(() => {
     if (activeTool !== 'canvas' || !canUseCanvas) return;
+    
     const onMove = (e: MouseEvent) => handleMouseMove(e as unknown as React.MouseEvent);
-    const onUp = () => handleMouseUp();
+    
+    // Vi lytter kun på 'window' for 'mousemove', da 'mouseup' nu håndteres af selve canvas-div'en
     window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
     return () => {
       window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
     };
-  }, [activeTool, canUseCanvas, handleMouseMove, handleMouseUp]); 
+  }, [activeTool, canUseCanvas, handleMouseMove]); 
   
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Ignorer alle klik, hvis vi er i forbindelsestilstand
+    if (isConnecting) return; 
+
+    // Tjek om vi klikker på baggrunden (og ikke et håndtag)
     if (e.target instanceof HTMLElement && 
-        !e.target.closest('.canvas-handle') && 
-        !e.target.closest('.canvas-delete-btn') &&
-        !e.target.closest('.react-resizable-handle') 
+        e.target.closest('.canvas-handle') === null && 
+        e.target.closest('.canvas-delete-btn') === null &&
+        e.target.closest('.react-resizable-handle') === null &&
+        e.target.closest('.connection-point') === null
     ) {
         setIsDraggingCanvas(true);
         dragStartPoint.current = { x: e.clientX, y: e.clientY }; 
-        e.preventDefault();
+        e.preventDefault(); // Start panorering
     }
-  }, []);
+  }, [isConnecting]); 
   
-  // --- TOUCH/GESTURE LOGIC (Uændret) ---
+  // --- TOUCH/GESTURE LOGIC (RETTET) ---
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (e.target instanceof HTMLElement && (
+    // Ignorer alle touches, hvis vi er i forbindelsestilstand ELLER rører et håndtag
+    if (isConnecting || e.target instanceof HTMLElement && (
       e.target.closest('.canvas-handle') || 
       e.target.closest('.canvas-delete-btn') ||
-      e.target.closest('.react-resizable-handle') 
+      e.target.closest('.react-resizable-handle') ||
+      e.target.closest('.connection-point')
     )) {
         return;
     }
 
+    // Håndter zoom
     if (e.touches.length === 2) {
-        const distance = getDistance(e.touches)!;
-        touchStartDist.current = distance;
-        lastTouchCenter.current = getCenter(e.touches);
-        setIsDraggingCanvas(false); 
-    } else if (e.touches.length === 1) {
+        const distance = getDistance(e.touches);
+        if (distance) {
+          touchStartDist.current = distance;
+          lastTouchCenter.current = getCenter(e.touches);
+          setIsDraggingCanvas(false); // Stop panorering, start zoom
+        }
+    // Håndter panorering
+    } else if (e.touches.length === 1 && e.touches[0]) {
         setIsDraggingCanvas(true);
         dragStartPoint.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; 
     }
-  }, []);
+  }, [isConnecting]); 
 
-  // RETTELSE: Fjerner rød streg
+  // RETTELSE: Denne funktion forhindrer nu kun 'default' når det er relevant.
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    // Tjek for zoom FØRST
     if (e.touches.length === 2 && touchStartDist.current !== null) {
-        const newDistance = getDistance(e.touches)!;
+        e.preventDefault(); // OK at forhindre browser-zoom
+        const newDistance = getDistance(e.touches);
+        if (!newDistance) return;
+        
         const scaleChange = newDistance / touchStartDist.current;
         const scaleDelta = (scaleChange - 1); 
         const newScaleRaw = canvasScale + scaleDelta;
         const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScaleRaw));
         setCanvasScale(parseFloat(newScale.toFixed(2)));
         touchStartDist.current = newDistance;
-    } else if (isDraggingCanvasRef.current && e.touches.length === 1 && e.touches[0]) { // TILFØJET TJEK
+        return; // Vi er færdige
+    } 
+    
+    // Tjek for lærred-panorering
+    if (isDraggingCanvasRef.current && e.touches.length === 1 && e.touches[0]) { 
+        e.preventDefault(); // OK at forhindre side-scroll
         const dx = e.touches[0].clientX - dragStartPoint.current.x; 
         const dy = e.touches[0].clientY - dragStartPoint.current.y; 
         setCanvasPosition(prev => ({
           x: prev.x + dx,
           y: prev.y + dy,
         }));
-        // OPDATERET: Bruger touches[0] sikkert
         dragStartPoint.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; 
+        return; // Vi er færdige
     }
   }, [canvasScale, MIN_SCALE, MAX_SCALE]); 
 
   const handleTouchEnd = useCallback(() => {
     touchStartDist.current = null;
     lastTouchCenter.current = null;
-    setIsDraggingCanvas(false);
-    autosaveCanvasLayout(canvasCards, activeTool);
-  }, [autosaveCanvasLayout, canvasCards, activeTool]);
+    if (isDraggingCanvasRef.current) {
+        setIsDraggingCanvas(false);
+        autosaveCanvasLayout(canvasCards, activeTool, canvasBackground, canvasScale, canvasPosition, connections);
+    }
+  }, [autosaveCanvasLayout, canvasCards, activeTool, canvasBackground, canvasScale, canvasPosition, connections]);
   
   const handleWheel = useCallback((e: React.WheelEvent) => {
     let delta = -e.deltaY / 1000; 
@@ -858,17 +1024,19 @@ export default function DashboardClient({
         let newScale = prevScale + delta;
         newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
         
-        autosaveCanvasLayout(canvasCards, activeTool, canvasBackground, newScale, canvasPosition);
+        autosaveCanvasLayout(canvasCards, activeTool, canvasBackground, newScale, canvasPosition, connections);
         
         return parseFloat(newScale.toFixed(2));
     });
-  }, [MIN_SCALE, MAX_SCALE, autosaveCanvasLayout, canvasCards, activeTool, canvasBackground, canvasPosition]); 
+  }, [MIN_SCALE, MAX_SCALE, autosaveCanvasLayout, canvasCards, activeTool, canvasBackground, canvasPosition, connections]); 
 
   
+  // RETTELSE: Fjerner 'touchmove' listener fra denne useEffect
   useEffect(() => {
-    if (activeTool !== 'canvas' || !canvasRef.current) return;
+    if (activeTool !== 'canvas' || !canUseCanvas) return;
     const canvasElement = canvasRef.current;
-    
+    if (!canvasElement) return; 
+
     const onWheel = (e: WheelEvent) => {
         if (e.target === canvasElement || canvasElement.contains(e.target as Node)) {
             e.preventDefault();
@@ -876,24 +1044,20 @@ export default function DashboardClient({
             handleWheel(e as unknown as React.WheelEvent);
         }
     };
+
+    // RETTELSE: Denne listener er nu PÅ canvasElement, ikke window
     const onTouchMove = (e: TouchEvent) => {
-        if (e.target instanceof HTMLElement && e.target.closest('.react-resizable-handle')) {
-          return;
-        }
-        if (e.target === canvasElement || canvasElement.contains(e.target as Node)) {
-            e.preventDefault();
-            e.stopPropagation();
-            handleTouchMove(e as unknown as React.TouchEvent<HTMLDivElement>);
-        };
+        handleTouchMove(e as unknown as React.TouchEvent<HTMLDivElement>);
     };
 
     canvasElement.addEventListener('wheel', onWheel, { passive: false });
-    canvasElement.addEventListener('touchmove', onTouchMove, { passive: false });
+    canvasElement.addEventListener('touchmove', onTouchMove, { passive: false }); // 'passive: false' er vigtig
+    
     return () => {
       canvasElement.removeEventListener('wheel', onWheel);
       canvasElement.removeEventListener('touchmove', onTouchMove);
     };
-  }, [activeTool, canvasRef, handleWheel, handleTouchMove]); 
+  }, [activeTool, canUseCanvas, handleWheel, handleTouchMove]); 
   
   
   const canvasBgClass = useMemo(() => {
@@ -909,11 +1073,10 @@ export default function DashboardClient({
       </div>
     );
   }
-
-  // Selve return-statement (OPDATERET)
+  
+  // Selve return-statement
   return (
     <> 
-      {/* NYT: Viser popup-menuen, hvis den er åben */}
       {isWidgetModalOpen && (
         <WidgetModal 
           t={t}
@@ -927,7 +1090,6 @@ export default function DashboardClient({
         <QuickAccessBar t={t} accessLevel={accessLevel} lang={lang} />
       </div>
       
-      {/* OPDATERET: Fjerner props der er flyttet til toolbar */}
       <div className="mb-4">
         <ViewModeToggle 
           activeTool={activeTool}
@@ -940,7 +1102,7 @@ export default function DashboardClient({
       {(activeTool === 'grid' || activeTool === 'add') && (
         <ResponsiveGridLayout
             className="layout"
-            layouts={layouts}
+            layouts={layouts} 
             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 200 }}
             cols={{ lg: 12, md: 12, sm: 6, xs: 4, xxs: 2 }} 
             rowHeight={100}
@@ -948,7 +1110,7 @@ export default function DashboardClient({
             isResizable={isDraggable} 
             margin={[16, 16]} 
           >
-            {gridElements}
+            {gridElements} 
           </ResponsiveGridLayout>
       )}
 
@@ -958,16 +1120,19 @@ export default function DashboardClient({
           className={`relative w-full h-[800px] rounded-lg touch-none border border-gray-300 overflow-hidden ${canvasBgClass}`} 
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart} 
-          onTouchEnd={handleTouchEnd}     
-          style={{ cursor: isDraggingCanvas ? 'grabbing' : 'grab' }}
+          onTouchEnd={handleTouchEnd}
+          onMouseUp={handleMouseUp} // RETTELSE: Fjernet (e) => ...
+          style={{ cursor: isConnecting ? 'crosshair' : (isDraggingCanvas ? 'grabbing' : 'grab') }}
         >
             
-          {/* NYT: Værktøjslinjen (OPGAVE 7) */}
           <CanvasToolbar 
-            onAddWidget={addCardToCanvas} // Til Note-knappen
-            onOpenWidgetModal={() => setIsWidgetModalOpen(true)} // Til Widget-knappen
+            onAddWidget={addCardToCanvas} 
+            onOpenWidgetModal={() => setIsWidgetModalOpen(true)}
             onChangeBackground={handleChangeBackground}
             onSaveLayout={handleSaveLayout}
+            onToggleConnections={handleToggleConnections} 
+            onClearConnections={handleClearConnections} 
+            isConnecting={isConnecting} 
             t={t}
           />
 
@@ -977,6 +1142,73 @@ export default function DashboardClient({
             style={{ transform: `translate(${canvasPosition.x}px, ${canvasPosition.y}px) scale(${canvasScale})` }}
           >
             
+            {/* SVG LAG TIL PILE */}
+            <svg 
+              width="100%" 
+              height="100%" 
+              className="absolute top-0 left-0" 
+              style={{ 
+                overflow: 'visible', 
+                zIndex: 10, 
+                pointerEvents: 'none' // 'none' lader klik gå igennem til kortene nedenunder
+              }} 
+            >
+              <defs>
+                <marker
+                  id="arrowhead"
+                  markerWidth="8" // Smallere
+                  markerHeight="6" // Smallere
+                  refX="8" // RETTELSE (Pilspids): Justeret til ny, smallere størrelse
+                  refY="3"
+                  orient="auto"
+                  markerUnits="strokeWidth"
+                >
+                  <polygon points="0 0, 8 3, 0 6" fill="#f97316" />
+                </marker>
+              </defs>
+
+              {/* Tegn gemte forbindelser */}
+              {connections.map(conn => {
+                const fromCard = canvasCards.find(c => c.id === conn.fromId);
+                const toCard = canvasCards.find(c => c.id === conn.toId);
+                if (!fromCard || !toCard) return null;
+                
+                // RETTELSE (Gennem kort): Brug den gemte punkt-information
+                const start = getCardPointPosition(fromCard, conn.fromPoint);
+                const end = getCardPointPosition(toCard, conn.toPoint);
+
+                return (
+                  <ConnectionArrow 
+                    key={conn.id}
+                    start={start}
+                    end={end}
+                    fromPoint={conn.fromPoint}
+                    toPoint={conn.toPoint}
+                  />
+                )
+              })}
+
+              {/* Tegn midlertidig pil, der følger musen */}
+              {tempArrow && (() => {
+                const fromCard = canvasCards.find(c => c.id === tempArrow.fromId);
+                if (!fromCard) return null;
+
+                const start = getCardPointPosition(fromCard, tempArrow.fromPoint);
+                
+                return (
+                   <ConnectionArrow 
+                    start={start}
+                    end={tempArrow.end}
+                    fromPoint={tempArrow.fromPoint}
+                    toPoint={null} // Vi ved ikke, hvor den lander endnu
+                    isTemporary={true}
+                  />
+                )
+              })()}
+            </svg>
+            {/* --- SLUT PÅ SVG LAG --- */}
+
+
             {canvasCards.map((card) => {
               
               const title = (card.type === 'note' && card.content) ? card.content.title :
@@ -985,7 +1217,6 @@ export default function DashboardClient({
 
               const innerContentStyle = { width: '100%', height: '100%' };
 
-              // OPDATERET: Definerer dynamiske klasser for noter
               const noteBgClass = card.type === 'note' ? `note-bg-${card.content?.color || 'yellow'}` : 'bg-white';
               const noteFontClass = card.type === 'note' ? `note-font-${card.content?.font || 'marker'}` : '';
 
@@ -997,7 +1228,8 @@ export default function DashboardClient({
                   defaultPosition={card.defaultPosition}
                   scale={canvasScale} 
                   onStop={(e, data) => handleCardStop(card.id, e, data)}
-                  cancel=".react-resizable-handle, .canvas-delete-btn" 
+                  cancel=".react-resizable-handle, .canvas-delete-btn, .connection-point" 
+                  disabled={isConnecting} 
                 >
                   <div
                     ref={card.ref}
@@ -1010,6 +1242,16 @@ export default function DashboardClient({
                         card.isNew ? 'opacity-0' : 'opacity-100'
                     }`}
                   >
+                    {isConnecting && (
+                      <>
+                        <ConnectionPoint cardId={card.id} pointId="left" position="top-1/2 -translate-y-1/2 -left-1.5" onMouseDown={handleConnectionStart} onMouseUp={(e) => handleConnectionEnd(e, card.id, 'left')} />
+                        <ConnectionPoint cardId={card.id} pointId="right" position="top-1/2 -translate-y-1/2 -right-1.5" onMouseDown={handleConnectionStart} onMouseUp={(e) => handleConnectionEnd(e, card.id, 'right')} />
+                        <ConnectionPoint cardId={card.id} pointId="top" position="left-1/2 -translate-x-1/2 -top-1.5" onMouseDown={handleConnectionStart} onMouseUp={(e) => handleConnectionEnd(e, card.id, 'top')} />
+                        <ConnectionPoint cardId={card.id} pointId="bottom" position="left-1/2 -translate-x-1/2 -bottom-1.5" onMouseDown={handleConnectionStart} onMouseUp={(e) => handleConnectionEnd(e, card.id, 'bottom')} />
+                      </>
+                    )}
+
+                    {/* RETTELSE: Fjernet 'disabled' prop */}
                     <Resizable
                       width={card.size.w}
                       height={card.size.h}
@@ -1035,13 +1277,12 @@ export default function DashboardClient({
                           <X className="w-3 h-3" strokeWidth={3} />
                         </button>
 
-                        {/* OPDATERET: Rendering af Note-kort er nu flyttet herned */}
                         {card.type === 'note' && card.content ? (
                           <div 
-                            // Anvender dynamisk farve og font
                             className={`canvas-handle h-full w-full shadow-lg p-4 flex flex-col text-black transform -rotate-1 cursor-move 
                                         ${noteBgClass} ${noteFontClass}`}
                             onDoubleClick={(e) => {
+                                if (isConnecting) return; 
                                 e.stopPropagation(); 
                                 handleEditCard(card.id, true);
                             }}
@@ -1052,7 +1293,6 @@ export default function DashboardClient({
                                     type="text"
                                     ref={el => { if (el) card.titleRef = el; }} 
                                     defaultValue={title}
-                                    // Anvender dynamisk font
                                     className={`${noteFontClass} w-full text-black text-lg p-1 bg-transparent border-b border-gray-500/30 focus:outline-none focus:border-orange-500`} 
                                     placeholder={lang === 'da' ? 'Note Titel' : 'Note Title'}
                                     onKeyDown={(e) => { 
@@ -1066,14 +1306,12 @@ export default function DashboardClient({
                                 <textarea
                                     ref={el => { if (el) card.textRef = el; }}
                                     defaultValue={card.content.text}
-                                    // Anvender dynamisk font
                                     className={`${noteFontClass} w-full h-full flex-1 text-sm text-gray-800 p-1 bg-transparent resize-none focus:outline-none mt-2`} 
                                     placeholder={lang === 'da' ? 'Note Tekst' : 'Note Text'}
                                     onDoubleClick={(e) => e.stopPropagation()} 
                                     onClick={(e) => e.stopPropagation()} 
                                     onMouseDown={(e) => e.stopPropagation()} 
                                 />
-                                {/* NYT: Knapper til redigering */}
                                 <div className="flex justify-between items-center mt-2">
                                   <button
                                       title={t.toggleFont ?? 'Skift Skrifttype'}
@@ -1112,7 +1350,6 @@ export default function DashboardClient({
                             )}
                           </div>
                         ) : (
-                          // Rendering for andre widgets (AI, Kalender)
                             <div className="h-full w-full shadow-lg rounded-xl canvas-handle cursor-move">
                                 {card.type === 'ai_readiness' && (
                                     <AiReadinessWidget userData={{ subscriptionLevel: accessLevel }} lang={lang} />
@@ -1122,16 +1359,12 @@ export default function DashboardClient({
                                 )}
                             </div>
                         )}
-                        {/* Slut på kort-indhold */}
-
                       </div>
                     </Resizable>
                   </div>
                 </Draggable>
               );
             })}
-            {/* ### SLUT PÅ MAP ### */}
-
           </div>
         </div>
       )}

@@ -1,18 +1,19 @@
 // components/dashboard/CanvasToolbar.tsx
 "use client";
 
-// OPDATERET: Importer 'useState', 'useRef', 'useEffect'
 import React, { useState, useRef, useEffect } from 'react';
-import { StickyNote, Zap, Calendar, Image as ImageIcon, Save, Package } from 'lucide-react';
-// OPDATERET: Importer de nye typer
+// OPDATERET: Importerer 'Share2' og 'Trash2'
+import { StickyNote, Zap, Calendar, Image as ImageIcon, Save, Package, Share2, Trash2 } from 'lucide-react';
 import { CanvasCardPersist, NoteColor, NoteFont } from '@/lib/server/dashboard';
 
 interface CanvasToolbarProps {
-  // OPDATERET: onAddWidget tager nu 'options'
   onAddWidget: (type: CanvasCardPersist['type'], options?: { color?: NoteColor, font?: NoteFont }) => void;
   onOpenWidgetModal: () => void; 
   onChangeBackground: () => void;
   onSaveLayout: () => Promise<void>;
+  onToggleConnections: () => void; 
+  onClearConnections: () => void; // <-- NY PROP
+  isConnecting: boolean; 
   t: any; // Oversættelser (fra dashboard)
 }
 
@@ -23,15 +24,16 @@ export default function CanvasToolbar({
   onAddWidget, 
   onOpenWidgetModal, 
   onChangeBackground, 
-  onSaveLayout, 
+  onSaveLayout,
+  onToggleConnections, 
+  onClearConnections, // <-- NY
+  isConnecting, 
   t 
 }: CanvasToolbarProps) {
   
-  // NYT: State til at styre farve-popup'en
   const [isNotePopoverOpen, setIsNotePopoverOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  // Luk popup, hvis man klikker udenfor
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
@@ -45,24 +47,23 @@ export default function CanvasToolbar({
   }, [popoverRef]);
 
   const buttonClass = "p-2 text-gray-700 rounded-lg hover:bg-orange-100 hover:text-orange-500 transition-colors cursor-pointer";
+  const activeButtonClass = "p-2 bg-orange-100 text-orange-500 rounded-lg cursor-pointer";
 
-  // Handler til at tilføje en note med en specifik farve
+
   const handleAddNote = (color: NoteColor) => {
-    onAddWidget('note', { color: color, font: 'marker' }); // Standard til marker-font
+    onAddWidget('note', { color: color, font: 'marker' });
     setIsNotePopoverOpen(false);
   };
 
   return (
-    // OPDATERET: Tilføjet 'relative' til containeren for popover
     <div ref={popoverRef} className="absolute top-2 left-2 z-20">
-      {/* Selve værktøjslinjen */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-200">
         <div className="flex flex-col p-1 space-y-1">
           
           <button 
             title={t.addNote ?? 'Add Note'}
-            className={`${buttonClass} ${isNotePopoverOpen ? 'bg-orange-100 text-orange-500' : ''}`}
-            onClick={() => setIsNotePopoverOpen(!isNotePopoverOpen)} // Åbner/lukker popover
+            className={isNotePopoverOpen ? activeButtonClass : buttonClass}
+            onClick={() => setIsNotePopoverOpen(!isNotePopoverOpen)} 
           >
             <StickyNote className="w-5 h-5" />
           </button>
@@ -75,6 +76,15 @@ export default function CanvasToolbar({
             <Package className="w-5 h-5" />
           </button>
           
+          {/* --- NY FORBINDELSES-KNAP (OPGAVE 7) --- */}
+          <button 
+            title={t.toggleConnections ?? 'Toggle Connections'}
+            className={isConnecting ? activeButtonClass : buttonClass}
+            onClick={onToggleConnections} 
+          >
+            <Share2 className="w-5 h-5" />
+          </button>
+
           <hr className="my-1 border-gray-200" />
 
           <button 
@@ -92,11 +102,22 @@ export default function CanvasToolbar({
           >
             <Save className="w-5 h-5" />
           </button>
+
+          {/* NY SLET-KNAP (KUN HVIS isConnecting ER AKTIV) */}
+          {isConnecting && (
+             <button 
+                title={t.clearConnections ?? 'Clear All Connections'}
+                className={buttonClass} // Kan styles anderledes (f.eks. rød)
+                onClick={onClearConnections} 
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+          )}
           
         </div>
       </div>
 
-      {/* NYT: Popover til farvevalg */}
+      {/* Popover til farvevalg */}
       {isNotePopoverOpen && (
         <div className="absolute top-0 left-full ml-2 bg-white rounded-lg shadow-lg border border-gray-200 p-2">
           <div className="flex space-x-2">
