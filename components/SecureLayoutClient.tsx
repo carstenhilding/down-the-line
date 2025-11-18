@@ -1,7 +1,8 @@
+// components/SecureLayoutClient.tsx
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, ReactNode } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   LayoutDashboard,
@@ -17,9 +18,10 @@ import {
   Activity,
   Shield,
   Wrench,
-  Layers,  // Ikon til "The Turf"
+  Layers,  // Ikon til "The Turf" og Canvas view
   PenTool, // Ikon til DTL Studio
-  ClipboardList // Ikon til Session Planner
+  ClipboardList, // Ikon til Session Planner
+  LayoutGrid // Ikon til Grid view
 } from 'lucide-react';
 import { UserRole, DTLUser, SubscriptionLevel } from '@/lib/server/data';
 import { useLanguage } from './LanguageContext';
@@ -73,6 +75,7 @@ export default function SecureLayoutClient({
 }: SecureLayoutClientProps) {
   const router = useRouter();
   const pathname = usePathname() ?? initialPathname;
+  const searchParams = useSearchParams();
   const langContext = useLanguage();
   const language = langContext?.language ?? lang;
   const setLanguage =
@@ -298,6 +301,29 @@ export default function SecureLayoutClient({
     const headerDict = dict.header || {};
     const langSelectorDict = headerDict.languageSelector || {};
 
+    // LOGIK FOR VIEW TOGGLE
+    const isDashboardRoute = cleanCurrentRoute === '/dashboard';
+    const canUseCanvas = ['Elite', 'Enterprise'].includes(user.subscriptionLevel) || [UserRole.Tester, UserRole.Developer].includes(user.role);
+    
+    // Bestemmer aktuel visning fra søgeparametre
+    const currentView = searchParams.get('view') === 'canvas' ? 'canvas' : 'grid';
+
+    const handleViewChange = (view: 'grid' | 'canvas') => {
+        const currentParams = new URLSearchParams(searchParams.toString());
+        
+        if (view === 'grid') {
+            currentParams.delete('view');
+        } else {
+            currentParams.set('view', 'canvas');
+        }
+
+        const newSearch = currentParams.toString();
+        
+        // Pusher til router med nye søgeparametre
+        router.push(pathname + (newSearch ? `?${newSearch}` : ''));
+    };
+    // SLUT LOGIK FOR VIEW TOGGLE
+
     return (
       <div className="w-full bg-white flex-shrink-0 z-20 relative border-b">
         <div className="h-12 flex items-center justify-between px-2 sm:px-4">
@@ -310,6 +336,44 @@ export default function SecureLayoutClient({
             </button>
             <img src="/images/logo.png" alt="DTL Logo" className="h-7 sm:h-8 w-auto" />
           </div>
+
+          {/* SEKTION TIL VIEW TOGGLE */}
+          {isDashboardRoute && (
+            // OPDATERET: gap-0.5 for minimal afstand + items-end for at rykke ned
+            <div className="flex items-end gap-0.5 mr-auto ml-20"> 
+              {/* Grid Button */}
+              <button
+                  onClick={() => handleViewChange('grid')}
+                  // OPDATERET: Ingen kant eller baggrund i aktiv tilstand
+                  className={`flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-semibold transition-colors border border-transparent 
+                      ${currentView === 'grid' 
+                        ? 'text-orange-600' // Aktiv: Kun orange tekst
+                        : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+              >
+                  <LayoutGrid className="w-4 h-4" />
+                  Grid
+              </button>
+              
+              {/* Canvas Button */}
+              <button
+                  onClick={() => canUseCanvas && handleViewChange('canvas')}
+                  disabled={!canUseCanvas}
+                  title={!canUseCanvas ? (lang === 'da' ? 'Canvas kræver Elite eller Enterprise adgang' : 'Canvas requires Elite or Enterprise access') : ''}
+                  // OPDATERET: Ingen kant eller baggrund i aktiv tilstand
+                  className={`flex items-center gap-1 px-1 py-0.5 rounded-full text-xs font-semibold transition-colors border border-transparent
+                      ${currentView === 'canvas' && canUseCanvas
+                        ? 'text-orange-600' // Aktiv: Kun orange tekst
+                        : 'text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed'
+                      }`}
+              >
+                  <Layers className="w-4 h-4" />
+                  Canvas
+              </button>
+            </div>
+          )}
+          {/* SLUT SEKTION TIL VIEW TOGGLE */}
+
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
