@@ -1,4 +1,4 @@
-// app/[lang]/(secure)/trainer/TrainerClient.tsx (MINIMAL YDRE PADDING V2)
+// app/[lang]/(secure)/trainer/TrainerClient.tsx
 "use client";
 
 import React, { useMemo } from 'react';
@@ -35,9 +35,8 @@ export default function TrainerClient({ dict, trainerHubData, accessLevel, userR
     const t = useMemo(() => dict.trainer_page || {}, [dict]);
 
     return (
-        // KORREKTION: Næsten ingen ydre padding
-        <div className="p-0 md:p-1 lg:p-2"> {/* MINIMAL PADDING HER */}
-            {/* Indre container beholder sin spacing */}
+        // MINIMAL YDRE PADDING (Som defineret i tidligere trin)
+        <div className="p-0 md:p-1 lg:p-2"> 
             <div className="space-y-4 md:space-y-6 xl:space-y-8">
 
                 {/* Grid */}
@@ -48,20 +47,25 @@ export default function TrainerClient({ dict, trainerHubData, accessLevel, userR
 
                         {/* Large Shortcut Buttons */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 xl:gap-8">
-                            <Link href={`/${lang}/trainer/new`} className="group bg-orange-500 text-white p-4 sm:p-6 rounded-lg shadow hover:shadow-md transition-shadow flex items-center space-x-3 sm:space-x-4 cursor-pointer">
+                            
+                            {/* 1. SESSION PLANNER (Opdateret link til /planner) */}
+                            <Link href={`/${lang}/trainer/planner`} className="group bg-orange-500 text-white p-4 sm:p-6 rounded-lg shadow hover:shadow-md transition-shadow flex items-center space-x-3 sm:space-x-4 cursor-pointer">
                                 <PlusCircle className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0" />
                                 <div>
                                     <h2 className="font-bold text-base sm:text-lg">{t.session_planner ?? 'Session Planner'}</h2>
                                     <p className="text-xs sm:text-sm opacity-90">{t.session_planner_desc ?? 'Design og planlæg'}</p>
                                 </div>
                             </Link>
-                            <div className="group bg-black text-white p-4 sm:p-6 rounded-lg shadow hover:shadow-md transition-shadow flex items-center space-x-3 sm:space-x-4 cursor-pointer">
+
+                            {/* 2. DTL STUDIO (Opdateret link til /studio og ændret fra div til Link) */}
+                            <Link href={`/${lang}/trainer/studio`} className="group bg-black text-white p-4 sm:p-6 rounded-lg shadow hover:shadow-md transition-shadow flex items-center space-x-3 sm:space-x-4 cursor-pointer">
                                 <Film className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0" />
                                 <div>
                                     <h2 className="font-bold text-base sm:text-lg">{t.animation_studio ?? 'Animation Studio'}</h2>
                                     <p className="text-xs sm:text-sm opacity-90">{t.animation_studio_desc ?? 'Bring øvelser til live'}</p>
                                 </div>
-                            </div>
+                            </Link>
+                            
                         </div>
 
                         {/* Week's Focus */}

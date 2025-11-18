@@ -8,6 +8,7 @@ export type NoteFont = 'marker' | 'sans';
 export type ConnectionPointId = 'top' | 'right' | 'bottom' | 'left';
 
 // NYT: Definerer et simpelt punkt
+// Til (tilføj 'export'):
 export type Point = { x: number; y: number };
 
 // OPDATERET: Connection kan nu gemme bruger-justerede kontrolpunkter
@@ -37,7 +38,7 @@ export interface CanvasCardPersist {
   size: { w: number; h: number };
 }
 
-export type CanvasBackground = 'default' | 'dots';
+export type CanvasBackground = 'default' | 'dots' | 'week' | 'pitch';
 
 export interface CanvasState {
   zoom: number;

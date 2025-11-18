@@ -2,42 +2,52 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-// OPDATERET: Importerer 'Share2' og 'Trash2'
-import { StickyNote, Zap, Calendar, Image as ImageIcon, Save, Package, Share2, Trash2 } from 'lucide-react';
-import { CanvasCardPersist, NoteColor, NoteFont } from '@/lib/server/dashboard';
+import { 
+  StickyNote, 
+  Package, 
+  Share2, 
+  Trash2, 
+  ImageIcon, 
+  Save,
+  Grid3x3, 
+  CalendarDays, 
+  RectangleHorizontal, 
+  Layers
+} from 'lucide-react';
+import { CanvasCardPersist, NoteColor, NoteFont, CanvasBackground } from '@/lib/server/dashboard';
 
 interface CanvasToolbarProps {
   onAddWidget: (type: CanvasCardPersist['type'], options?: { color?: NoteColor, font?: NoteFont }) => void;
   onOpenWidgetModal: () => void; 
-  onChangeBackground: () => void;
+  onChangeBackground: (bg: CanvasBackground) => void;
   onSaveLayout: () => Promise<void>;
   onToggleConnections: () => void; 
-  onClearConnections: () => void; // <-- NY PROP
+  onClearConnections: () => void;
   isConnecting: boolean; 
-  t: any; // Oversættelser (fra dashboard)
+  t: any; 
 }
 
-/**
- * Dette er den flydende værktøjslinje i venstre side af Canvas (Miro-stil).
- */
 export default function CanvasToolbar({ 
   onAddWidget, 
   onOpenWidgetModal, 
   onChangeBackground, 
   onSaveLayout,
   onToggleConnections, 
-  onClearConnections, // <-- NY
+  onClearConnections,
   isConnecting, 
   t 
 }: CanvasToolbarProps) {
   
   const [isNotePopoverOpen, setIsNotePopoverOpen] = useState(false);
+  const [isBgPopoverOpen, setIsBgPopoverOpen] = useState(false);
+  
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
         setIsNotePopoverOpen(false);
+        setIsBgPopoverOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -46,13 +56,17 @@ export default function CanvasToolbar({
     };
   }, [popoverRef]);
 
-  const buttonClass = "p-2 text-gray-700 rounded-lg hover:bg-orange-100 hover:text-orange-500 transition-colors cursor-pointer";
-  const activeButtonClass = "p-2 bg-orange-100 text-orange-500 rounded-lg cursor-pointer";
-
+  const buttonClass = "p-2 text-black rounded-lg hover:text-orange-500 transition-colors cursor-pointer";
+  const activeButtonClass = "p-2 bg-black text-orange-500 rounded-lg cursor-pointer";
 
   const handleAddNote = (color: NoteColor) => {
     onAddWidget('note', { color: color, font: 'marker' });
     setIsNotePopoverOpen(false);
+  };
+  
+  const handleBgChange = (bg: CanvasBackground) => {
+    onChangeBackground(bg);
+    setIsBgPopoverOpen(false);
   };
 
   return (
@@ -63,7 +77,10 @@ export default function CanvasToolbar({
           <button 
             title={t.addNote ?? 'Add Note'}
             className={isNotePopoverOpen ? activeButtonClass : buttonClass}
-            onClick={() => setIsNotePopoverOpen(!isNotePopoverOpen)} 
+            onClick={() => {
+              setIsNotePopoverOpen(!isNotePopoverOpen);
+              setIsBgPopoverOpen(false);
+            }} 
           >
             <StickyNote className="w-5 h-5" />
           </button>
@@ -76,7 +93,6 @@ export default function CanvasToolbar({
             <Package className="w-5 h-5" />
           </button>
           
-          {/* --- NY FORBINDELSES-KNAP (OPGAVE 7) --- */}
           <button 
             title={t.toggleConnections ?? 'Toggle Connections'}
             className={isConnecting ? activeButtonClass : buttonClass}
@@ -89,8 +105,11 @@ export default function CanvasToolbar({
 
           <button 
             title={t.changeBackground ?? 'Change Background'}
-            className={buttonClass}
-            onClick={onChangeBackground} 
+            className={isBgPopoverOpen ? activeButtonClass : buttonClass}
+            onClick={() => {
+              setIsBgPopoverOpen(!isBgPopoverOpen);
+              setIsNotePopoverOpen(false);
+            }}
           >
             <ImageIcon className="w-5 h-5" />
           </button>
@@ -103,11 +122,10 @@ export default function CanvasToolbar({
             <Save className="w-5 h-5" />
           </button>
 
-          {/* NY SLET-KNAP (KUN HVIS isConnecting ER AKTIV) */}
           {isConnecting && (
              <button 
                 title={t.clearConnections ?? 'Clear All Connections'}
-                className={buttonClass} // Kan styles anderledes (f.eks. rød)
+                className={buttonClass}
                 onClick={onClearConnections} 
               >
                 <Trash2 className="w-5 h-5" />
@@ -117,7 +135,6 @@ export default function CanvasToolbar({
         </div>
       </div>
 
-      {/* Popover til farvevalg */}
       {isNotePopoverOpen && (
         <div className="absolute top-0 left-full ml-2 bg-white rounded-lg shadow-lg border border-gray-200 p-2">
           <div className="flex space-x-2">
@@ -136,6 +153,48 @@ export default function CanvasToolbar({
               className="w-8 h-8 rounded-full bg-pink-200 border-2 border-white hover:border-orange-500"
               onClick={() => handleAddNote('pink')}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Baggrunds-popover */}
+      {isBgPopoverOpen && (
+        <div className="absolute top-0 left-full ml-2 bg-white rounded-lg shadow-lg border border-gray-200 p-2 w-40">
+          
+          {/* --- DIN VALGTE JUSTERING ER HER --- */}
+          <div className="flex flex-col space-y-0.5">
+            <button 
+              title={t.bgDefault ?? 'Default'}
+              className="flex items-center text-left w-full p-2 text-sm text-black rounded-md hover:text-orange-500 transition-colors"
+              onClick={() => handleBgChange('default')}
+            >
+              <Layers className="w-4 h-4 mr-2" />
+              {t.bgDefault ?? 'Default'}
+            </button>
+            <button 
+              title={t.bgDots ?? 'Dots'}
+              className="flex items-center text-left w-full p-2 text-sm text-black rounded-md hover:text-orange-500 transition-colors"
+              onClick={() => handleBgChange('dots')}
+            >
+              <Grid3x3 className="w-4 h-4 mr-2" />
+              {t.bgDots ?? 'Dots'}
+            </button>
+            <button 
+              title={t.bgWeek ?? 'Week Plan'}
+              className="flex items-center text-left w-full p-2 text-sm text-black rounded-md hover:text-orange-500 transition-colors"
+              onClick={() => handleBgChange('week')}
+            >
+              <CalendarDays className="w-4 h-4 mr-2" />
+              {t.bgWeek ?? 'Week Plan'}
+            </button>
+            <button 
+              title={t.bgPitch ?? 'Pitch'}
+              className="flex items-center text-left w-full p-2 text-sm text-black rounded-md hover:text-orange-500 transition-colors"
+              onClick={() => handleBgChange('pitch')}
+            >
+              <RectangleHorizontal className="w-4 h-4 mr-2" />
+              {t.bgPitch ?? 'Pitch'}
+            </button>
           </div>
         </div>
       )}

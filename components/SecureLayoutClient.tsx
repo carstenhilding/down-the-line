@@ -1,10 +1,8 @@
-// components/SecureLayoutClient.tsx (RETTET: h-screen er fjernet for at løse dobbelt scrollbar)
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-// Opdateret imports for at fjerne Rocket og Zap, da de nu bor i DashboardClient
 import {
   LayoutDashboard,
   Users,
@@ -18,22 +16,22 @@ import {
   Calendar,
   Activity,
   Shield,
+  Wrench,
+  Layers,  // Ikon til "The Turf"
+  PenTool, // Ikon til DTL Studio
+  ClipboardList // Ikon til Session Planner
 } from 'lucide-react';
 import { UserRole, DTLUser, SubscriptionLevel } from '@/lib/server/data';
-// Sikr dig at stien til LanguageContext er korrekt
 import { useLanguage } from './LanguageContext';
-// Sikr dig at stien til firebase config er korrekt
 import { auth } from '@/firebase/config';
 import { signOut } from 'firebase/auth';
 
-// Typer for oversættelser
 interface SecureTranslations {
   header: any;
   sidebar: any;
   dashboard: any;
   trainer_page?: any;
   trainer?: any;
-  // ... andre nøgler ...
 }
 
 interface SecureLayoutClientProps {
@@ -44,22 +42,24 @@ interface SecureLayoutClientProps {
   initialPathname: string;
 }
 
-// Definition af moduler
+// OPDATERET: Modul-struktur med "The Turf"
 const modules = [
   { nameKey: 'dashboard', path: '/dashboard', icon: LayoutDashboard, role: 'tester' },
   {
-    nameKey: 'training',
-    icon: BookOpen,
+    // DETTE ER DET NYE HOVEDMODUL-NAV: "THE TURF"
+    nameKey: 'the_turf',        // Nøgle bruges til at finde teksten i JSON-filen
+    icon: Layers,               // Ikonet der vises i sidebaren
     role: 'tester',
-    path: '/trainer',
+    path: '/trainer',           // Ruten, hvor DTL Dashboard (med 3 niveauer) ligger
     subModules: [
-      { nameKey: 'training_new', path: '/trainer/new' },
-      { nameKey: 'training_library', path: '/trainer/library' },
+      { nameKey: 'session_planner', path: '/trainer/planner', icon: ClipboardList }, // Træningsplan
+      { nameKey: 'dtl_studio', path: '/trainer/studio', icon: PenTool },           // DTL Studio
+      { nameKey: 'exercise_catalog', path: '/trainer/library', icon: BookOpen },   // Øvelseskatalog
     ],
   },
   { nameKey: 'club', path: '/calendar', icon: Calendar, role: 'developer' },
   { nameKey: 'players', path: '/profiles', icon: Users, role: 'developer' },
-  { nameKey: 'video', path: '/analysis', icon: Users, role: 'developer' }, // OBS: Users Icon er brugt her - bør måske være Zap/Video
+  { nameKey: 'video', path: '/analysis', icon: Users, role: 'developer' },
   { nameKey: 'scouting', path: '/scouting', icon: Shield, role: 'developer' },
   { nameKey: 'chat', path: '/comms', icon: Activity, role: 'developer' },
 ];
@@ -83,13 +83,14 @@ export default function SecureLayoutClient({
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
+  const [simulatedLevel, setSimulatedLevel] = useState<SubscriptionLevel>(user.subscriptionLevel);
+
   const accessibleModules = modules.filter(
     (m) =>
       user.role === UserRole.Developer ||
       (user.role === UserRole.Tester && m.role !== UserRole.Developer)
   );
 
-  // --- Client-side logik (hooks, handlers) ---
   useEffect(() => {
     const checkScreenWidth = () => {
       if (window.innerWidth < 1024) {
@@ -147,6 +148,11 @@ export default function SecureLayoutClient({
     }
   };
 
+  const handleLevelChange = (level: SubscriptionLevel) => {
+    setSimulatedLevel(level);
+    // Her kunne man evt. gemme valget i en cookie eller context, så det huskes på tværs af sider
+  };
+
   const currentLangSegment = language
     ? `/${language}`
     : pathname.startsWith('/da/')
@@ -164,14 +170,11 @@ export default function SecureLayoutClient({
         (m.path && cleanCurrentRoute.startsWith(m.path) && m.subModules)
     );
     setOpenMenu(activeModule ? activeModule.nameKey : null);
-    // Luk sidebar på mobil ved ruteskift
     if (window.innerWidth < 1024) {
       setIsSidebarOpen(false);
     }
-  }, [cleanCurrentRoute]); // Opdaterer når ruten ændres
-  // --- Slut på Client-side logik ---
+  }, [cleanCurrentRoute]);
 
-  // === SIDEBAR JSX ===
   const Sidebar = () => (
     <aside
       className={`${
@@ -185,6 +188,11 @@ export default function SecureLayoutClient({
       <nav className="flex-1 mt-2 space-y-1 p-2 overflow-y-auto">
         {accessibleModules.map((module) => {
           const sidebarDict = dict.sidebar || {};
+          // Tjekker om hovedmodulet eller et undermodul er aktivt
+          const isParentActive = module.path 
+             ? cleanCurrentRoute.startsWith(module.path) 
+             : module.subModules?.some(sub => cleanCurrentRoute.startsWith(sub.path));
+             
           if (!module.subModules) {
             const isActive = module.path && cleanCurrentRoute.startsWith(module.path);
             return (
@@ -216,7 +224,7 @@ export default function SecureLayoutClient({
               </Link>
             );
           }
-          const isParentActive = module.path ? cleanCurrentRoute.startsWith(module.path) : false;
+          
           const isOpen = openMenu === module.nameKey;
           return (
             <div key={module.nameKey}>
@@ -271,6 +279,7 @@ export default function SecureLayoutClient({
                             : 'text-black hover:text-orange-500 text-xs'
                         }`}
                       >
+                        {/* Evt. vis ikon for undermodul her hvis ønsket */}
                         {sidebarDict[subModule.nameKey] ?? subModule.nameKey}
                       </Link>
                     );
@@ -281,12 +290,9 @@ export default function SecureLayoutClient({
           );
         })}
       </nav>
-      {/* Footer fjernet */}
     </aside>
   );
-  // === SLUT PÅ SIDEBAR JSX ===
 
-  // === HEADER JSX (Uden Quick Access Bar) ===
   const Header = () => {
     const isDtlEmployee = user.role === UserRole.Developer || user.role === UserRole.Tester;
     const headerDict = dict.header || {};
@@ -313,7 +319,6 @@ export default function SecureLayoutClient({
             </button>
             {isProfileOpen && (
               <div className="absolute right-0 mt-2 w-52 sm:w-64 bg-white rounded-lg shadow-xl border z-30">
-                {/* Øverste sektion med brugerinfo */}
                 <div className="p-3 border-b">
                   <p className="font-semibold text-sm truncate">{user.name}</p>
                   {isDtlEmployee ? (
@@ -330,7 +335,6 @@ export default function SecureLayoutClient({
                     </>
                   )}
                 </div>
-                {/* Midtersektion (Settings, Language, Access Level) */}
                 <div className="p-1.5">
                   <a
                     href="#"
@@ -340,6 +344,33 @@ export default function SecureLayoutClient({
                     {headerDict.settings ?? 'Account Settings'}
                   </a>
                   <div className="my-1 border-t"></div>
+                  
+                  {/* DEVELOPER TOOLS */}
+                  {(isDtlEmployee || true) && (
+                    <div className="mb-2 pb-2 border-b border-gray-100">
+                       <div className="px-2 py-1 text-[10px] uppercase text-gray-400 font-bold flex items-center">
+                          <Wrench className="w-3 h-3 mr-1" /> Developer Tools
+                       </div>
+                       <div className="px-2 grid grid-cols-3 gap-1 mt-1">
+                          {(['Starter', 'Expert', 'Elite'] as SubscriptionLevel[]).map((level) => (
+                             <button
+                                key={level}
+                                onClick={() => handleLevelChange(level)}
+                                className={`text-[10px] py-1 px-1 rounded border transition-colors 
+                                   ${
+                                     simulatedLevel === level 
+                                       ? 'bg-orange-500 border-orange-500 text-white font-bold' 
+                                       : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                                   }`}
+                             >
+                                {level}
+                             </button>
+                          ))}
+                       </div>
+                    </div>
+                  )}
+                  {/* END DEVELOPER TOOLS */}
+
                   <div className="flex items-center p-2 text-xs text-gray-400">
                     <Globe className="h-4 w-4 mr-2" />
                     {langSelectorDict.label ?? 'Language'}
@@ -364,11 +395,10 @@ export default function SecureLayoutClient({
                     <p className="text-[10px] text-gray-400 px-2 text-center">
                       {headerDict.access_level_label ??
                         (lang === 'da' ? 'Adgangsniveau:' : 'Access Level:')}{' '}
-                      {user.subscriptionLevel}
+                      <span className="font-medium text-gray-600">{simulatedLevel}</span>
                     </p>
                   </div>
                 </div>
-                {/* Nederste sektion (Logout) */}
                 <div className="border-t p-1.5">
                   <button
                     onClick={handleLogout}
@@ -382,20 +412,13 @@ export default function SecureLayoutClient({
             )}
           </div>
         </div>
-        {/* Quick Access Bar er ikke længere her */}
       </div>
     );
   };
-  // === SLUT PÅ HEADER JSX ===
 
-  // === LAYOUT STRUKTUR ===
   return (
     <div
       id="secure-layout-client-root"
-      // *** RETTELSEN ER HER ***
-      // 'h-screen' er erstattet med 'h-full'. 
-      // Dette tvinger ikke længere layoutet til at være 100% af skærmen,
-      // men 100% af sin forælder, hvilket løser konflikten med headeren.
       className="flex flex-col h-full bg-gray-50 text-black overflow-hidden"
     >
       <Header />

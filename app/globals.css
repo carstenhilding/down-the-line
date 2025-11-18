@@ -74,11 +74,26 @@ body {
 
 /* Ny "dot-grid" baggrund (Miro-stil) */
 .canvas-bg-dots {
-  /* OPDATERET: Baggrundsfarven er nu hvid for at gøre prikkerne tydelige */
   background-color: #ffffff; /* hvid */
   background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px); /* grå prikker */
   background-size: 20px 20px;
 }
+
+/* Ugeplan (Lysegrå kolonner) */
+.canvas-bg-week {
+  background-color: #ffffff; /* Hvid */
+  /* 7 Lige store kolonner med en tynd grå streg */
+  background-image: linear-gradient(to right, #e5e7eb 1px, transparent 1px);
+  background-size: calc(100% / 7) 100%;
+}
+
+/* Fodboldbane (V19): Denne klasse er nu en GENNEMSIGTIG container
+   til den ægte 3D-bane, der ligger nedenunder.
+*/
+.canvas-bg-pitch {
+  background-color: transparent;
+}
+
 
 /* --- NYE KLASSER TIL NOTE-FARVER --- */
 .note-bg-yellow { 
