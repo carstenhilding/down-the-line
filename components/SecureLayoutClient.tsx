@@ -153,7 +153,6 @@ export default function SecureLayoutClient({
 
   const handleLevelChange = (level: SubscriptionLevel) => {
     setSimulatedLevel(level);
-    // Her kunne man evt. gemme valget i en cookie eller context, så det huskes på tværs af sider
   };
 
   const currentLangSegment = language
@@ -181,7 +180,10 @@ export default function SecureLayoutClient({
   const Sidebar = () => (
     <aside
       className={`${
-        isSidebarOpen ? 'w-64' : 'w-20'
+        // ÆNDRING STEP 9: Responsiv sidebar bredde. 
+        // w-64 standard (mobil når åben) og 2xl (stor skærm)
+        // lg:w-52 (208px) på laptop for at spare 48px plads
+        isSidebarOpen ? 'w-64 lg:w-52 2xl:w-64' : 'w-20'
       } bg-white border-r flex flex-col shrink-0 transition-all duration-300 lg:block ${
         isSidebarOpen
           ? 'max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-30 max-lg:pt-12'
@@ -191,7 +193,6 @@ export default function SecureLayoutClient({
       <nav className="flex-1 mt-2 space-y-1 p-2 overflow-y-auto">
         {accessibleModules.map((module) => {
           const sidebarDict = dict.sidebar || {};
-          // Tjekker om hovedmodulet eller et undermodul er aktivt
           const isParentActive = module.path 
              ? cleanCurrentRoute.startsWith(module.path) 
              : module.subModules?.some(sub => cleanCurrentRoute.startsWith(sub.path));
@@ -218,7 +219,8 @@ export default function SecureLayoutClient({
                   }`}
                 />
                 <span
-                  className={`ml-3 whitespace-nowrap transition-opacity ${
+                  // ÆNDRING: text-xs som standard, lidt større på 2xl
+                  className={`ml-3 whitespace-nowrap transition-opacity text-xs 2xl:text-sm ${
                     isSidebarOpen ? 'opacity-100' : 'opacity-0'
                   } ${!isSidebarOpen && 'hidden'}`}
                 >
@@ -254,7 +256,8 @@ export default function SecureLayoutClient({
                   }`}
                 />
                 <span
-                  className={`ml-3 whitespace-nowrap transition-opacity ${
+                  // ÆNDRING: text-xs på laptop, større på 2xl
+                  className={`ml-3 whitespace-nowrap transition-opacity text-xs 2xl:text-sm ${
                     isSidebarOpen ? 'opacity-100' : 'opacity-0'
                   } ${!isSidebarOpen && 'hidden'}`}
                 >
@@ -278,11 +281,13 @@ export default function SecureLayoutClient({
                         href={`/${lang}${subModule.path}`}
                         className={`flex items-center w-full py-1.5 px-2 rounded-lg my-0.5 transition-colors cursor-pointer ${
                           isSubActive
-                            ? 'bg-black text-orange-500 font-bold text-sm'
-                            : 'text-black hover:text-orange-500 text-xs'
-                        }`}
+                            ? 'bg-black text-orange-500 font-bold'
+                            : 'text-black hover:text-orange-500'
+                        } 
+                        ${/* ÆNDRING: Mindre tekst i undermenuen på laptop */ ''}
+                        text-[11px] 2xl:text-xs
+                        `}
                       >
-                        {/* Evt. vis ikon for undermodul her hvis ønsket */}
                         {sidebarDict[subModule.nameKey] ?? subModule.nameKey}
                       </Link>
                     );
@@ -301,11 +306,9 @@ export default function SecureLayoutClient({
     const headerDict = dict.header || {};
     const langSelectorDict = headerDict.languageSelector || {};
 
-    // LOGIK FOR VIEW TOGGLE
     const isDashboardRoute = cleanCurrentRoute === '/dashboard';
     const canUseCanvas = ['Elite', 'Enterprise'].includes(user.subscriptionLevel) || [UserRole.Tester, UserRole.Developer].includes(user.role);
     
-    // Bestemmer aktuel visning fra søgeparametre
     const currentView = searchParams.get('view') === 'canvas' ? 'canvas' : 'grid';
 
     const handleViewChange = (view: 'grid' | 'canvas') => {
@@ -318,11 +321,8 @@ export default function SecureLayoutClient({
         }
 
         const newSearch = currentParams.toString();
-        
-        // Pusher til router med nye søgeparametre
         router.push(pathname + (newSearch ? `?${newSearch}` : ''));
     };
-    // SLUT LOGIK FOR VIEW TOGGLE
 
     return (
       <div className="w-full bg-white flex-shrink-0 z-20 relative border-b">
@@ -337,17 +337,13 @@ export default function SecureLayoutClient({
             <img src="/images/logo.png" alt="DTL Logo" className="h-7 sm:h-8 w-auto" />
           </div>
 
-          {/* SEKTION TIL VIEW TOGGLE */}
           {isDashboardRoute && (
-            // OPDATERET: gap-0.5 for minimal afstand + items-end for at rykke ned
             <div className="flex items-end gap-0.5 mr-auto ml-20"> 
-              {/* Grid Button */}
               <button
                   onClick={() => handleViewChange('grid')}
-                  // OPDATERET: Ingen kant eller baggrund i aktiv tilstand
                   className={`flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-semibold transition-colors border border-transparent 
                       ${currentView === 'grid' 
-                        ? 'text-orange-600' // Aktiv: Kun orange tekst
+                        ? 'text-orange-600' 
                         : 'text-gray-600 hover:bg-gray-100'
                       }`}
               >
@@ -355,15 +351,13 @@ export default function SecureLayoutClient({
                   Grid
               </button>
               
-              {/* Canvas Button */}
               <button
                   onClick={() => canUseCanvas && handleViewChange('canvas')}
                   disabled={!canUseCanvas}
                   title={!canUseCanvas ? (lang === 'da' ? 'Canvas kræver Elite eller Enterprise adgang' : 'Canvas requires Elite or Enterprise access') : ''}
-                  // OPDATERET: Ingen kant eller baggrund i aktiv tilstand
                   className={`flex items-center gap-1 px-1 py-0.5 rounded-full text-xs font-semibold transition-colors border border-transparent
                       ${currentView === 'canvas' && canUseCanvas
-                        ? 'text-orange-600' // Aktiv: Kun orange tekst
+                        ? 'text-orange-600' 
                         : 'text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed'
                       }`}
               >
@@ -372,7 +366,6 @@ export default function SecureLayoutClient({
               </button>
             </div>
           )}
-          {/* SLUT SEKTION TIL VIEW TOGGLE */}
 
           <div className="relative" ref={profileRef}>
             <button
@@ -409,7 +402,6 @@ export default function SecureLayoutClient({
                   </a>
                   <div className="my-1 border-t"></div>
                   
-                  {/* DEVELOPER TOOLS */}
                   {(isDtlEmployee || true) && (
                     <div className="mb-2 pb-2 border-b border-gray-100">
                        <div className="px-2 py-1 text-[10px] uppercase text-gray-400 font-bold flex items-center">
@@ -433,7 +425,6 @@ export default function SecureLayoutClient({
                        </div>
                     </div>
                   )}
-                  {/* END DEVELOPER TOOLS */}
 
                   <div className="flex items-center p-2 text-xs text-gray-400">
                     <Globe className="h-4 w-4 mr-2" />
@@ -494,7 +485,8 @@ export default function SecureLayoutClient({
             onClick={() => setIsSidebarOpen(false)}
           ></div>
         )}
-        <main className="flex-1 overflow-y-auto p-2 md:p-4">
+        {/* ÆNDRING STEP 9: Fjerner ydre padding på main for at lade session planner styre det hele (p-0) */}
+        <main className="flex-1 overflow-y-auto p-0">
           {children}
         </main>
       </div>

@@ -1,3 +1,4 @@
+// app/[lang]/(secure)/dashboard/DashboardClient.tsx
 'use client';
 
 // Imports
@@ -58,7 +59,6 @@ import { SmartWidget } from '@/components/dashboard/widgets/SmartWidget';
 import CanvasToolbar from '@/components/dashboard/CanvasToolbar';
 import ConnectionArrow, { getSvgPath_defaultLogic, CURVE_OFFSET } from '@/components/dashboard/ConnectionArrow';
 import ConnectionHandle from '@/components/dashboard/ConnectionHandle';
-// RETTELSE: Importerer den omdøbte fil
 import PitchBackground from '@/components/dashboard/PitchBackground_FIX';
 
 
@@ -194,7 +194,7 @@ const QuickAccessBar = ({ t, accessLevel, lang }: { t: any; accessLevel: Subscri
         </div>
         <div className={ICON_SIZE_CLASS}></div>
       </Link>
-      <Link href="/trainer/new?mode=exercise"
+      <Link href={`/${lang}/trainer/studio`}
         className={buttonClass + " w-full md:w-[calc(50%-8px)] lg:w-[calc(33.33%-10.66px)] xl:w-[calc(25%-12px)]"}>
         <div className='flex items-center'>
           <GitPullRequestArrowIcon className={ICON_SIZE_CLASS + " text-orange-500 shrink-0"} />
@@ -1095,7 +1095,8 @@ export default function DashboardClient({
 
   // Selve return-statement
   return (
-    <>
+    // TILFØJET WRAPPER MED PADDING HER
+    <div className="h-full overflow-y-auto p-2 lg:p-4 bg-gray-50"> 
       {isWidgetModalOpen && (
         <WidgetModal
           t={t}
@@ -1105,12 +1106,9 @@ export default function DashboardClient({
         />
       )}
 
-      {/* Denne div er den, der skabte det UDENFORS-hul. Vi fjerner mb-4. */}
-      <div>
+      <div className="mb-4">
         <QuickAccessBar t={t} accessLevel={accessLevel} lang={lang} />
       </div>
-
-      {/* ViewModeToggle er nu i headeren */}
 
       {(activeTool === 'grid' || activeTool === 'add') && (
         <ResponsiveGridLayout
@@ -1138,7 +1136,6 @@ export default function DashboardClient({
           style={{ cursor: isConnecting ? 'crosshair' : (isDraggingCanvas ? 'grabbing' : 'grab') }}
         >
 
-          {/* === RETTELSE 1: Wrapper for græsset (z-0) === */}
           {canvasBackground === 'pitch' && (
             <div className="absolute inset-0 z-0">
               <Suspense fallback={null}>
@@ -1147,7 +1144,6 @@ export default function DashboardClient({
             </div>
           )}
 
-          {/* === RETTELSE 2: Wrapper for Toolbar (z-20) === */}
           <div className="absolute z-20 top-1 left-1">
             <CanvasToolbar
               onAddWidget={addCardToCanvas}
@@ -1161,7 +1157,6 @@ export default function DashboardClient({
             />
           </div>
 
-          {/* Canvas Indhold (Kort og Pile) ligger ovenpå (z-10) */}
           <div
             className="absolute inset-0 origin-top-left transition-transform duration-50"
             style={{
@@ -1171,7 +1166,6 @@ export default function DashboardClient({
             }}
           >
 
-            {/* SVG LAG TIL PILE (z-index 10) */}
             <svg
               width="100%"
               height="100%"
@@ -1201,7 +1195,6 @@ export default function DashboardClient({
                 </marker>
               </defs>
 
-              {/* Tegn gemte forbindelser */}
               {connections.map(conn => {
                 const fromCard = canvasCards.find(c => c.id === conn.fromId);
                 const toCard = canvasCards.find(c => c.id === conn.toId);
@@ -1231,7 +1224,6 @@ export default function DashboardClient({
                 );
               })}
 
-              {/* Tegn midlertidig pil, der følger musen */}
               {tempArrow && (() => {
                 const fromCard = canvasCards.find(c => c.id === tempArrow.fromId);
                 if (!fromCard) return null;
@@ -1249,7 +1241,6 @@ export default function DashboardClient({
                 );
               })()}
 
-              {/* Tegn justeringshåndtag */}
               {selectedConnectionId && !isConnecting && (() => {
                 const conn = connections.find(c => c.id === selectedConnectionId);
                 if (!conn) return null;
@@ -1290,8 +1281,6 @@ export default function DashboardClient({
                 );
               })()}
             </svg>
-            {/* --- SLUT PÅ SVG LAG --- */}
-
 
             {canvasCards.map((card) => {
 
@@ -1438,12 +1427,6 @@ export default function DashboardClient({
                             {card.type === 'ai_readiness' && (
                               <AiReadinessWidget userData={{ subscriptionLevel: accessLevel }} lang={lang} />
                             )}
-                            {card.empty_widget && ( // Antager vi har en 'empty_widget' type
-                              <div className="p-4">
-                                <h3 className="font-semibold">{card.content?.title}</h3>
-                                <p className="text-sm text-gray-600">{card.content?.text}</p>
-                              </div>
-                            )}
                             {card.type === 'weekly_calendar' && (
                               <CalendarWidget translations={t} lang={lang} />
                             )}
@@ -1458,6 +1441,6 @@ export default function DashboardClient({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

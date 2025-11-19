@@ -172,6 +172,9 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
 
+  // GRID BAGGRUND & KORT STØRRELSE STATE
+  const [baseGridSize, setBaseGridSize] = useState(40); // Standard 40px
+
   // SESSION MANAGEMENT
   const [weeklySessions, setWeeklySessions] = useState<Session[]>([
       { id: 's1', day: 'Mandag', time: '17:30', team: 'U19', type: 'Fodbold', status: 'ready', theme: 'Fase 1 - Opbygningsspil' },
@@ -193,7 +196,7 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
   const [cards, setCards] = useState<PlannerCard[]>([
     { 
         id: 'drill-1', type: 'drill', title: 'Rondo: Fase 2', content: '', 
-        x: 150, y: 100, w: 220, h: 160, color: 'bg-white', 
+        x: 150, y: 100, w: 180, h: 130, color: 'bg-white', 
         duration: 15, intensity: 'medium', phase: 'Fase 2', tags: ['Possession'],
         ref: React.createRef<HTMLDivElement>() 
     }
@@ -208,11 +211,32 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
 
   // RESPONSIV HANDLER
   useEffect(() => {
-      if (window.innerWidth < 1024) { 
-          setIsRightPanelOpen(false);
-      } else {
-          setIsRightPanelOpen(true);
+      const handleResize = () => {
+          // Sidebar logik
+          if (window.innerWidth < 1024) { 
+              setIsRightPanelOpen(false);
+          } else {
+              setIsRightPanelOpen(true);
+          }
+          
+          // Gitter logik
+          if (window.innerWidth <= 1280) {
+              setBaseGridSize(20);
+          } else {
+              setBaseGridSize(40);
+          }
+      };
+
+      // Initial resize check
+      handleResize();
+      
+      // Kort-størrelse ved load
+      if (window.innerWidth <= 1280) {
+          setCards(prevCards => prevCards.map(c => ({ ...c, w: 180, h: 130 })));
       }
+
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // MOCK DEMO TRUP
@@ -252,8 +276,15 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
   // ACTIONS
   const openEditModal = (cardId: string) => { setEditingCardId(cardId); setModalOpen(true); };
   const addCard = (type: CardType, data?: any) => {
+    const isSmall = window.innerWidth <= 1280;
+    const newWidth = isSmall ? 180 : 220;
+    const newHeight = isSmall ? 130 : 160;
+
     const newCard: PlannerCard = {
-        id: `card-${Date.now()}`, type, title: data?.title || (type === 'drill' ? 'Ny Øvelse' : 'Note'), content: '', x: -position.x + 200, y: -position.y + 150, w: 220, h: 160, color: type === 'note' ? 'bg-yellow-100' : 'bg-white', duration: 15, intensity: 'medium', tags: [], ref: React.createRef<HTMLDivElement>()
+        id: `card-${Date.now()}`, type, title: data?.title || (type === 'drill' ? 'Ny Øvelse' : 'Note'), content: '', 
+        x: -position.x + 200, y: -position.y + 150, 
+        w: newWidth, h: newHeight, 
+        color: type === 'note' ? 'bg-yellow-100' : 'bg-white', duration: 15, intensity: 'medium', tags: [], ref: React.createRef<HTMLDivElement>()
     };
     setCards([...cards, newCard]); setTimeout(() => { setEditingCardId(newCard.id); setModalOpen(true); }, 50);
   };
@@ -274,30 +305,23 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
   const switchSession = (sessionId: string) => { setActiveSessionId(sessionId); };
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100dvh-80px)] bg-[#F2F4F7] text-black font-sans overflow-hidden p-3 gap-3 relative">
+    <div className="flex flex-col lg:flex-row h-[calc(100dvh-55px)] lg:h-[calc(100dvh-55px)] 2xl:h-[calc(100dvh-80px)] bg-[#F2F4F7] text-black font-sans overflow-hidden p-2 lg:p-[2px] lg:gap-[2px] 2xl:p-4 2xl:gap-4 relative">
       
       <DrillModal isOpen={modalOpen} onClose={() => setModalOpen(false)} card={getEditingCard()} onSave={updateCard} lang={lang} />
 
       {/* --- VENSTRE KOLONNE --- */}
-      <div className="flex-1 flex flex-col gap-3 min-w-0 h-full">
+      <div className="flex-1 flex flex-col gap-2 lg:gap-[2px] 2xl:gap-3 min-w-0 h-full">
         
         {/* 1. CANVAS */}
-        <div className="flex-1 relative rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-white">
+        <div className="flex-1 relative rounded-xl lg:rounded-lg 2xl:rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-white">
             
-            {/* DESKTOP TOGGLE */}
-            <div className="absolute top-4 right-4 z-40">
-                 <button onClick={() => setIsRightPanelOpen(!isRightPanelOpen)} className="hidden lg:flex items-center justify-center w-8 h-8 bg-white rounded-lg shadow-md border border-slate-100 text-slate-500 hover:text-orange-600 transition-colors">
-                    {isRightPanelOpen ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}
-                 </button>
-            </div>
-
             {/* MOBILE MENU */}
             <div className="absolute top-4 right-4 z-40 lg:hidden">
                  <button onClick={() => setIsRightPanelOpen(!isRightPanelOpen)} className="p-2 bg-white rounded-lg shadow-md border border-slate-100 text-slate-600"><Menu size={20} /></button>
             </div>
 
-            <div ref={canvasRef} className={`w-full h-full relative bg-white rounded-2xl overflow-hidden ${isDraggingCanvas ? 'cursor-grabbing' : 'cursor-default'} pt-0`} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-                <div className="absolute inset-0 pointer-events-none opacity-[0.15]" style={{ backgroundImage: `linear-gradient(#94A3B8 1px, transparent 1px), linear-gradient(90deg, #94A3B8 1px, transparent 1px)`, backgroundSize: `${40 * scale}px ${40 * scale}px`, backgroundPosition: `${position.x}px ${position.y}px` }} />
+            <div ref={canvasRef} className={`w-full h-full relative bg-white rounded-2xl lg:rounded-lg 2xl:rounded-2xl overflow-hidden ${isDraggingCanvas ? 'cursor-grabbing' : 'cursor-default'} pt-0`} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+                <div className="absolute inset-0 pointer-events-none opacity-[0.15]" style={{ backgroundImage: `linear-gradient(#94A3B8 1px, transparent 1px), linear-gradient(90deg, #94A3B8 1px, transparent 1px)`, backgroundSize: `${baseGridSize * scale}px ${baseGridSize * scale}px`, backgroundPosition: `${position.x}px ${position.y}px` }} />
                 <div className="absolute top-0 left-0 origin-top-left will-change-transform" style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})` }}>
                     <svg className="absolute top-0 left-0 w-full h-full overflow-visible pointer-events-none" style={{ zIndex: 0 }}>
                         {connections.map(conn => {
@@ -334,31 +358,54 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
                         );
                     })}
                 </div>
-                <div className="absolute top-4 left-4 flex flex-col gap-2 z-20">
-                     <div className="bg-white p-1.5 rounded-xl shadow-lg border border-slate-200 flex flex-col gap-1">
-                        <button onClick={() => addCard('drill')} className="p-2 rounded-lg hover:bg-orange-50 text-slate-500 hover:text-orange-600 transition-colors" title="Ny Øvelse"><LayoutTemplate size={20} /></button>
-                        <button onClick={() => addCard('note')} className="p-2 rounded-lg hover:bg-yellow-50 text-slate-500 hover:text-yellow-600 transition-colors" title="Ny Note"><StickyNote size={20} /></button>
+                
+                {/* ÆNDRING STEP 15: Toolbar placeret top-1 left-1 for at matche Dashboard */}
+                <div className="absolute top-3 left-3 flex flex-col gap-2 z-20">
+                     <div className="origin-top-left transition-transform duration-300 scale-75 2xl:scale-100">
+                         <div className="bg-white p-1.5 rounded-xl shadow-lg border border-slate-200 flex flex-col gap-1">
+                            <button onClick={() => addCard('drill')} className="p-2 rounded-lg hover:bg-orange-50 text-slate-500 hover:text-orange-600 transition-colors" title="Ny Øvelse"><LayoutTemplate size={20} /></button>
+                            <button onClick={() => addCard('note')} className="p-2 rounded-lg hover:bg-yellow-50 text-slate-500 hover:text-yellow-600 transition-colors" title="Ny Note"><StickyNote size={20} /></button>
+                         </div>
+                         <div className="bg-white px-2 py-1 rounded-lg shadow-md border border-slate-200 text-[10px] font-bold text-slate-400 text-center mt-2">{Math.round(scale * 100)}%</div>
                      </div>
-                     <div className="bg-white px-2 py-1 rounded-lg shadow-md border border-slate-200 text-[10px] font-bold text-slate-400 text-center">{Math.round(scale * 100)}%</div>
                 </div>
             </div>
         </div>
 
         {/* 2. TIMELINE */}
-        <div className={`shrink-0 w-full bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden relative transition-all duration-300 ${isDraggingCard ? 'ring-2 ring-orange-400 ring-dashed bg-orange-50/50' : ''} ${isBottomPanelOpen ? 'h-44' : 'h-12'}`}>
-             <div className="h-12 border-b border-slate-100 px-4 flex items-center justify-between bg-white z-10 cursor-pointer border-t border-slate-100" onClick={() => setIsBottomPanelOpen(!isBottomPanelOpen)}>
-                <div className="flex items-center gap-3">
-                    <div className="bg-orange-100 p-1.5 rounded text-orange-600"><Clock size={14} /></div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-700">Tidslinje</span>
+        <div className={`
+            shrink-0 w-full bg-white rounded-xl lg:rounded-lg 2xl:rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden relative transition-all duration-300 
+            ${isDraggingCard ? 'ring-2 ring-orange-400 ring-dashed bg-orange-50/50' : ''} 
+            ${isBottomPanelOpen ? 'h-32 2xl:h-44' : 'h-10 2xl:h-12'}
+        `}>
+             <div className="h-8 lg:h-8 2xl:h-12 border-b border-slate-100 px-3 2xl:px-4 flex items-center justify-between bg-white z-10 cursor-pointer border-t border-slate-100" onClick={() => setIsBottomPanelOpen(!isBottomPanelOpen)}>
+                <div className="flex items-center gap-2 2xl:gap-3">
+                    <div className="bg-orange-100 p-1 2xl:p-1.5 rounded text-orange-600"><Clock size={14} className="w-3 h-3 2xl:w-4 2xl:h-4" /></div>
+                    <span className="text-[10px] 2xl:text-xs font-bold uppercase tracking-wider text-slate-700">Tidslinje</span>
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="h-1.5 w-32 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-orange-400 to-orange-600" style={{ width: `${Math.min((totalDuration/90)*100, 100)}%` }}></div></div>
-                    <span className="text-xs font-mono text-slate-500"><span className="text-slate-900 font-bold">{totalDuration}</span> / 90m</span>
-                    {isBottomPanelOpen ? <ChevronDown size={16} className="text-slate-400"/> : <ChevronUp size={16} className="text-slate-400"/>}
+                <div className="flex items-center gap-2 2xl:gap-3">
+                    <div className="h-1.5 w-24 2xl:w-32 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-orange-400 to-orange-600" style={{ width: `${Math.min((totalDuration/90)*100, 100)}%` }}></div></div>
+                    <span className="text-[10px] 2xl:text-xs font-mono text-slate-500"><span className="text-slate-900 font-bold">{totalDuration}</span> / 90m</span>
+                    {isBottomPanelOpen ? <ChevronDown size={14} className="text-slate-400 2xl:w-4 2xl:h-4"/> : <ChevronUp size={14} className="text-slate-400 2xl:w-4 2xl:h-4"/>}
                 </div>
              </div>
-             <div className="flex-1 p-3 overflow-x-auto bg-[#F8FAFC] flex items-center relative scrollbar-hide">
-                 {isBottomPanelOpen && (timelineItems.length === 0 ? <div className="w-full flex justify-center text-slate-400 text-xs font-medium">{isDraggingCard ? 'Slip for at tilføje' : 'Træk øvelser herned'}</div> : <div className="flex gap-2 h-full w-full min-w-max px-2 z-10">{timelineItems.map((item, idx) => (<div key={item.id} style={{ flex: item.duration }} className="h-full bg-white border border-slate-200 rounded-lg shadow-sm relative group hover:shadow-md hover:border-orange-300 transition-all cursor-grab flex flex-col overflow-hidden min-w-[100px]"><div className={`h-1 w-full ${getIntensityColor(item.intensity)}`}></div><div className="flex-1 p-2 flex flex-col justify-between"><span className="text-[10px] font-bold text-slate-400 uppercase">{idx + 1}. {item.duration}m</span><span className="text-xs font-bold text-slate-800 line-clamp-2">{item.title}</span><button onClick={() => removeFromTimeline(item.id)} className="self-end text-slate-300 hover:text-red-500 transition-colors"><X size={12}/></button></div></div>))}</div>)}
+             <div className="flex-1 p-1 lg:p-1 2xl:p-3 overflow-x-auto bg-[#F8FAFC] flex items-center relative scrollbar-hide">
+                 {isBottomPanelOpen && (
+                    timelineItems.length === 0 
+                    ? <div className="w-full flex justify-center text-slate-400 text-xs font-medium">{isDraggingCard ? 'Slip for at tilføje' : 'Træk øvelser herned'}</div> 
+                    : <div className="flex gap-2 h-full w-full min-w-max px-2 z-10">
+                        {timelineItems.map((item, idx) => (
+                            <div key={item.id} style={{ flex: item.duration }} className="h-full bg-white border border-slate-200 rounded-lg shadow-sm relative group hover:shadow-md hover:border-orange-300 transition-all cursor-grab flex flex-col overflow-hidden min-w-[80px] 2xl:min-w-[100px]">
+                                <div className={`h-1 w-full ${getIntensityColor(item.intensity)}`}></div>
+                                <div className="flex-1 p-1.5 2xl:p-2 flex flex-col justify-between">
+                                    <span className="text-[9px] 2xl:text-[10px] font-bold text-slate-400 uppercase">{idx + 1}. {item.duration}m</span>
+                                    <span className="text-[10px] 2xl:text-xs font-bold text-slate-800 line-clamp-2 leading-tight">{item.title}</span>
+                                    <button onClick={() => removeFromTimeline(item.id)} className="self-end text-slate-300 hover:text-red-500 transition-colors"><X size={10} className="2xl:w-3 2xl:h-3"/></button>
+                                </div>
+                            </div>
+                        ))}
+                      </div>
+                 )}
              </div>
         </div>
       </div>
@@ -366,49 +413,56 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
       {/* --- HØJRE KOLONNE (Sidebar) --- */}
       <div 
         className={`
-            fixed inset-y-0 right-0 z-50 w-[360px] bg-white/95 backdrop-blur-2xl shadow-2xl transition-all duration-300 ease-in-out
+            fixed inset-y-0 right-0 z-50 bg-white/95 backdrop-blur-2xl shadow-2xl transition-all duration-300 ease-in-out
             lg:relative lg:shadow-none lg:bg-transparent lg:z-auto lg:flex lg:flex-col lg:h-full
-            ${isRightPanelOpen ? 'translate-x-0 w-[360px] lg:w-[360px]' : 'translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden'}
+            
+            w-[85vw] sm:w-[360px] 
+            lg:w-[260px] 2xl:w-[360px]
+
+            ${isRightPanelOpen 
+                ? 'translate-x-0' 
+                : 'translate-x-full lg:translate-x-0 lg:!w-0 lg:overflow-hidden'
+            }
         `}
       >
             <button onClick={() => setIsRightPanelOpen(false)} className="absolute top-3 right-3 p-2 rounded-full bg-slate-100 text-slate-500 lg:hidden z-50"><X size={20} /></button>
             
-            <div className="flex-1 bg-white/95 backdrop-blur-2xl rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden relative h-full min-w-[360px]">
+            <div className="flex-1 bg-white/95 backdrop-blur-2xl rounded-2xl lg:rounded-lg 2xl:rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden relative h-full w-full">
                 <div className="h-10 border-b border-slate-100 flex items-center px-2 gap-1 bg-white">
                      <button onClick={() => setActiveTab('overview')} className={`flex-1 py-1 text-[10px] font-extrabold uppercase tracking-wider rounded-lg transition-all ${activeTab === 'overview' ? 'bg-slate-100 text-black' : 'text-slate-400 hover:bg-slate-50'}`}>Info</button>
                      <button onClick={() => setActiveTab('library')} className={`flex-1 py-1 text-[10px] font-extrabold uppercase tracking-wider rounded-lg transition-all ${activeTab === 'library' ? 'bg-slate-100 text-orange-600' : 'text-slate-400 hover:bg-slate-50'}`}>Byg</button>
                      <button onClick={() => setActiveTab('ai')} className={`flex-1 py-1 text-[10px] font-extrabold uppercase tracking-wide rounded-lg transition-all ${activeTab === 'ai' ? 'bg-slate-100 text-orange-600' : 'text-slate-400 hover:bg-slate-50'}`}>AI</button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar bg-white">
+                <div className="flex-1 overflow-y-auto p-2 2xl:p-3 space-y-2 2xl:space-y-3 custom-scrollbar bg-white">
                     {activeTab === 'overview' && (
-                        <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div className="space-y-2 2xl:space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
                              
-                             {/* PERIODISERING WIDGET (MØRK/POWER STYLE) */}
-                             <div className="rounded-xl overflow-hidden shadow-md bg-slate-900 text-white relative group p-4">
+                             {/* PERIODISERING WIDGET */}
+                             <div className="rounded-xl overflow-hidden shadow-md bg-slate-900 text-white relative group p-2 2xl:p-4">
                                  <div className="relative z-10">
-                                     <div className="flex justify-between items-center mb-3">
-                                         <h4 className="text-xs font-extrabold uppercase tracking-widest text-white truncate pr-2">
+                                     <div className="flex justify-between items-center mb-2 2xl:mb-3">
+                                         <h4 className="text-[10px] 2xl:text-xs font-extrabold uppercase tracking-wide 2xl:tracking-widest text-white truncate pr-2">
                                              PERIODISERING - {currentSession.team.toUpperCase()}
                                          </h4>
                                      </div>
                                      
-                                     <div className="space-y-3">
+                                     <div className="space-y-2 2xl:space-y-3">
                                          <div>
                                              <div className="flex justify-between items-center mb-1">
                                                 <span className="text-[9px] font-bold text-slate-400 uppercase">Primær</span>
-                                                <span className="text-[14px] font-bold text-white">Uge 42</span>
+                                                <span className="text-[10px] 2xl:text-[14px] font-bold text-white">Uge 42</span>
                                              </div>
-                                             <p className="text-sm font-bold text-white leading-tight">{currentSession.theme}</p>
+                                             <p className="text-[10px] 2xl:text-sm font-bold text-white leading-tight">{currentSession.theme}</p>
                                          </div>
                                          <div>
                                              <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Sekundær</span>
-                                             <p className="text-xs font-medium text-slate-300 leading-tight">Defensiv Omstilling</p>
+                                             <p className="text-[10px] 2xl:text-xs font-medium text-slate-300 leading-tight">Defensiv Omstilling</p>
                                          </div>
                                      </div>
                                  </div>
                                  
-                                 {/* Watermark Icon (Bottom Right) - Transparent Hvid/Orange */}
+                                 {/* Watermark Icon */}
                                  <div className="absolute right-[-10px] bottom-[-10px] text-orange-500 opacity-20 pointer-events-none">
                                      <Target size={100} />
                                  </div>
@@ -456,7 +510,7 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
                                                      <div className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border-2 border-white ${p.status === 'ready' ? 'bg-green-500' : (p.status === 'injured' || p.status === 'absent') ? 'bg-red-500' : p.status === 'limited' ? 'bg-yellow-400' : 'bg-purple-500'}`}></div>
                                                  </div>
                                                  <div className="flex flex-col">
-                                                     <span className={`text-[11px] font-bold leading-tight ${(p.status === 'injured' || p.status === 'absent') ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{p.name}</span>
+                                                     <span className={`text-[10px] 2xl:text-[11px] font-bold leading-tight ${(p.status === 'injured' || p.status === 'absent') ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{p.name}</span>
                                                      <span className="text-[9px] text-slate-400 font-medium">{p.pos}</span>
                                                  </div>
                                              </div>
