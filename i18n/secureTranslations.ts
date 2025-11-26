@@ -10,6 +10,7 @@ export type Header = SecureI18NRoot['header'];
 export type Sidebar = SecureI18NRoot['sidebar']; // Sikrer at de nye nøgler kan læses
 export type TrainerPage = SecureI18NRoot['trainer_page'];
 export type Trainer = SecureI18NRoot['trainer'];
+export type Library = SecureI18NRoot['library']; // <-- NY LINJE
 
 // Trin 3: Saml dem i den endelige type.
 export type SecureTranslations = {
@@ -17,7 +18,8 @@ export type SecureTranslations = {
   header: Header; 
   sidebar: Sidebar; 
   trainer_page: TrainerPage; 
-  trainer: Trainer; 
+  trainer: Trainer;
+  library: Library; // <-- NY LINJE 
  
   // Tilføj fremtidige moduler her:
  // calendar: object;

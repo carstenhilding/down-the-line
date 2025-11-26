@@ -15,7 +15,8 @@ export async function fetchSecureTranslations(lang: string): Promise<SecureTrans
     sidebar: dict.sidebar,
     trainer_page: dict.trainer_page,
     // SIKRER 'trainer' nøglen er inkluderet
-    trainer: dict.trainer, 
+    trainer: dict.trainer,
+    library: dict.library, // <-- NY LINJE 
     
     // Tilføj fremtidige moduler her:
     // calendar: dict.calendar,

@@ -95,6 +95,36 @@ export const secureI18n = {
       notesLabel: "Coach Notes",
       saveButton: "Save Session",
       cancelButton: "Cancel"
+    },
+    // NY SEKTION: Library (Fra Master Dok: "Intelligent Asset Management")
+    library: {
+      title: "Library & Assets",
+      subtitle: "Intelligent Asset Management",
+      createBtn: "Create Drill",
+      searchPlaceholder: 'Search (e.g. "Pressing" or "U12")',
+      tabs: {
+        global: "DTL Global",
+        club: "Club Curriculum",
+        team: "Team Library",
+        personal: "My Drills"
+      },
+      filters: {
+        all: "All",
+        warmup: "Warm-up",
+        technical: "Technical",
+        tactical: "Tactical",
+        physical: "Physical",
+        mental: "Mental"
+      },
+      card: {
+        verified: "Verified",
+        by: "By",
+        highIntensity: "High Intensity"
+      },
+      emptyState: {
+        title: "No assets found",
+        desc: "Try changing your filters or search query"
+      }
     }
   },
 
@@ -192,6 +222,36 @@ export const secureI18n = {
       notesLabel: "Trænernoter",
       saveButton: "Gem Pas",
       cancelButton: "Annuller"
+    },
+// NY SEKTION: Library
+    library: {
+      title: "Bibliotek & Assets",
+      subtitle: "Intelligent Asset Management",
+      createBtn: "Opret Øvelse",
+      searchPlaceholder: 'Søg (f.eks. "Genpres" eller "U12")',
+      tabs: {
+        global: "DTL Global",
+        club: "Klubbens Curriculum",
+        team: "Team Library",
+        personal: "Mine Øvelser"
+      },
+      filters: {
+        all: "Alle",
+        warmup: "Opvarmning",
+        technical: "Teknisk",
+        tactical: "Taktisk",
+        physical: "Fysisk",
+        mental: "Mentalt"
+      },
+      card: {
+        verified: "Verificeret",
+        by: "Af",
+        highIntensity: "Høj Intensitet"
+      },
+      emptyState: {
+        title: "Ingen assets fundet",
+        desc: "Prøv at ændre dine filtre eller søgning"
+      }
     }
   }
 };
