@@ -6,6 +6,8 @@ import { fetchUserAccessLevel, UserRole } from '@/lib/server/data';
 import SecureLayoutClient from '@/components/SecureLayoutClient'; // Sørg for stien er korrekt
 import { Language } from '@/components/LanguageContext';
 import validateLang from '@/lib/lang';
+// NY: Vi importerer UserProvider for at kunne styre niveauer globalt
+import { UserProvider } from '@/components/UserContext';
 
 interface SecureLayoutProps {
   children: React.ReactNode;
@@ -36,13 +38,16 @@ export default async function SecureLayout({ children, params }: SecureLayoutPro
 
   // 2. RENDERING AF CLIENT COMPONENT
   return (
-    <SecureLayoutClient
-    user={user}
-    dict={dict}
-    lang={locale}
-    initialPathname={initialPathname}
-  >
-      {children}
-    </SecureLayoutClient>
+    // VI WRAPPER DET HELE I USERPROVIDER HER, så hele appen kender brugerens niveau:
+    <UserProvider initialUser={user}>
+        <SecureLayoutClient
+        user={user}
+        dict={dict}
+        lang={locale}
+        initialPathname={initialPathname}
+        >
+            {children}
+        </SecureLayoutClient>
+    </UserProvider>
   );
 }

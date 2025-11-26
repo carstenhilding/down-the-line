@@ -15,6 +15,9 @@ import Draggable, { DraggableEvent, DraggableData } from 'react-draggable';
 import { Resizable, ResizeCallbackData } from 'react-resizable';
 import Link from 'next/link';
 import "react-resizable/css/styles.css";
+// HUSK: Importér updateSession også!
+import { createSession, getUserSessions, updateSession } from '@/lib/services/sessionService';
+import { useUser } from '@/components/UserContext'; 
 
 // --- TYPER ---
 type CardType = 'drill' | 'note';
@@ -30,6 +33,7 @@ interface Session {
     type: string;
     status: 'draft' | 'ready' | 'completed';
     theme: string;
+    exercises?: TimelineItem[];
 }
 
 interface PlannerCard {
@@ -164,6 +168,7 @@ const DrillModal = ({ card, isOpen, onClose, onSave, lang }: any) => {
 // --- MAIN COMPONENT ---
 export default function SessionPlannerClient({ dict, plannerData, accessLevel, userRole, lang }: SessionPlannerClientProps) {
   const t = dict.trainer_page || {};
+  const { user } = useUser();
   
   // UI STATE
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
@@ -177,14 +182,9 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
 
   // SESSION MANAGEMENT
   const [weeklySessions, setWeeklySessions] = useState<Session[]>([
-      { id: 's1', day: 'Mandag', time: '17:30', team: 'U19', type: 'Fodbold', status: 'ready', theme: 'Fase 1 - Opbygningsspil' },
-      { id: 's2', day: 'Mandag', time: '06:30', team: 'Morgentræning', type: 'Teknik', status: 'completed', theme: 'Individuel Teknik' },
-      { id: 's3', day: 'Onsdag', time: '17:30', team: 'U19', type: 'Fodbold', status: 'draft', theme: 'Erobringsspil' },
-      { id: 's4', day: 'Torsdag', time: '06:30', team: 'Morgentræning', type: 'Fysisk', status: 'draft', theme: 'Styrke' },
-      { id: 's5', day: 'Torsdag', time: '17:30', team: 'U19', type: 'Fodbold', status: 'draft', theme: 'Kampforberedelse' },
-      { id: 's6', day: 'Fredag', time: '16:00', team: 'U-trup', type: 'Talent', status: 'draft', theme: 'Teknisk/Taktisk' },
+      { id: 'new', day: 'I dag', time: '17:00', team: 'U19', type: 'Fodbold', status: 'draft', theme: 'Nyt Pas' }
   ]);
-  const [activeSessionId, setActiveSessionId] = useState<string>('s1');
+  const [activeSessionId, setActiveSessionId] = useState<string>('new');
   const currentSession = weeklySessions.find(s => s.id === activeSessionId) || weeklySessions[0];
 
   // CANVAS STATE
@@ -209,32 +209,61 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
   const dragStartPoint = useRef({ x: 0, y: 0 });
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
 
+  // --- INDLÆS DATA FRA DATABASE ---
+  useEffect(() => {
+    async function loadUserSessions() {
+        const userId = user?.id || 'dtl-dev-123';
+        const sessions = await getUserSessions(userId);
+
+        if (sessions && sessions.length > 0) {
+            const mappedSessions: Session[] = sessions.map(s => ({
+                id: s.id || 'unknown',
+                day: new Date(s.date).toLocaleDateString('da-DK', { weekday: 'long' }),
+                time: new Date(s.date).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }),
+                team: 'U19', 
+                type: 'Fodbold',
+                status: 'ready',
+                theme: s.title || 'Uden navn',
+                exercises: s.exercises 
+            }));
+
+            // Behold 'new' session i listen for at kunne oprette nye
+            setWeeklySessions([
+                { id: 'new', day: 'Ny', time: '--:--', team: 'Nyt Pas', type: 'Draft', status: 'draft', theme: 'Opret Nyt Pas' },
+                ...mappedSessions
+            ]);
+            
+            // Hvis vi har hentet sessioner, vælg den første rigtige
+            if (mappedSessions.length > 0) {
+                setActiveSessionId(mappedSessions[0].id);
+                if (mappedSessions[0].exercises) {
+                    setTimelineItems(mappedSessions[0].exercises);
+                }
+            }
+        }
+    }
+
+    loadUserSessions();
+  }, [user?.id]);
+
   // RESPONSIV HANDLER
   useEffect(() => {
       const handleResize = () => {
-          // Sidebar logik
           if (window.innerWidth < 1024) { 
               setIsRightPanelOpen(false);
           } else {
               setIsRightPanelOpen(true);
           }
-          
-          // Gitter logik
           if (window.innerWidth <= 1280) {
               setBaseGridSize(20);
           } else {
               setBaseGridSize(40);
           }
       };
-
-      // Initial resize check
       handleResize();
-      
-      // Kort-størrelse ved load
       if (window.innerWidth <= 1280) {
           setCards(prevCards => prevCards.map(c => ({ ...c, w: 180, h: 130 })));
       }
-
       window.addEventListener('resize', handleResize);
       return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -267,6 +296,7 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
     if (e.ctrlKey || e.metaKey) { e.preventDefault(); const delta = -e.deltaY / 1000; setScale(prev => Math.min(Math.max(0.5, prev + delta), 2)); }
   }, []);
   useEffect(() => { const c = canvasRef.current; if(!c) return; c.addEventListener('wheel', handleWheel, {passive:false}); return ()=>c.removeEventListener('wheel',handleWheel);}, [handleWheel]);
+  
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.target === canvasRef.current) { setIsDraggingCanvas(true); setSelectedCardId(null); dragStartPoint.current = { x: e.clientX - position.x, y: e.clientY - position.y }; }
   };
@@ -290,19 +320,64 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
   };
   const removeCard = (id: string) => { setCards(cards.filter(c => c.id !== id)); setConnections(connections.filter(c => c.fromId !== id && c.toId !== id)); };
   const updateCard = (id: string, updates: Partial<PlannerCard>) => { setCards(cards.map(c => c.id === id ? { ...c, ...updates } : c)); };
+
+  // --- DROP LOGIK ---
   const checkTimelineDrop = (e: MouseEvent | TouchEvent | React.MouseEvent | React.TouchEvent, card: PlannerCard) => {
      if (!timelineRef.current || !isBottomPanelOpen) return;
-     const timelineRect = timelineRef.current.getBoundingClientRect();
-     let clientY = 'changedTouches' in e ? e.changedTouches[0].clientY : (e as MouseEvent).clientY;
-     if (clientY > timelineRect.top && clientY < timelineRect.bottom) { addToTimeline(card); }
+     
+     let clientX, clientY;
+     if ('changedTouches' in e && e.changedTouches.length > 0) {
+         clientX = e.changedTouches[0].clientX;
+         clientY = e.changedTouches[0].clientY;
+     } else if ('clientX' in e) {
+         clientX = (e as MouseEvent).clientX;
+         clientY = (e as MouseEvent).clientY;
+     } else {
+         return;
+     }
+
+     const elementsUnder = document.elementsFromPoint(clientX, clientY);
+     const isOverTimeline = elementsUnder.some(el => 
+         el === timelineRef.current || timelineRef.current?.contains(el)
+     );
+
+     if (isOverTimeline) { 
+         addToTimeline(card); 
+     }
   };
+
   const addToTimeline = (card: PlannerCard) => {
       if (card.type !== 'drill') return;
-      const newItem: TimelineItem = { id: `tl-${Date.now()}`, cardId: card.id, title: card.title, duration: card.duration || 15, type: card.type, intensity: card.intensity || 'medium' };
+      const newItem: TimelineItem = { 
+          id: `tl-${Date.now()}`, 
+          cardId: card.id, 
+          title: card.title, 
+          duration: card.duration || 15, 
+          type: card.type, 
+          intensity: card.intensity || 'medium' 
+      };
       setTimelineItems(prev => [...prev, newItem]);
   };
+
   const removeFromTimeline = (itemId: string) => { setTimelineItems(prev => prev.filter(item => item.id !== itemId)); };
-  const switchSession = (sessionId: string) => { setActiveSessionId(sessionId); };
+
+  // --- SKIFT SESSION & OPRET NY ---
+  const switchSession = (sessionId: string) => { 
+      if (sessionId === 'new') {
+          // Nulstil til en tom "Ny Session"
+          setActiveSessionId('new');
+          setTimelineItems([]);
+      } else {
+          // Skift til en eksisterende session
+          setActiveSessionId(sessionId);
+          const selectedSession = weeklySessions.find(s => s.id === sessionId);
+          if (selectedSession && selectedSession.exercises) {
+              setTimelineItems(selectedSession.exercises);
+          } else {
+              setTimelineItems([]);
+          }
+      }
+  };
 
   return (
     <div className="flex flex-col lg:flex-row h-[calc(100dvh-55px)] lg:h-[calc(100dvh-55px)] 2xl:h-[calc(100dvh-80px)] bg-[#F2F4F7] text-black font-sans overflow-hidden p-2 lg:p-[2px] lg:gap-[2px] 2xl:p-4 2xl:gap-4 relative">
@@ -313,14 +388,24 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
       <div className="flex-1 flex flex-col gap-2 lg:gap-[2px] 2xl:gap-3 min-w-0 h-full">
         
         {/* 1. CANVAS */}
-        <div className="flex-1 relative rounded-xl lg:rounded-lg 2xl:rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-white">
+        <div className="flex-1 relative rounded-xl lg:rounded-lg 2xl:rounded-2xl border border-slate-200 shadow-sm bg-white z-10">
             
             {/* MOBILE MENU */}
             <div className="absolute top-4 right-4 z-40 lg:hidden">
                  <button onClick={() => setIsRightPanelOpen(!isRightPanelOpen)} className="p-2 bg-white rounded-lg shadow-md border border-slate-100 text-slate-600"><Menu size={20} /></button>
             </div>
 
-            <div ref={canvasRef} className={`w-full h-full relative bg-white rounded-2xl lg:rounded-lg 2xl:rounded-2xl overflow-hidden ${isDraggingCanvas ? 'cursor-grabbing' : 'cursor-default'} pt-0`} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+            {/* Canvas Area */}
+            <div 
+                ref={canvasRef} 
+                className={`
+                    w-full h-full relative bg-white rounded-2xl lg:rounded-lg 2xl:rounded-2xl 
+                    ${isDraggingCanvas ? 'cursor-grabbing' : 'cursor-default'} 
+                    pt-0
+                    ${isDraggingCard ? 'z-30 overflow-visible' : 'z-10 overflow-hidden'}
+                `} 
+                onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}
+            >
                 <div className="absolute inset-0 pointer-events-none opacity-[0.15]" style={{ backgroundImage: `linear-gradient(#94A3B8 1px, transparent 1px), linear-gradient(90deg, #94A3B8 1px, transparent 1px)`, backgroundSize: `${baseGridSize * scale}px ${baseGridSize * scale}px`, backgroundPosition: `${position.x}px ${position.y}px` }} />
                 <div className="absolute top-0 left-0 origin-top-left will-change-transform" style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})` }}>
                     <svg className="absolute top-0 left-0 w-full h-full overflow-visible pointer-events-none" style={{ zIndex: 0 }}>
@@ -334,8 +419,20 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
                     {cards.map(card => {
                         const isSelected = card.id === selectedCardId;
                         return (
-                            <Draggable key={card.id} nodeRef={card.ref} position={{ x: card.x, y: card.y }} onStart={() => { setSelectedCardId(card.id); setIsDraggingCard(true); }} onStop={(e, data) => { updateCard(card.id, { x: data.x, y: data.y }); setIsDraggingCard(false); checkTimelineDrop(e, card); }} scale={scale} handle=".drag-handle">
-                                <div ref={card.ref} className={`absolute transition-all duration-200 ${isSelected ? 'z-50 scale-[1.02]' : 'z-10 hover:z-20'}`} style={{ width: card.w, height: card.h }} onMouseDown={(e) => { e.stopPropagation(); setSelectedCardId(card.id); }} onDoubleClick={(e) => { e.stopPropagation(); openEditModal(card.id); }}>
+                            <Draggable 
+                                key={card.id} 
+                                nodeRef={card.ref} 
+                                position={{ x: card.x, y: card.y }} 
+                                onStart={() => { setSelectedCardId(card.id); setIsDraggingCard(true); }} 
+                                onStop={(e, data) => { 
+                                    updateCard(card.id, { x: data.x, y: data.y }); 
+                                    setIsDraggingCard(false); 
+                                    checkTimelineDrop(e, card); 
+                                }} 
+                                scale={scale} 
+                                handle=".drag-handle"
+                            >
+                                <div ref={card.ref} className={`absolute transition-all duration-200 ${isSelected || isDraggingCard ? 'z-50 scale-[1.02]' : 'z-10 hover:z-20'}`} style={{ width: card.w, height: card.h }} onMouseDown={(e) => { e.stopPropagation(); setSelectedCardId(card.id); }} onDoubleClick={(e) => { e.stopPropagation(); openEditModal(card.id); }}>
                                     <Resizable width={card.w} height={card.h} onResize={(e, data) => updateCard(card.id, { w: data.size.width, h: data.size.height })} resizeHandles={['se']}>
                                         <div className={`w-full h-full flex flex-col bg-white rounded-xl overflow-hidden ${isSelected ? 'shadow-2xl ring-2 ring-orange-500' : 'shadow-md border border-slate-200 hover:shadow-lg'} ${card.type === 'note' ? 'bg-yellow-50' : ''}`}>
                                             <div className={`drag-handle h-9 flex items-center justify-between px-3 cursor-move ${card.type === 'drill' ? 'bg-white border-b border-slate-100' : 'bg-yellow-100/50'}`}>
@@ -359,7 +456,6 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
                     })}
                 </div>
                 
-                {/* ÆNDRING STEP 15: Toolbar placeret top-1 left-1 for at matche Dashboard */}
                 <div className="absolute top-3 left-3 flex flex-col gap-2 z-20">
                      <div className="origin-top-left transition-transform duration-300 scale-75 2xl:scale-100">
                          <div className="bg-white p-1.5 rounded-xl shadow-lg border border-slate-200 flex flex-col gap-1">
@@ -372,38 +468,99 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
             </div>
         </div>
 
-        {/* 2. TIMELINE */}
-        <div className={`
-            shrink-0 w-full bg-white rounded-xl lg:rounded-lg 2xl:rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden relative transition-all duration-300 
-            ${isDraggingCard ? 'ring-2 ring-orange-400 ring-dashed bg-orange-50/50' : ''} 
-            ${isBottomPanelOpen ? 'h-32 2xl:h-44' : 'h-10 2xl:h-12'}
+        {/* 2. TIMELINE - NYT VISUELT DESIGN */}
+        <div 
+            ref={timelineRef} 
+            className={`
+                shrink-0 w-full bg-white rounded-xl lg:rounded-lg 2xl:rounded-2xl border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] flex flex-col overflow-hidden relative transition-all duration-300 
+                ${isDraggingCard ? 'z-0' : 'z-20'}
+                ${isBottomPanelOpen ? 'h-32 2xl:h-44' : 'h-10 2xl:h-12'} 
         `}>
-             <div className="h-8 lg:h-8 2xl:h-12 border-b border-slate-100 px-3 2xl:px-4 flex items-center justify-between bg-white z-10 cursor-pointer border-t border-slate-100" onClick={() => setIsBottomPanelOpen(!isBottomPanelOpen)}>
-                <div className="flex items-center gap-2 2xl:gap-3">
-                    <div className="bg-orange-100 p-1 2xl:p-1.5 rounded text-orange-600"><Clock size={14} className="w-3 h-3 2xl:w-4 2xl:h-4" /></div>
-                    <span className="text-[10px] 2xl:text-xs font-bold uppercase tracking-wider text-slate-700">Tidslinje</span>
+             {/* HEADER / CONTROLS */}
+             <div className="h-10 border-b border-slate-100 px-4 flex items-center justify-between bg-white z-10">
+                
+                {/* Venstre: Play Controls */}
+                <div className="flex items-center gap-4">
+                    <button 
+                        onClick={() => setIsBottomPanelOpen(!isBottomPanelOpen)}
+                        className="text-xs font-bold text-slate-800 flex items-center gap-2 hover:text-orange-500 transition-colors"
+                    >
+                        {isBottomPanelOpen ? <ChevronDown size={16}/> : <ChevronUp size={16}/>}
+                        <span className="uppercase tracking-wider">Persistent Timeline</span>
+                    </button>
+                    
+                    {isBottomPanelOpen && (
+                        <div className="flex items-center gap-2 ml-4 border-l border-slate-200 pl-4">
+                            <button className="p-1.5 rounded-full hover:bg-slate-100 text-slate-600"><Clock size={16} /></button>
+                            <button className="p-1.5 rounded-full hover:bg-slate-100 text-slate-600"><Play size={16} className="fill-current" /></button>
+                        </div>
+                    )}
                 </div>
-                <div className="flex items-center gap-2 2xl:gap-3">
-                    <div className="h-1.5 w-24 2xl:w-32 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-orange-400 to-orange-600" style={{ width: `${Math.min((totalDuration/90)*100, 100)}%` }}></div></div>
-                    <span className="text-[10px] 2xl:text-xs font-mono text-slate-500"><span className="text-slate-900 font-bold">{totalDuration}</span> / 90m</span>
-                    {isBottomPanelOpen ? <ChevronDown size={14} className="text-slate-400 2xl:w-4 2xl:h-4"/> : <ChevronUp size={14} className="text-slate-400 2xl:w-4 2xl:h-4"/>}
+
+                {/* Højre: Total Tid */}
+                <div className="flex items-center gap-3">
+                    <div className="text-xs font-mono text-slate-500">
+                        Total: <span className="text-slate-900 font-bold">{totalDuration}</span> / 90 min
+                    </div>
+                    <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-orange-500" style={{ width: `${Math.min((totalDuration/90)*100, 100)}%` }}></div>
+                    </div>
                 </div>
              </div>
-             <div className="flex-1 p-1 lg:p-1 2xl:p-3 overflow-x-auto bg-[#F8FAFC] flex items-center relative scrollbar-hide">
+
+             {/* TRACK AREA */}
+             <div className="flex-1 relative bg-[#FAFAFA] overflow-x-auto overflow-y-hidden flex items-end pb-8 custom-scrollbar">
+                 
+                 {/* Tidslinje Baggrund (Lineal) */}
+                 <div className="absolute bottom-0 left-0 w-full h-8 border-t border-slate-300 flex items-center px-4 select-none pointer-events-none">
+                     {[0, 15, 30, 45, 60, 75, 90, 105, 120].map((time, i) => (
+                         <div key={i} className="absolute bottom-0 h-full border-l border-slate-300/50 flex flex-col justify-end pb-1" style={{ left: `${(i * 100) + 20}px` }}>
+                             <span className="text-[10px] font-mono text-slate-400 pl-1">{time}:00</span>
+                             <div className="h-2 w-px bg-slate-400"></div>
+                         </div>
+                     ))}
+                     <div className="absolute bottom-4 left-0 right-0 h-0.5 bg-orange-500/20 z-0"></div>
+                 </div>
+
+                 {/* DROP ZONE & ITEMS */}
                  {isBottomPanelOpen && (
                     timelineItems.length === 0 
-                    ? <div className="w-full flex justify-center text-slate-400 text-xs font-medium">{isDraggingCard ? 'Slip for at tilføje' : 'Træk øvelser herned'}</div> 
-                    : <div className="flex gap-2 h-full w-full min-w-max px-2 z-10">
+                    ? <div className="absolute inset-0 flex items-center justify-center text-slate-300 text-sm font-bold uppercase tracking-widest border-2 border-dashed border-slate-200 m-4 rounded-xl">
+                        {isDraggingCard ? 'Slip for at tilføje til tidslinjen' : 'Træk dine øvelser herned'}
+                      </div> 
+                    : <div className="flex gap-1 px-4 z-10 h-[80%] items-center">
                         {timelineItems.map((item, idx) => (
-                            <div key={item.id} style={{ flex: item.duration }} className="h-full bg-white border border-slate-200 rounded-lg shadow-sm relative group hover:shadow-md hover:border-orange-300 transition-all cursor-grab flex flex-col overflow-hidden min-w-[80px] 2xl:min-w-[100px]">
-                                <div className={`h-1 w-full ${getIntensityColor(item.intensity)}`}></div>
-                                <div className="flex-1 p-1.5 2xl:p-2 flex flex-col justify-between">
-                                    <span className="text-[9px] 2xl:text-[10px] font-bold text-slate-400 uppercase">{idx + 1}. {item.duration}m</span>
-                                    <span className="text-[10px] 2xl:text-xs font-bold text-slate-800 line-clamp-2 leading-tight">{item.title}</span>
-                                    <button onClick={() => removeFromTimeline(item.id)} className="self-end text-slate-300 hover:text-red-500 transition-colors"><X size={10} className="2xl:w-3 2xl:h-3"/></button>
+                            <div 
+                                key={item.id} 
+                                style={{ width: Math.max(item.duration * 6, 100) + 'px' }} 
+                                className="h-full bg-white rounded-lg shadow-sm border border-slate-200 relative group hover:shadow-md hover:border-orange-400 transition-all cursor-pointer flex flex-col overflow-hidden shrink-0"
+                            >
+                                {/* Miniature Billede */}
+                                <div className="flex-1 bg-slate-100 relative p-1">
+                                    <MiniPitchCSS />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors"></div>
                                 </div>
+                                
+                                {/* Footer */}
+                                <div className="h-6 bg-white border-t border-slate-100 flex items-center justify-between px-2">
+                                    <span className="text-[9px] font-bold text-slate-700 truncate max-w-[70%]">{item.title}</span>
+                                    <span className={`text-[8px] font-bold px-1 rounded ${item.intensity === 'high' ? 'text-red-500 bg-red-50' : 'text-green-500 bg-green-50'}`}>{item.duration}m</span>
+                                </div>
+
+                                {/* Slet knap */}
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); removeFromTimeline(item.id); }} 
+                                    className="absolute top-1 right-1 bg-white/90 text-slate-400 hover:text-red-500 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                >
+                                    <X size={10} />
+                                </button>
                             </div>
                         ))}
+                        
+                        {/* Add Ghost Card */}
+                        <div className="h-[80%] border-2 border-dashed border-slate-200 rounded-lg w-24 flex items-center justify-center text-slate-300 shrink-0 ml-2">
+                            <Plus size={20} />
+                        </div>
                       </div>
                  )}
              </div>
@@ -491,7 +648,7 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
                                             </div>
                                         </div>
                                     ))}
-                                    <button className="w-full py-1.5 text-[9px] text-slate-400 hover:text-orange-500 font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1 hover:bg-slate-50"><Plus size={10} /> Opret Session</button>
+                                    <button onClick={() => switchSession('new')} className="w-full py-1.5 text-[9px] text-slate-400 hover:text-orange-500 font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1 hover:bg-slate-50"><Plus size={10} /> Opret Session</button>
                                  </div>
                              </div>
 
@@ -530,9 +687,43 @@ export default function SessionPlannerClient({ dict, plannerData, accessLevel, u
                     {activeTab !== 'overview' && <div className="text-center text-slate-400 text-xs py-10">Modul indhold kommer her...</div>}
                 </div>
 
+                {/* OPDATERET BUNDPANEL MED KORREKT GEM-LOGIK */}
                 <div className="p-2 border-t border-slate-100 bg-white/50">
-                    <button className="w-full py-3 bg-black text-orange-500 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-zinc-900 transition-all shadow-lg hover:shadow-orange-500/20 flex items-center justify-center gap-2 transform active:scale-[0.98]">
-                        <CheckCircle2 size={14} /> Gem Session
+                    <button 
+                        onClick={async () => {
+                            const sessionData = {
+                                userId: user?.id || 'dtl-dev-123', 
+                                title: currentSession?.theme || 'Nyt Pas',
+                                date: new Date(),
+                                duration: totalDuration,
+                                theme: currentSession?.theme || 'Generelt',
+                                intensity: 'medium' as 'medium', 
+                                exercises: timelineItems 
+                            };
+
+                            if (activeSessionId === 'new' || activeSessionId.startsWith('s')) {
+                                // Opret ny session
+                                const result = await createSession(sessionData);
+                                if (result.success) {
+                                    alert(`Succes! Session oprettet med ID: ${result.id}`);
+                                    window.location.reload();
+                                } else {
+                                    alert("Der opstod en fejl ved oprettelse.");
+                                }
+                            } else {
+                                // Opdater eksisterende
+                                const result = await updateSession(activeSessionId, sessionData);
+                                if (result.success) {
+                                    alert("Session opdateret succesfuldt!");
+                                    window.location.reload();
+                                } else {
+                                    alert("Der opstod en fejl ved opdatering.");
+                                }
+                            }
+                        }}
+                        className="w-full py-3 bg-black text-orange-500 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-zinc-900 transition-all shadow-lg hover:shadow-orange-500/20 flex items-center justify-center gap-2 transform active:scale-[0.98]"
+                    >
+                        <CheckCircle2 size={14} /> {activeSessionId === 'new' || activeSessionId.startsWith('s') ? 'Gem Ny Session' : 'Opdater Session'}
                     </button>
                 </div>
             </div>

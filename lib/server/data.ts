@@ -1,86 +1,113 @@
-// lib/server/data.ts (KORREKT NAVN FOR DEVELOPER)
-
-// --- DTL DATA MODELLER OG MOCK FUNKTIONER ---
+// lib/server/data.ts
+import { db } from "@/firebase/config";
+import { doc, getDoc } from "firebase/firestore";
 
 // Abonnementniveauer
 export type SubscriptionLevel =
-  'Starter' | 'Advance' | 'Expert' | // Træner
-  'Essential' | 'Growth' | 'Complete' | // Breddeklub
-  'Performance' | 'Elite' | 'Enterprise'; // Akademi
+  'Starter' | 'Advance' | 'Expert' | 
+  'Essential' | 'Growth' | 'Complete' | 
+  'Performance' | 'Elite' | 'Enterprise'; 
 
-// Akademiroller
+// Roller - Opdateret med specialist-roller og CustomRole
 export enum UserRole {
+  // Tekniske roller
   Unauthenticated = 'unauthenticated',
+  Developer = 'developer',
+  Tester = 'tester',
+  CustomRole = 'custom_role', // NY: Til specielle tilfælde
+
+  // Ledelse & Administration
+  ClubOwner = 'club_owner',
+  ClubAdmin = 'club_admin',
+  Management = 'management', 
+  AcademyDirector = 'academy_director', 
+
+  // Trænere (Coaching Staff - General)
+  HeadOfCoach = 'head_of_coach',
+  YouthDevelopmentCoach = 'youth_development_coach',
+  Coach = 'coach', // Head Coach
+  AssistantCoach = 'assistant_coach',
+  
+  // Trænere (Specialister - NYE)
+  KeeperCoach = 'keeper_coach',
+  TransitionsCoach = 'transitions_coach',
+  IndividualCoach = 'individual_coach', // NY
+  DefenseCoach = 'defense_coach',       // NY
+  AttackCoach = 'attack_coach',         // NY
+  DeadBallCoach = 'dead_ball_coach',    // NY
+  
+  // Performance & Medical
+  FitnessCoach = 'fitness_coach', 
+  Physio = 'physio', 
+
+  // Analyse
+  Analyst = 'analyst', 
+
+  // Hold & Spillere
+  TeamLead = 'team_lead', 
   Player = 'player',
-  Parent = 'parent',
-  Coach = 'coach',
-  TransitionCoach = 'transition_coach',
-  IndividualCoach = 'individual_coach',
-  DefenseCoach = 'defense_coach',
-  AttackCoach = 'attack_coach',
-  DeadBallCoach = 'dead_ball_coach',
-  Physio = 'physio',
-  Scout = 'scout',
-  HeadOfCoaching = 'head_of_coaching',
-  HeadOfTalent = 'head_of_talent',
-  Admin = 'admin',
-  Developer = 'developer', // DTL medarbejder
-  Tester = 'tester',       // DTL medarbejder
-  CustomRole = 'custom_role',
+  Parent = 'parent', 
+  
+  // Scouting & Eksterne
+  Scout = 'scout', 
+  ExternalPlayer = 'external_player'
 }
 
-// Interface for brugerdata (UDVIDET KORREKT)
 export interface DTLUser {
   id: string;
   role: UserRole;
   subscriptionLevel: SubscriptionLevel;
-  teamId: string; // Måske mindre relevant hvis vi har clubName?
-  name: string; // Indeholder Fornavn + Efternavn
-  clubName?: string; // Optionel: Kun relevant for klub/akademi brugere
-  clubFunction?: string; // Optionel: Specifik rolle i klubben
+  name: string;
+  email?: string;
+  clubId?: string;
+  clubName?: string;
+  clubFunction?: string;
+  teamId?: string;
 }
 
-// --- MOCK IMPLEMENTERINGER ---
+export async function fetchUserAccessLevel(userId?: string): Promise<DTLUser> {
+  if (!userId) {
+    return { 
+        id: 'dev-bypass', 
+        role: UserRole.Developer,  // <--- ÆNDRET FRA Unauthenticated
+        subscriptionLevel: 'Enterprise', 
+        name: 'Developer Bypass' 
+    };
+  }
 
-export async function fetchUserAccessLevel(): Promise<DTLUser> {
-  await new Promise(resolve => setTimeout(resolve, 50));
+  try {
+    const userDocRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userDocRef);
 
-  // --- Vælg hvilken bruger du vil simulere ---
+    if (userSnap.exists()) {
+      const data = userSnap.data();
+      return {
+        id: userId,
+        role: (data.role as UserRole) || UserRole.Coach,
+        subscriptionLevel: (data.subscriptionLevel as SubscriptionLevel) || 'Starter',
+        name: data.fullName || data.name || 'Ukendt Bruger',
+        clubId: data.clubId,
+        clubName: data.clubName,
+        clubFunction: data.clubFunction,
+        teamId: data.teamId
+      };
+    }
+  } catch (error) {
+    console.error("Fejl ved hentning af bruger fra Firestore:", error);
+  }
 
-  // KORREKTION: SIMULERET DTL DEVELOPER (AKTIV SOM STANDARD NU):
-   return {
-     id: 'dtl-dev-123',
-     role: UserRole.Developer,
-     subscriptionLevel: 'Enterprise', // Irrelevant for DTL ansat
-     teamId: 'internal',
-     name: 'Carsten Hilding Larsen', // KORREKT NAVN HER
-     // clubName og clubFunction er undefined for DTL ansatte
-   };
-
-   // // SIMULERET KLUB/AKADEMI BRUGER (udkommenteret for nu):
-   // return {
-   //   id: 'klub-coach-456',
-   //   role: UserRole.HeadOfCoaching, // Funktion i klubben
-   //   subscriptionLevel: 'Elite', // Klubbens abonnement
-   //   teamId: 'u19-women',
-   //   name: 'Anders Andersen', // Fornavn Efternavn
-   //   clubName: 'Esbjerg fB Akademi', // Klubnavn
-   //   clubFunction: 'U19 Headcoach Women' // Funktion i klubben
-   // };
-
-  // // SIMULERET DTL TESTER (udkommenteret for nu):
-  // return {
-  //   id: 'dtl-test-789',
-  //   role: UserRole.Tester,
-  //   subscriptionLevel: 'Enterprise',
-  //   teamId: 'internal',
-  //   name: 'Test Bruger',
-  // };
+  // Fallback til Developer i dev-mode
+  return {
+    id: userId,
+    role: UserRole.Developer, 
+    subscriptionLevel: 'Enterprise', 
+    name: 'Dev Bruger (Mangler i Firestore)',
+    clubName: 'System Dev'
+  };
 }
 
-// fetchSessionPlannerData forbliver uændret...
+// Mock data funktion
 export async function fetchSessionPlannerData(userId: string, accessLevel: SubscriptionLevel, userRole: UserRole) {
-  // ... (kode som før) ...
     const teamRoster = [
         { name: 'Emil M.', available: true, status: 'Ready' },
         { name: 'Mads J.', available: false, status: 'Injured (Knee)' },
@@ -95,18 +122,21 @@ export async function fetchSessionPlannerData(userId: string, accessLevel: Subsc
         { id: 1, title: '5v2 Rondo', tags: ['Opvarmning', 'Pasningsspil'] },
         { id: 2, title: '4 Mål Spil', tags: ['Spil til slut', 'Afslutning'] },
     ];
-    const aiReadinessScore = accessLevel === 'Elite' || accessLevel === 'Enterprise' || userRole === UserRole.HeadOfTalent;
-    const showFullRoster = userRole === UserRole.Admin || userRole === UserRole.Developer;
+    
+    const showReadiness = ['Elite', 'Enterprise', 'Performance'].includes(accessLevel) || 
+                          [UserRole.HeadOfCoach, UserRole.AcademyDirector, UserRole.Physio, UserRole.FitnessCoach].includes(userRole);
+    
+    const canEditCurriculum = [UserRole.HeadOfCoach, UserRole.AcademyDirector, UserRole.ClubAdmin, UserRole.Developer].includes(userRole);
 
     return {
         teamRoster,
         curriculumFocus,
-        exerciseCatalog: aiReadinessScore ? exerciseCatalog.concat({ id: 3, title: 'AI Anbefalet Pas', tags: ['Taktisk'] }) : exerciseCatalog,
+        exerciseCatalog: showReadiness ? exerciseCatalog.concat({ id: 3, title: 'AI Anbefalet Pas', tags: ['Taktisk'] }) : exerciseCatalog,
         accessFlags: {
-            showReadiness: aiReadinessScore,
-            canEditCurriculum: userRole === UserRole.HeadOfCoaching || userRole === UserRole.Admin,
+            showReadiness,
+            canEditCurriculum,
             isDeveloper: userRole === UserRole.Developer,
-            showFullRoster: showFullRoster,
+            showFullRoster: true,
         },
     };
 }

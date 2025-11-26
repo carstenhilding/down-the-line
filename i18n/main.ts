@@ -123,7 +123,7 @@ export const mainI18n = {
           categoryTitle: "The Coach",
           shortTitle: "Coach",
           plans: [
-              { name: "Starter", price: "€9", period: "/ month", description: "The essential tools to start planning.", features: ["Exercise Builder (2D)", "Session Planner", "Up to 25 saved drills"], buttonText: "Choose Starter" },
+              { name: "Starter", price: "€1", period: "/ month", description: "The essential tools to start planning.", features: ["Session Planner (basic)", "Drill library", "Up to 15 training sessions a month"], buttonText: "Choose Starter" },
               { name: "Advanced", price: "€15", period: "/ month", mostPopular: "Most Popular", description: "Animate and share your vision.", features: ["Everything in Starter, plus:", "Animation Tools", "Video & PDF Export", "Unlimited Drills"], buttonText: "Choose Advanced" },
               { name: "Expert", price: "€25", period: "/ month", description: "Advanced analytics for the dedicated coach.", features: ["Everything in Advanced, plus:", "Personal Player Statistics", "Video Tagging Tool", "AI Drill Suggestions"], buttonText: "Choose Expert" }
           ]
@@ -270,7 +270,7 @@ export const mainI18n = {
           categoryTitle: "Individuelle Træner",
           shortTitle: "Træneren",
           plans: [
-              { name: "Starter", price: "69 kr.", period: "/ md.", description: "De essentielle værktøjer til at starte din planlægning.", features: ["Øvelsesbygger (2D)", "Session Planner", "Op til 25 gemte øvelser"], buttonText: "Vælg Starter" },
+              { name: "Starter", price: "8 kr.", period: "/ md.", description: "De essentielle værktøjer til at starte din planlægning.", features: ["Session Planner (basic)", "Øvelseskatalog", "Op til 15 træninger hver måned"], buttonText: "Vælg Starter" },
               { name: "Advanced", price: "99 kr.", period: "/ md.", mostPopular: "Mest Populære", description: "Animer og del din vision.", features: ["Alt i Starter, plus:", "Animations-værktøjer", "Video & PDF Eksport", "Ubegrænset antal øvelser"], buttonText: "Vælg Advanced" },
               { name: "Expert", price: "169 kr.", period: "/ md.", description: "Avanceret analyse for den dedikerede træner.", features: ["Alt i Advanced, plus:", "Personlig Spillerstatistik", "Video Tagging-værktøj", "AI Øvelsesforslag"], buttonText: "Vælg Expert" }
           ]

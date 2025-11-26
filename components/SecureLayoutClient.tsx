@@ -1,7 +1,7 @@
 // components/SecureLayoutClient.tsx
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef, ReactNode } from 'react';
+import React, { useState, useEffect, useRef, ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -18,10 +18,10 @@ import {
   Activity,
   Shield,
   Wrench,
-  Layers,  // Ikon til "The Turf" og Canvas view
-  PenTool, // Ikon til DTL Studio
-  ClipboardList, // Ikon til Session Planner
-  LayoutGrid // Ikon til Grid view
+  Layers,
+  PenTool,
+  ClipboardList,
+  LayoutGrid
 } from 'lucide-react';
 import { UserRole, DTLUser, SubscriptionLevel } from '@/lib/server/data';
 import { useLanguage } from './LanguageContext';
@@ -44,26 +44,23 @@ interface SecureLayoutClientProps {
   initialPathname: string;
 }
 
-// OPDATERET: Modul-struktur med "The Turf"
 const modules = [
-  { nameKey: 'dashboard', path: '/dashboard', icon: LayoutDashboard, role: 'tester' },
+  { nameKey: 'dashboard', path: '/dashboard', icon: LayoutDashboard },
   {
-    // DETTE ER DET NYE HOVEDMODUL-NAV: "THE TURF"
-    nameKey: 'the_turf',        // Nøgle bruges til at finde teksten i JSON-filen
-    icon: Layers,               // Ikonet der vises i sidebaren
-    role: 'tester',
-    path: '/trainer',           // Ruten, hvor DTL Dashboard (med 3 niveauer) ligger
+    nameKey: 'the_turf',        
+    icon: Layers,               
+    path: '/trainer',           
     subModules: [
-      { nameKey: 'session_planner', path: '/trainer/planner', icon: ClipboardList }, // Træningsplan
-      { nameKey: 'dtl_studio', path: '/trainer/studio', icon: PenTool },           // DTL Studio
-      { nameKey: 'exercise_catalog', path: '/trainer/library', icon: BookOpen },   // Øvelseskatalog
+      { nameKey: 'session_planner', path: '/trainer/planner', icon: ClipboardList },
+      { nameKey: 'dtl_studio', path: '/trainer/studio', icon: PenTool },
+      { nameKey: 'exercise_catalog', path: '/trainer/library', icon: BookOpen },
     ],
   },
-  { nameKey: 'club', path: '/calendar', icon: Calendar, role: 'developer' },
-  { nameKey: 'players', path: '/profiles', icon: Users, role: 'developer' },
-  { nameKey: 'video', path: '/analysis', icon: Users, role: 'developer' },
-  { nameKey: 'scouting', path: '/scouting', icon: Shield, role: 'developer' },
-  { nameKey: 'chat', path: '/comms', icon: Activity, role: 'developer' },
+  { nameKey: 'club', path: '/calendar', icon: Calendar },
+  { nameKey: 'players', path: '/profiles', icon: Users },
+  { nameKey: 'video', path: '/analysis', icon: Users },
+  { nameKey: 'scouting', path: '/scouting', icon: Shield },
+  { nameKey: 'chat', path: '/comms', icon: Activity },
 ];
 
 export default function SecureLayoutClient({
@@ -78,21 +75,77 @@ export default function SecureLayoutClient({
   const searchParams = useSearchParams();
   const langContext = useLanguage();
   const language = langContext?.language ?? lang;
-  const setLanguage =
-    langContext?.setLanguage ?? (() => console.warn('setLanguage not available'));
+  const setLanguage = langContext?.setLanguage ?? (() => console.warn('setLanguage not available'));
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
+  // --- Developer Tools State ---
   const [simulatedLevel, setSimulatedLevel] = useState<SubscriptionLevel>(user.subscriptionLevel);
+  const [simulatedRole, setSimulatedRole] = useState<UserRole>(user.role);
 
-  const accessibleModules = modules.filter(
-    (m) =>
-      user.role === UserRole.Developer ||
-      (user.role === UserRole.Tester && m.role !== UserRole.Developer)
-  );
+  const isDtlEmployee = user.role === UserRole.Developer || user.role === UserRole.Tester;
+
+  // --- ADGANGSKONTROL LOGIK ---
+  const checkAccess = (role: UserRole, moduleKey: string) => {
+    // Developers og Testers ser alt
+    if (role === UserRole.Developer || role === UserRole.Tester) return true;
+
+    switch (moduleKey) {
+      case 'dashboard': 
+        return true; // Alle har adgang til Dashboard (Styrehuset)
+        
+      case 'the_turf': 
+        // Kun trænere og ledere har adgang til The Turf
+        return [
+          UserRole.HeadOfCoach, UserRole.Coach, UserRole.AssistantCoach,
+          UserRole.KeeperCoach, UserRole.TransitionsCoach, UserRole.FitnessCoach,
+          UserRole.IndividualCoach, UserRole.DefenseCoach, UserRole.AttackCoach, 
+          UserRole.DeadBallCoach, UserRole.AcademyDirector, UserRole.YouthDevelopmentCoach
+        ].includes(role);
+        
+      case 'club': 
+        // Klub-admin, ejere og ledelse
+        return [
+          UserRole.ClubOwner, UserRole.ClubAdmin, UserRole.Management, 
+          UserRole.AcademyDirector, UserRole.TeamLead
+        ].includes(role);
+        
+      case 'players': 
+        // Trænere, Scouts og Admin
+        return [
+          UserRole.HeadOfCoach, UserRole.Coach, UserRole.AssistantCoach, 
+          UserRole.Scout, UserRole.AcademyDirector, UserRole.ClubAdmin,
+          UserRole.YouthDevelopmentCoach
+        ].includes(role);
+        
+      case 'video':
+        // Trænere, Analytikere, Scouts og Spillere
+        return [
+          UserRole.HeadOfCoach, UserRole.Coach, UserRole.AssistantCoach,
+          UserRole.Analyst, UserRole.Scout, UserRole.Player,
+          UserRole.TransitionsCoach, UserRole.KeeperCoach
+        ].includes(role);
+        
+      case 'scouting':
+        // Kun Scouts og Ledelse
+        return [
+          UserRole.Scout, UserRole.HeadOfCoach, UserRole.AcademyDirector, 
+          UserRole.ClubOwner, UserRole.ClubAdmin
+        ].includes(role);
+        
+      case 'chat': 
+        return true; // Alle har adgang til chat
+        
+      default: 
+        return false;
+    }
+  };
+
+  // Filtrer moduler baseret på den SIMULEREDE rolle
+  const accessibleModules = modules.filter(m => checkAccess(simulatedRole, m.nameKey));
 
   useEffect(() => {
     const checkScreenWidth = () => {
@@ -129,7 +182,6 @@ export default function SecureLayoutClient({
       setIsProfileOpen(false);
       setLanguage(newLang);
     } else {
-      console.warn('Language context not ready or lang unchanged.');
       const newPath = pathname.includes('/da/')
         ? pathname.replace('/da/', `/${newLang}`)
         : pathname.includes('/en/')
@@ -155,6 +207,11 @@ export default function SecureLayoutClient({
     setSimulatedLevel(level);
   };
 
+  const handleRoleChange = (role: UserRole) => {
+    setSimulatedRole(role);
+    console.log("Simuleret rolle skiftet til:", role);
+  };
+
   const currentLangSegment = language
     ? `/${language}`
     : pathname.startsWith('/da/')
@@ -177,12 +234,46 @@ export default function SecureLayoutClient({
     }
   }, [cleanCurrentRoute]);
 
+  const subGroups = [
+    { title: 'Træner (Privat)', levels: ['Starter', 'Advance', 'Expert'] },
+    { title: 'Klub (Bredde)', levels: ['Essential', 'Growth', 'Complete'] },
+    { title: 'Akademi / Pro', levels: ['Performance', 'Elite', 'Enterprise'] }
+  ];
+
+  const roleGroups = [
+    {
+      title: 'Ledelse & Admin',
+      roles: [UserRole.ClubOwner, UserRole.ClubAdmin, UserRole.Management, UserRole.AcademyDirector]
+    },
+    {
+      title: 'Trænerstab (General)',
+      roles: [UserRole.HeadOfCoach, UserRole.YouthDevelopmentCoach, UserRole.Coach, UserRole.AssistantCoach]
+    },
+    {
+      title: 'Specialister',
+      roles: [UserRole.KeeperCoach, UserRole.TransitionsCoach, UserRole.IndividualCoach, UserRole.DefenseCoach, UserRole.AttackCoach, UserRole.DeadBallCoach]
+    },
+    {
+      title: 'Performance & Sundhed',
+      roles: [UserRole.FitnessCoach, UserRole.Physio]
+    },
+    {
+      title: 'Analyse & Scouting',
+      roles: [UserRole.Analyst, UserRole.Scout]
+    },
+    {
+      title: 'Spillere & Hold',
+      roles: [UserRole.Player, UserRole.Parent, UserRole.TeamLead, UserRole.ExternalPlayer]
+    },
+    {
+      title: 'Teknisk',
+      roles: [UserRole.Developer, UserRole.Tester, UserRole.CustomRole]
+    }
+  ];
+
   const Sidebar = () => (
     <aside
       className={`${
-        // ÆNDRING STEP 9: Responsiv sidebar bredde. 
-        // w-64 standard (mobil når åben) og 2xl (stor skærm)
-        // lg:w-52 (208px) på laptop for at spare 48px plads
         isSidebarOpen ? 'w-64 lg:w-52 2xl:w-64' : 'w-20'
       } bg-white border-r flex flex-col shrink-0 transition-all duration-300 lg:block ${
         isSidebarOpen
@@ -190,7 +281,7 @@ export default function SecureLayoutClient({
           : 'max-lg:hidden'
       }`}
     >
-      <nav className="flex-1 mt-2 space-y-1 p-2 overflow-y-auto">
+      <nav className="flex-1 mt-2 space-y-1 p-2 overflow-y-auto custom-scrollbar">
         {accessibleModules.map((module) => {
           const sidebarDict = dict.sidebar || {};
           const isParentActive = module.path 
@@ -219,7 +310,6 @@ export default function SecureLayoutClient({
                   }`}
                 />
                 <span
-                  // ÆNDRING: text-xs som standard, lidt større på 2xl
                   className={`ml-3 whitespace-nowrap transition-opacity text-xs 2xl:text-sm ${
                     isSidebarOpen ? 'opacity-100' : 'opacity-0'
                   } ${!isSidebarOpen && 'hidden'}`}
@@ -256,7 +346,6 @@ export default function SecureLayoutClient({
                   }`}
                 />
                 <span
-                  // ÆNDRING: text-xs på laptop, større på 2xl
                   className={`ml-3 whitespace-nowrap transition-opacity text-xs 2xl:text-sm ${
                     isSidebarOpen ? 'opacity-100' : 'opacity-0'
                   } ${!isSidebarOpen && 'hidden'}`}
@@ -284,7 +373,6 @@ export default function SecureLayoutClient({
                             ? 'bg-black text-orange-500 font-bold'
                             : 'text-black hover:text-orange-500'
                         } 
-                        ${/* ÆNDRING: Mindre tekst i undermenuen på laptop */ ''}
                         text-[11px] 2xl:text-xs
                         `}
                       >
@@ -302,24 +390,21 @@ export default function SecureLayoutClient({
   );
 
   const Header = () => {
-    const isDtlEmployee = user.role === UserRole.Developer || user.role === UserRole.Tester;
     const headerDict = dict.header || {};
     const langSelectorDict = headerDict.languageSelector || {};
 
     const isDashboardRoute = cleanCurrentRoute === '/dashboard';
-    const canUseCanvas = ['Elite', 'Enterprise'].includes(user.subscriptionLevel) || [UserRole.Tester, UserRole.Developer].includes(user.role);
+    const canUseCanvas = ['Elite', 'Enterprise'].includes(simulatedLevel) || [UserRole.Tester, UserRole.Developer].includes(simulatedRole);
     
     const currentView = searchParams.get('view') === 'canvas' ? 'canvas' : 'grid';
 
     const handleViewChange = (view: 'grid' | 'canvas') => {
         const currentParams = new URLSearchParams(searchParams.toString());
-        
         if (view === 'grid') {
             currentParams.delete('view');
         } else {
             currentParams.set('view', 'canvas');
         }
-
         const newSearch = currentParams.toString();
         router.push(pathname + (newSearch ? `?${newSearch}` : ''));
     };
@@ -375,13 +460,23 @@ export default function SecureLayoutClient({
               <UserIcon className="h-7 w-7 sm:h-8 sm:w-8 bg-orange-500 text-white rounded-full p-1 sm:p-1.5" />
             </button>
             {isProfileOpen && (
-              <div className="absolute right-0 mt-2 w-52 sm:w-64 bg-white rounded-lg shadow-xl border z-30">
-                <div className="p-3 border-b">
-                  <p className="font-semibold text-sm truncate">{user.name}</p>
+              <div 
+                className={`
+                  absolute right-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-30 overflow-hidden 
+                  ${isDtlEmployee ? 'w-[30rem]' : 'w-64'}
+                `}
+              >
+                
+                {/* User Info Header */}
+                <div className="p-3 border-b border-gray-100">
+                  <p className="font-semibold text-sm truncate text-black">{user.name}</p>
                   {isDtlEmployee ? (
                     <>
                       <p className="text-xs text-gray-500">Down The Line</p>
-                      <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                         <span className="text-xs font-bold text-orange-500 capitalize">{simulatedRole.replace(/_/g, ' ')}</span>
+                         {simulatedRole !== user.role && <span className="text-[9px] bg-gray-100 px-1.5 rounded text-gray-500">(Simuleret)</span>}
+                      </div>
                     </>
                   ) : (
                     <>
@@ -392,68 +487,125 @@ export default function SecureLayoutClient({
                     </>
                   )}
                 </div>
-                <div className="p-1.5">
-                  <a
-                    href="#"
-                    className="flex items-center w-full text-left p-2 rounded-md hover:bg-gray-100 text-xs cursor-pointer"
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    {headerDict.settings ?? 'Account Settings'}
-                  </a>
+                
+                <div className="max-h-[70vh] overflow-y-auto custom-scrollbar">
+                  
+                  <div className="p-1.5">
+                    <a href="#" className="flex items-center w-full text-left p-2 rounded-md hover:bg-gray-100 text-xs cursor-pointer text-black font-medium">
+                      <Settings className="h-4 w-4 mr-2 text-gray-400" />
+                      {headerDict.settings ?? 'Account Settings'}
+                    </a>
+                  </div>
+                  
                   <div className="my-1 border-t"></div>
                   
+                  {/* --- DEVELOPER TOOLS (ORGANISED) --- */}
                   {(isDtlEmployee || true) && (
-                    <div className="mb-2 pb-2 border-b border-gray-100">
-                       <div className="px-2 py-1 text-[10px] uppercase text-gray-400 font-bold flex items-center">
-                          <Wrench className="w-3 h-3 mr-1" /> Developer Tools
+                    <div className="bg-white">
+                       <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center">
+                          <Wrench className="w-3 h-3 mr-2 text-orange-500" /> 
+                          <span className="text-[10px] uppercase font-bold text-black tracking-wider">Developer Tools</span>
                        </div>
-                       <div className="px-2 grid grid-cols-3 gap-1 mt-1">
-                          {(['Starter', 'Expert', 'Elite'] as SubscriptionLevel[]).map((level) => (
-                             <button
-                                key={level}
-                                onClick={() => handleLevelChange(level)}
-                                className={`text-[10px] py-1 px-1 rounded border transition-colors 
-                                   ${
-                                     simulatedLevel === level 
-                                       ? 'bg-orange-500 border-orange-500 text-white font-bold' 
-                                       : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                                   }`}
-                             >
-                                {level}
-                             </button>
-                          ))}
+                       
+                       {/* 1. ABONNEMENTER */}
+                       <div className="p-3">
+                          <div className="text-[10px] font-bold text-black mb-2 uppercase tracking-wider">Abonnement</div>
+                          <div className="space-y-2">
+                            {subGroups.map((group, idx) => (
+                              <div key={idx}>
+                                <p className="text-[9px] text-gray-500 mb-1 pl-1">{group.title}</p>
+                                <div className="grid grid-cols-3 gap-1">
+                                  {group.levels.map((level) => (
+                                    <button
+                                        key={level}
+                                        onClick={() => handleLevelChange(level as SubscriptionLevel)}
+                                        className={`text-[10px] py-1 px-1 rounded border transition-all font-medium
+                                          ${
+                                            simulatedLevel === level 
+                                              ? 'bg-orange-500 border-orange-500 text-white shadow-sm' 
+                                              : 'bg-white border-gray-200 text-black hover:border-black'
+                                          }`}
+                                    >
+                                        {level}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                       </div>
+
+                       <div className="border-t border-gray-100"></div>
+
+                       {/* 2. ROLLER */}
+                       <div className="p-3">
+                          <div className="text-[10px] font-bold text-black mb-2 uppercase tracking-wider flex items-center">
+                             <Shield className="w-3 h-3 mr-1" /> Roller
+                          </div>
+                          <div className="space-y-3">
+                             {roleGroups.map((group, idx) => (
+                                <div key={idx}>
+                                   <p className="text-[9px] text-gray-500 mb-1 pl-1 border-l-2 border-orange-500 leading-none">{group.title}</p>
+                                   <div className="grid grid-cols-2 gap-1">
+                                      {group.roles.map((role) => (
+                                        <button
+                                           key={role}
+                                           onClick={() => handleRoleChange(role)}
+                                           className={`text-[10px] py-1.5 px-2 rounded border transition-all text-left truncate
+                                              ${
+                                                simulatedRole === role
+                                                  ? 'bg-orange-500 border-orange-500 text-white font-bold shadow-sm' 
+                                                  : 'bg-white border-gray-200 text-black hover:border-black'
+                                              }`}
+                                           title={role.replace(/_/g, ' ')}
+                                        >
+                                           {role.replace(/_/g, ' ')}
+                                        </button>
+                                      ))}
+                                   </div>
+                                </div>
+                             ))}
+                          </div>
                        </div>
                     </div>
                   )}
 
-                  <div className="flex items-center p-2 text-xs text-gray-400">
-                    <Globe className="h-4 w-4 mr-2" />
-                    {langSelectorDict.label ?? 'Language'}
-                  </div>
-                  <button
-                    onClick={() => changeLanguage('da')}
-                    className={`w-full text-left px-2 py-1 rounded-md text-xs cursor-pointer ${
-                      lang === 'da' ? 'font-semibold text-orange-600' : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    {langSelectorDict.danish ?? 'Dansk'}
-                  </button>
-                  <button
-                    onClick={() => changeLanguage('en')}
-                    className={`w-full text-left px-2 py-1 rounded-md text-xs cursor-pointer ${
-                      lang === 'en' ? 'font-semibold text-orange-600' : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    {langSelectorDict.english ?? 'English'}
-                  </button>
-                  <div className="mt-2 pt-2 border-t border-gray-100">
-                    <p className="text-[10px] text-gray-400 px-2 text-center">
-                      {headerDict.access_level_label ??
-                        (lang === 'da' ? 'Adgangsniveau:' : 'Access Level:')}{' '}
-                      <span className="font-medium text-gray-600">{simulatedLevel}</span>
-                    </p>
+                  <div className="my-1 border-t"></div>
+
+                  {/* Language Selector */}
+                  <div className="p-1.5">
+                    <div className="flex items-center p-2 text-xs text-gray-400">
+                      <Globe className="h-4 w-4 mr-2" />
+                      {langSelectorDict.label ?? 'Language'}
+                    </div>
+                    <button
+                      onClick={() => changeLanguage('da')}
+                      className={`w-full text-left px-2 py-1 rounded-md text-xs cursor-pointer ${
+                        lang === 'da' ? 'font-semibold text-orange-600' : 'hover:bg-gray-100'
+                      }`}
+                    >
+                      {langSelectorDict.danish ?? 'Dansk'}
+                    </button>
+                    <button
+                      onClick={() => changeLanguage('en')}
+                      className={`w-full text-left px-2 py-1 rounded-md text-xs cursor-pointer ${
+                        lang === 'en' ? 'font-semibold text-orange-600' : 'hover:bg-gray-100'
+                      }`}
+                    >
+                      {langSelectorDict.english ?? 'English'}
+                    </button>
+
+                    <div className="mt-2 pt-2 border-t border-gray-100">
+                      <p className="text-[10px] text-gray-400 px-2 text-center">
+                        {headerDict.access_level_label ??
+                          (lang === 'da' ? 'Adgangsniveau:' : 'Access Level:')}{' '}
+                        <span className="font-medium text-gray-600">{simulatedLevel}</span>
+                      </p>
+                    </div>
                   </div>
                 </div>
+
+                {/* Footer: Log Out */}
                 <div className="border-t p-1.5">
                   <button
                     onClick={handleLogout}
@@ -485,7 +637,7 @@ export default function SecureLayoutClient({
             onClick={() => setIsSidebarOpen(false)}
           ></div>
         )}
-        {/* ÆNDRING STEP 9: Fjerner ydre padding på main for at lade session planner styre det hele (p-0) */}
+        {/* Main Content */}
         <main className="flex-1 overflow-y-auto p-0">
           {children}
         </main>

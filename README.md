@@ -255,3 +255,25 @@ Consider stricter route typing generation to lock lang globally to 'da' | 'en'.
 Contact
 
 Questions or help: see the repo owner or project README on GitHub.
+
+## 🛠 Developer Tools (Nyhed)
+
+For at lette test og udvikling af rettighedsstyring (RBAC), er der indbygget en **Developer Menu** i applikationen.
+
+**Sådan bruges den:**
+1. Log ind (eller brug dev-bypass).
+2. Klik på **Profil-ikonet** i øverste højre hjørne.
+3. Hvis din bruger har rollen `Developer` eller `Tester`, vil du se en sektion kaldet **"DEVELOPER TOOLS"**.
+4. Her kan du:
+   - **Skifte Abonnement:** Simuler hvordan appen ser ud for en 'Starter' vs. 'Elite' bruger.
+   - **Skifte Rolle:** Skift øjeblikkeligt rolle (f.eks. til 'Coach', 'Player' eller 'Scout') for at se, hvordan menuer og adgang ændrer sig.
+
+*Bemærk: Denne menu er kun synlig for brugere med rollen `Developer` eller `Tester`.*
+
+## 💾 Data Layer Status
+
+Data-laget (`lib/server/data.ts`) er nu opdateret til at understøtte **live Firestore data**.
+
+- **Produktion:** Systemet forsøger at hente brugerdata fra `users`-kollektionen i Firestore baseret på Auth ID.
+- **Development:** Hvis brugeren ikke findes i databasen (eller ved lokal test), falder systemet tilbage på en "Developer"-profil, så man kan arbejde uden at oprette data først.
+- **Roller:** Systemet understøtter nu alle roller defineret i Master Dokumentet (inkl. specialister som `KeeperCoach`, `Analyst`, etc.).
