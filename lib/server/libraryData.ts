@@ -1,60 +1,91 @@
 // lib/server/libraryData.ts
 
-// --- PÆDAGOGISK STRUKTUR (4-Corner Model) ---
-export type FourCornerTag = 'Teknisk' | 'Taktisk' | 'Fysisk' | 'Mentalt';
+// --- 1. FYSISK LOAD KATEGORIER ---
+export type PhysicalLoadType = 
+  | 'Aerob – lav intensitet' 
+  | 'Aerob – moderat intensitet' 
+  | 'Aerob – høj intensitet' 
+  | 'Anaerob – Sprint' 
+  | 'Anaerob – Sprint udholdenhed' 
+  | 'Anaerob – Produktion' 
+  | 'Anaerob – Tolerance';
 
-// --- FYSISK PROFILERING (The Science Layer) ---
-export type PhysicalIntensity = 'Restitution (RPE 1-3)' | 'Aerob (RPE 4-7)' | 'Anaerob (RPE 8-10)';
-
-// --- FASE OPDELING ---
+// --- 2. SPIL FASER ---
 export type GamePhase = 
-  | 'Opvarmning' 
-  | 'Teknisk Færdighed' 
   | 'Opbygningsspil' 
+  | 'Opbygningsspil Fase 1'
+  | 'Opbygningsspil Fase 2'
   | 'Erobringsspil' 
   | 'Afslutningsspil' 
-  | 'Omstilling' 
-  | 'Dødbolde' 
-  | 'Fysisk Træning';
+  | 'Forsvarsspil'
+  | 'Omstilling offensiv' 
+  | 'Omstilling defensiv'
+  | 'Dødbolde';
 
-// --- COACHING INTELLIGENCE (Trigger-Based) ---
+// --- 3. KATEGORIER & TAGS ---
+export type FourCornerTag = 'Teknisk' | 'Taktisk' | 'Fysisk' | 'Mentalt';
+
+// --- 4. COACHING INTELLIGENCE ---
 export interface CoachingPoints {
-  before: string[]; // Instruktion før start
-  during: string[]; // "Freeze" situationer / Stop-billeder
-  after: string[];  // Evalueringsspørgsmål
+  keyPoints: string[]; 
+  instruction: string; 
 }
 
-// --- HOVED ØVELSES OBJEKT (Asset Management) ---
+// --- 5. HOVED ØVELSES OBJEKT (The Drill Asset) ---
 export interface DrillAsset {
-  id: string;
-  title: string;
-  thumbnailUrl: string; // Billede til kortet
+  id?: string; // Firebase ID
   
-  // Multi-Level Access
-  accessLevel: 'Global' | 'Club' | 'Team' | 'Personal'; 
-  author: {
-    id: string;
-    name: string; 
-    role: string;
-  };
-  version: string; // Fx "v2.0" (Git for Drills)
+  // BASIS INFO
+  title: string; 
+  description: string; 
+  rules?: string; 
+  ageGroups: string[]; 
+  
+  // MEDIA
+  thumbnailUrl?: string; 
+  mediaType: 'image' | 'video' | 'dtl-studio';
+  studioDataId?: string; 
 
-  // Metadata (Standard + Smart)
-  ageGroups: string[]; // ['U13', 'U14', 'U15']
-  durationMin: number;
+  // EJERSKAB
+  accessLevel: 'Global' | 'Club' | 'Personal'; 
+  authorId: string;
+  authorName: string;
+  clubId?: string;
+
+  // PARAMETRE
+  durationMin: number; 
+  workDuration?: number; 
+  restDuration?: number; 
+  repetitions?: number; 
+  
   minPlayers: number;
   maxPlayers: number;
-  pitchSize: { width: number; length: number }; // Bruges til Area Per Player Calc
+  pitchSize: { width: number; length: number }; 
   
-  // Smart Data
-  areaPerPlayer?: number; // Udregnes automatisk (m2)
-  intensity: PhysicalIntensity;
-  tags: FourCornerTag[]; // 4-Corner tags
-  phase: GamePhase;
+  // FAGLIGHED
+  physicalLoad: PhysicalLoadType; 
+  phase: GamePhase; 
+  
+  // KATEGORISERING (FIX: Dette felt manglede!)
+  tags?: FourCornerTag[];
 
-  // Didaktik
-  coachingPoints: CoachingPoints;
-  gamification?: string; // "Hvordan vinder man?"
-
-  isVerified?: boolean; // "Best Practice" stempel
+  // PERIODISERING & TEMAER
+  primaryTheme?: string; 
+  secondaryTheme?: string; 
+  
+  // LÆRINGSMÅL & PRINCIPPER
+  technicalGoals?: string[]; 
+  tacticalGoals?: string[]; 
+  mentalGoals?: string[]; 
+  
+  playStylePrinciples?: string[]; 
+  groupPrinciples?: string[]; 
+  individualPrinciples?: string[]; 
+  
+  coachingPoints: CoachingPoints; 
+  progression?: string; 
+  materials?: string[]; 
+  
+  isVerified?: boolean; 
+  createdAt: Date | any; 
 }
