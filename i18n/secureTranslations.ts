@@ -7,10 +7,12 @@ type SecureI18NRoot = typeof secureI18n.da;
 // Trin 2: Definer de enkelte grene ved at bruge Indexed Access til roden.
 export type Dashboard = SecureI18NRoot['dashboard'];
 export type Header = SecureI18NRoot['header'];
-export type Sidebar = SecureI18NRoot['sidebar']; // Sikrer at de nye nøgler kan læses
+export type Sidebar = SecureI18NRoot['sidebar'];
 export type TrainerPage = SecureI18NRoot['trainer_page'];
 export type Trainer = SecureI18NRoot['trainer'];
-export type Library = SecureI18NRoot['library']; // <-- NY LINJE
+export type Library = SecureI18NRoot['library'];
+// NY: Definer Categories typen
+export type Categories = SecureI18NRoot['categories'];
 
 // Trin 3: Saml dem i den endelige type.
 export type SecureTranslations = {
@@ -19,9 +21,7 @@ export type SecureTranslations = {
   sidebar: Sidebar; 
   trainer_page: TrainerPage; 
   trainer: Trainer;
-  library: Library; // <-- NY LINJE 
- 
-  // Tilføj fremtidige moduler her:
- // calendar: object;
- // scouting: object;
+  library: Library;
+  // NY: Tilføj categories til objektet
+  categories: Categories;
 };

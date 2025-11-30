@@ -326,6 +326,7 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
         isOpen={isCreateModalOpen} 
         onClose={() => setIsCreateModalOpen(false)} 
         lang={lang}
+        dict={dict}
         onSuccess={fetchAssets} 
       />
     </div>

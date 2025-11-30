@@ -65,5 +65,94 @@
     "notesLabel": "Coach Notes",
     "saveButton": "Save Session",
     "cancelButton": "Cancel"
+  },
+  "categories": {
+    "main": {
+      "buildup_phase_1": "Build-up - Phase 1 (Establishment)",
+      "buildup_phase_2": "Build-up - Phase 2 (Possession / Breakthrough)",
+      "attacking": "Attacking (Finishing / Phase 3)",
+      "pressing": "Conquest (Organized Pressing)",
+      "defending": "Defending (Box Defence / Zonal)",
+      "transition_off": "Transition - Offensive (Counter)",
+      "transition_def": "Transition - Defensive (Counter-press / Recovery)",
+      "set_pieces": "Set Pieces",
+      "technical": "Technical Training",
+      "physical": "Physical Training",
+      "goalkeeper": "Goalkeeper Training",
+      "other": "Other"
+    },
+    "sub": {
+      "establishment": "Establishment & Playing out from back",
+      "opening": "Opening the play (Fullbacks/Center)",
+      "switching_back": "Switching play (Back line)",
+      "relations_back": "Relationships in back line",
+      "resist_press": "Resisting high press",
+
+      "breaking_lines": "Breaking Lines",
+      "possession_retention": "Possession Retention",
+      "progression": "Progression & Transport",
+      "pocket_play": "Play in pockets/between lines",
+      "switching_mid": "Switching play (Midfield)",
+      "rotation": "Rotations & Interchanges",
+      "transition_to_finish": "Transition to finishing",
+
+      "breakthrough": "Breakthrough & Through balls",
+      "cross_box": "Crosses & Box play",
+      "finishing": "Finishing",
+      "1v1_off": "1v1 Offensive",
+      "overloads": "Overloads",
+      "shooting": "Shooting practice",
+
+      "high_press": "High Press (Organized)",
+      "pres_traps": "Pressing Traps",
+      "mid_conquest": "Midfield Conquest",
+      "steering": "Steering play wide",
+      "break_rhythm": "Breaking opponent's rhythm",
+
+      "zonal": "Zonal defending",
+      "man_marking": "Man-to-man / Duels",
+      "defend_box": "Defending own box (Low Block)",
+      "shifting": "Shifting & Organization",
+      "1v1_def": "1v1 Defensive",
+
+      "deep_runs": "Seeking depth quickly",
+      "imbalance": "Exploiting imbalance",
+      "first_pass": "The first pass forward",
+      "counter_direct": "Direct Counter",
+
+      "counter_press": "Counter-pressing",
+      "reaction": "Reaction to loss of possession",
+      "recovery_runs": "Recovery runs & Delay",
+      "reorg": "Re-establishing organization",
+
+      "corners_off": "Corners (Offensive)",
+      "corners_def": "Corners (Defensive)",
+      "freekicks": "Free kicks",
+      "throwins": "Throw-ins",
+      "penalties": "Penalties",
+
+      "passing_touch": "Passing & 1st touch",
+      "dribbling": "Dribbling, Feints & Turns",
+      "ball_mastery": "Ball Mastery",
+      "heading": "Heading",
+      "coordination_ball": "Coordination with ball",
+
+      "warmup": "Warm-up & Activation",
+      "sprint": "Sprint & Speed",
+      "strength": "Strength & Power",
+      "agility": "Agility & Coordination",
+      "endurance": "Endurance (Aerobic/Anaerob)",
+      "prehab": "Injury Prevention",
+
+      "shot_stopping": "Shot stopping & Saves",
+      "crosses": "Crosses & Aerial Command",
+      "distribution": "Distribution (Feet/Throws)",
+      "1v1_gk": "1v1 vs Striker",
+
+      "teambuilding": "Teambuilding",
+      "mental": "Mental Training",
+      "fun": "Fun & Games",
+      "rondos": "Rondos"
+    }
   }
 }

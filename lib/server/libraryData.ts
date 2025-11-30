@@ -1,90 +1,101 @@
 // lib/server/libraryData.ts
 
-// --- 1. FYSISK LOAD KATEGORIER ---
+// --- 1. HOVEDKATEGORIER (Keys / ID'er) ---
+export type MainCategory = 
+  | 'buildup_phase_1'
+  | 'buildup_phase_2'
+  | 'attacking'
+  | 'pressing'
+  | 'defending'
+  | 'transition_off'
+  | 'transition_def'
+  | 'set_pieces'
+  | 'technical'
+  | 'physical'
+  | 'goalkeeper'
+  | 'other';
+
+export const DRILL_CATEGORIES: Record<MainCategory, string[]> = {
+  'buildup_phase_1': ['establishment', 'opening', 'switching_back', 'relations_back', 'resist_press'],
+  'buildup_phase_2': ['breaking_lines', 'possession_retention', 'transition_to_finish', 'pocket_play', 'switching_mid', 'rotation', 'progression'],
+  'attacking': ['breakthrough', 'cross_box', 'finishing', '1v1_off', 'overloads', 'shooting'],
+  'pressing': ['high_press', 'pres_traps', 'mid_conquest', 'steering', 'break_rhythm'],
+  'defending': ['zonal', 'man_marking', 'defend_box', 'shifting', '1v1_def'],
+  'transition_off': ['deep_runs', 'imbalance', 'first_pass'],
+  'transition_def': ['counter_press', 'reaction', 'recovery_runs', 'reorg'],
+  'set_pieces': ['corners_off', 'corners_def', 'freekicks', 'throwins', 'penalties'],
+  'technical': ['passing_touch', 'dribbling', 'ball_mastery', 'heading', 'coordination_ball'],
+  'physical': ['warmup', 'sprint', 'strength', 'agility', 'endurance', 'prehab'],
+  'goalkeeper': ['shot_stopping', 'crosses', 'distribution', '1v1_gk'],
+  'other': ['teambuilding', 'mental', 'fun', 'rondos']
+};
+
 export type PhysicalLoadType = 
-  | 'Aerob – lav intensitet' 
-  | 'Aerob – moderat intensitet' 
-  | 'Aerob – høj intensitet' 
-  | 'Anaerob – Sprint' 
-  | 'Anaerob – Sprint udholdenhed' 
-  | 'Anaerob – Produktion' 
-  | 'Anaerob – Tolerance';
+  | 'Aerob – lav intensitet' | 'Aerob – moderat intensitet' | 'Aerob – høj intensitet' 
+  | 'Anaerob – Sprint' | 'Anaerob – Sprint udholdenhed' | 'Anaerob – Produktion' | 'Anaerob – Tolerance';
 
-// --- 2. SPIL FASER ---
 export type GamePhase = 
-  | 'Opbygningsspil' 
-  | 'Opbygningsspil Fase 1'
-  | 'Opbygningsspil Fase 2'
-  | 'Erobringsspil' 
-  | 'Afslutningsspil' 
-  | 'Forsvarsspil'
-  | 'Omstilling offensiv' 
-  | 'Omstilling defensiv'
-  | 'Dødbolde';
+  | 'Opbygningsspil' | 'Opbygningsspil Fase 1' | 'Opbygningsspil Fase 2'
+  | 'Erobringsspil' | 'Afslutningsspil' | 'Forsvarsspil'
+  | 'Omstilling offensiv' | 'Omstilling defensiv' | 'Dødbolde';
 
-// --- 3. KATEGORIER & TAGS ---
 export type FourCornerTag = 'Teknisk' | 'Taktisk' | 'Fysisk' | 'Mentalt';
 
-// --- 4. COACHING INTELLIGENCE ---
 export interface CoachingPoints {
   keyPoints: string[]; 
   instruction: string; 
 }
 
-// --- 5. HOVED ØVELSES OBJEKT (The Drill Asset) ---
+// NY: MATERIALE TYPE
+export interface MaterialItem {
+  name: string;
+  count: number;
+}
+
+export interface TeamSetup {
+  name: string; 
+  playerCount: number; 
+  color: 'orange' | 'red' | 'blue' | 'green' | 'yellow' | 'white' | 'black'; 
+}
+
 export interface DrillAsset {
-  id?: string; // Firebase ID
-  
-  // BASIS INFO
+  id?: string;
   title: string; 
   description: string; 
-  rules?: string; 
-  ageGroups: string[]; 
-  
-  // MEDIA
+  mainCategory: MainCategory; 
+  subCategory: string;        
+  rules?: string[]; 
   thumbnailUrl?: string; 
-  mediaType: 'image' | 'video' | 'dtl-studio';
+  videoUrl?: string;      
+  youtubeUrl?: string;    
+  mediaType: 'image' | 'video' | 'youtube' | 'dtl-studio';
   studioDataId?: string; 
-
-  // EJERSKAB
+  ageGroups: string[]; 
   accessLevel: 'Global' | 'Club' | 'Personal'; 
   authorId: string;
   authorName: string;
   clubId?: string;
-
-  // PARAMETRE
   durationMin: number; 
   workDuration?: number; 
   restDuration?: number; 
   repetitions?: number; 
-  
   minPlayers: number;
   maxPlayers: number;
   pitchSize: { width: number; length: number }; 
-  
-  // FAGLIGHED
+  setup?: TeamSetup[]; 
   physicalLoad: PhysicalLoadType; 
-  phase: GamePhase; 
-  
-  // KATEGORISERING (FIX: Dette felt manglede!)
+  phase?: string; 
   tags?: FourCornerTag[];
-
-  // PERIODISERING & TEMAER
   primaryTheme?: string; 
   secondaryTheme?: string; 
-  
-  // LÆRINGSMÅL & PRINCIPPER
   technicalGoals?: string[]; 
   tacticalGoals?: string[]; 
   mentalGoals?: string[]; 
-  
-  playStylePrinciples?: string[]; 
-  groupPrinciples?: string[]; 
-  individualPrinciples?: string[]; 
-  
   coachingPoints: CoachingPoints; 
   progression?: string; 
-  materials?: string[]; 
+  
+  // ÆNDRET HER:
+  materials?: MaterialItem[]; 
   
   isVerified?: boolean; 
   createdAt: Date | any; 
