@@ -46,10 +46,11 @@ export interface CoachingPoints {
   instruction: string; 
 }
 
-// NY: MATERIALE TYPE
+// OPDATERET: Materiale type har nu 'details'
 export interface MaterialItem {
   name: string;
   count: number;
+  details?: string; // <--- Tilføjet for at fjerne fejl i modalen
 }
 
 export interface TeamSetup {
@@ -92,9 +93,14 @@ export interface DrillAsset {
   tacticalGoals?: string[]; 
   mentalGoals?: string[]; 
   coachingPoints: CoachingPoints; 
-  progression?: string; 
   
-  // ÆNDRET HER:
+  // NYT FELT:
+  stopFreeze?: string; 
+
+  progression?: string[]; 
+  regression?: string[];
+  gamification?: string;
+
   materials?: MaterialItem[]; 
   
   isVerified?: boolean; 
