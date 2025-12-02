@@ -66,93 +66,74 @@
     "saveButton": "Gem Pas",
     "cancelButton": "Annuller"
   },
+  "library": {
+    "title": "Bibliotek & Assets",
+    "subtitle": "Intelligent Asset Management",
+    "createBtn": "Opret Øvelse",
+    "searchPlaceholder": "Søg (f.eks. \"Genpres\" eller \"U12\")",
+    "tabs": {
+      "global": "DTL Global",
+      "club": "Klubbens Curriculum",
+      "team": "Team Library",
+      "personal": "Mine Øvelser"
+    },
+    "filters": {
+      "all": "Alle",
+      "warmup": "Opvarmning",
+      "technical": "Teknisk",
+      "tactical": "Taktisk",
+      "physical": "Fysisk",
+      "mental": "Mentalt"
+    },
+    "card": {
+      "verified": "Verificeret",
+      "by": "Af",
+      "highIntensity": "Høj Intensitet"
+    },
+    "emptyState": {
+      "title": "Ingen assets fundet",
+      "desc": "Prøv at ændre dine filtre eller søgning"
+    }
+  },
   "categories": {
     "main": {
-      "buildup_phase_1": "Opbygningsspil - Fase 1 (Etablering)",
-      "buildup_phase_2": "Opbygningsspil - Fase 2 (Possession / Gennembrud)",
-      "attacking": "Angrebsspil (Afslutningsspil / Fase 3)",
-      "pressing": "Erobringsspil (Organiseret Pres)",
-      "defending": "Forsvarsspil (Forsvar af feltet / Zone)",
-      "transition_off": "Omstilling - Offensiv (Kontra)",
-      "transition_def": "Omstilling - Defensiv (Genpres / Returløb)",
-      "set_pieces": "Dødbolde",
+      "warmup": "Opvarmning",
       "technical": "Teknisk Træning",
+      "tactical": "Taktisk Træning",
+      "game_forms": "Spilformer",
       "physical": "Fysisk Træning",
-      "goalkeeper": "Målmandstræning",
-      "other": "Andet"
+      "set_pieces": "Standardsituationer",
+      "goalkeeper": "Keepertræning"
     },
     "sub": {
-      "establishment": "Etablering & Spille ud fra bagkæden",
-      "opening": "Åbne spillet (Backs/Centrale)",
-      "switching_back": "Spilvendinger (Bagerste kæde)",
-      "relations_back": "Relationer i bagkæden",
-      "resist_press": "Modstå højt pres",
-      
-      "breaking_lines": "Bryde kæder (Breaking Lines)",
-      "possession_retention": "Fastholde spillet (Possession)",
-      "progression": "Progression & Transport",
-      "pocket_play": "Spil i mellemrum",
-      "switching_mid": "Spilvendinger (Midtbane)",
-      "rotation": "Rotationer & Positionsveksler",
-      "transition_to_finish": "Overgang til afslutningsspil",
-
-      "breakthrough": "Gennembrud & Stikninger",
-      "cross_box": "Indlæg & Boksspil",
-      "finishing": "Afslutninger (Finishing)",
-      "1v1_off": "1v1 Offensivt",
-      "overloads": "Overtal (Overloads)",
-      "shooting": "Skudtræning",
-
-      "high_press": "Højt Pres (Organiseret)",
-      "pres_traps": "Presfælder",
-      "mid_conquest": "Erobring på midten",
-      "steering": "Styre spillet mod siderne",
-      "break_rhythm": "Bryde modstanders rytme",
-
-      "zonal": "Zoneforsvar",
-      "man_marking": "Mand-til-mand / Dueller",
-      "defend_box": "Forsvare eget felt (Low Block)",
-      "shifting": "Sideforskydning & Organisering",
-      "1v1_def": "1v1 Defensivt",
-
-      "deep_runs": "Søge dybden hurtigt",
-      "imbalance": "Udnytte ubalance",
-      "first_pass": "Den første pasning fremad",
-      "counter_direct": "Direkte Kontra",
-
-      "counter_press": "Genpres (Counter-pressing)",
-      "reaction": "Reaktion ved boldtab",
-      "recovery_runs": "Returløb & Forsinkelse",
-      "reorg": "Genetablering af organisation",
-
-      "corners_off": "Hjørnespark (Offensivt)",
-      "corners_def": "Hjørnespark (Defensivt)",
-      "freekicks": "Frispark",
-      "throwins": "Indkast",
-      "penalties": "Straffespark",
-
-      "passing_touch": "Pasninger & 1. berøring",
-      "dribbling": "Driblinger, Finter & Vendinger",
-      "ball_mastery": "Ball Mastery",
-      "heading": "Hovedspil",
-      "coordination_ball": "Koordination med bold",
-
-      "warmup": "Opvarmning & Aktivering",
-      "sprint": "Sprint & Hurtighed",
-      "strength": "Styrke & Power",
-      "agility": "Agility & Koordination",
-      "endurance": "Udholdenhed (Aerob/Anaerob)",
-      "prehab": "Skadesforebyggelse",
-
-      "shot_stopping": "Skudtræning & Redninger",
-      "crosses": "Indlæg & Feltarbejde",
-      "distribution": "Distribution (Fødder/Kast)",
-      "1v1_gk": "1v1 mod angriber",
-
-      "teambuilding": "Teambuilding",
-      "mental": "Mental Træning",
-      "fun": "Sjov & Leg",
-      "rondos": "Rondos"
+      "Generel Opvarmning": "Generel Opvarmning",
+      "Teknisk Opvarmning": "Teknisk Opvarmning",
+      "Fysisk Aktivering": "Fysisk Aktivering",
+      "Leg og Boldleg": "Leg og Boldleg",
+      "Aflevering & Modtagelse": "Aflevering & Modtagelse",
+      "Dribling & Vendinger": "Dribling & Vendinger",
+      "1v1": "1v1",
+      "Afslutning": "Afslutning",
+      "Angrebsspil": "Angrebsspil",
+      "Forsvarsspil": "Forsvarsspil",
+      "Boldbesiddelse": "Boldbesiddelse",
+      "Omstillinger": "Omstillinger",
+      "Rondos": "Rondos",
+      "Småspil (SSG)": "Småspil (SSG)",
+      "Spil til to mål": "Spil til to mål",
+      "Positionsspil": "Positionsspil",
+      "Hurtighed & Sprint": "Hurtighed & Sprint",
+      "Styrke & Power": "Styrke & Power",
+      "Udholdenhed": "Udholdenhed",
+      "Skadesforebyggelse": "Skadesforebyggelse",
+      "Hjørnespark": "Hjørnespark",
+      "Frispark": "Frispark",
+      "Straffespark": "Straffespark",
+      "Indkast": "Indkast",
+      "Skudtræning": "Skudtræning",
+      "Indlæg & Feltet": "Indlæg & Feltet",
+      "Reaktion & Redninger": "Reaktion & Redninger",
+      "Spil med fødderne": "Spil med fødderne"
     }
   }
-}  
+}

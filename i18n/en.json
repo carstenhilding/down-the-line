@@ -14,6 +14,14 @@
     "loading": "Loading dashboard...",
     "welcomeTitle": "Welcome",
     "logoutButton": "Log Out",
+    "createSessionTitle": "Create Session",
+    "sessionPlannerSubtitle": "Session Planner",
+    "createDrillTitle": "Create Drill",
+    "dtlStudioSubtitle": "DTL Studio",
+    "readinessTitle": "Readiness",
+    "playerSubtitle": "Player",
+    "videoAnalysisTitle": "Video Analysis",
+    "analysisRoomSubtitle": "Analysis Room",
     "createTrainingTitle": "Create New Session",
     "createTrainingDesc": "Access the advanced training planner to design your next session.",
     "viewTrainingTitle": "Session Library",
@@ -66,93 +74,74 @@
     "saveButton": "Save Session",
     "cancelButton": "Cancel"
   },
+  "library": {
+    "title": "Library & Assets",
+    "subtitle": "Intelligent Asset Management",
+    "createBtn": "Create Drill",
+    "searchPlaceholder": "Search (e.g. \"Pressing\" or \"U12\")",
+    "tabs": {
+      "global": "DTL Global",
+      "club": "Club Curriculum",
+      "team": "Team Library",
+      "personal": "My Drills"
+    },
+    "filters": {
+      "all": "All",
+      "warmup": "Warm-up",
+      "technical": "Technical",
+      "tactical": "Tactical",
+      "physical": "Physical",
+      "mental": "Mental"
+    },
+    "card": {
+      "verified": "Verified",
+      "by": "By",
+      "highIntensity": "High Intensity"
+    },
+    "emptyState": {
+      "title": "No assets found",
+      "desc": "Try changing your filters or search query"
+    }
+  },
   "categories": {
     "main": {
-      "buildup_phase_1": "Build-up - Phase 1 (Establishment)",
-      "buildup_phase_2": "Build-up - Phase 2 (Possession / Breakthrough)",
-      "attacking": "Attacking (Finishing / Phase 3)",
-      "pressing": "Conquest (Organized Pressing)",
-      "defending": "Defending (Box Defence / Zonal)",
-      "transition_off": "Transition - Offensive (Counter)",
-      "transition_def": "Transition - Defensive (Counter-press / Recovery)",
-      "set_pieces": "Set Pieces",
+      "warmup": "Warm-up",
       "technical": "Technical Training",
+      "tactical": "Tactical Training",
+      "game_forms": "Game Forms",
       "physical": "Physical Training",
-      "goalkeeper": "Goalkeeper Training",
-      "other": "Other"
+      "set_pieces": "Set Pieces",
+      "goalkeeper": "Goalkeeper Training"
     },
     "sub": {
-      "establishment": "Establishment & Playing out from back",
-      "opening": "Opening the play (Fullbacks/Center)",
-      "switching_back": "Switching play (Back line)",
-      "relations_back": "Relationships in back line",
-      "resist_press": "Resisting high press",
-
-      "breaking_lines": "Breaking Lines",
-      "possession_retention": "Possession Retention",
-      "progression": "Progression & Transport",
-      "pocket_play": "Play in pockets/between lines",
-      "switching_mid": "Switching play (Midfield)",
-      "rotation": "Rotations & Interchanges",
-      "transition_to_finish": "Transition to finishing",
-
-      "breakthrough": "Breakthrough & Through balls",
-      "cross_box": "Crosses & Box play",
-      "finishing": "Finishing",
-      "1v1_off": "1v1 Offensive",
-      "overloads": "Overloads",
-      "shooting": "Shooting practice",
-
-      "high_press": "High Press (Organized)",
-      "pres_traps": "Pressing Traps",
-      "mid_conquest": "Midfield Conquest",
-      "steering": "Steering play wide",
-      "break_rhythm": "Breaking opponent's rhythm",
-
-      "zonal": "Zonal defending",
-      "man_marking": "Man-to-man / Duels",
-      "defend_box": "Defending own box (Low Block)",
-      "shifting": "Shifting & Organization",
-      "1v1_def": "1v1 Defensive",
-
-      "deep_runs": "Seeking depth quickly",
-      "imbalance": "Exploiting imbalance",
-      "first_pass": "The first pass forward",
-      "counter_direct": "Direct Counter",
-
-      "counter_press": "Counter-pressing",
-      "reaction": "Reaction to loss of possession",
-      "recovery_runs": "Recovery runs & Delay",
-      "reorg": "Re-establishing organization",
-
-      "corners_off": "Corners (Offensive)",
-      "corners_def": "Corners (Defensive)",
-      "freekicks": "Free kicks",
-      "throwins": "Throw-ins",
-      "penalties": "Penalties",
-
-      "passing_touch": "Passing & 1st touch",
-      "dribbling": "Dribbling, Feints & Turns",
-      "ball_mastery": "Ball Mastery",
-      "heading": "Heading",
-      "coordination_ball": "Coordination with ball",
-
-      "warmup": "Warm-up & Activation",
-      "sprint": "Sprint & Speed",
-      "strength": "Strength & Power",
-      "agility": "Agility & Coordination",
-      "endurance": "Endurance (Aerobic/Anaerob)",
-      "prehab": "Injury Prevention",
-
-      "shot_stopping": "Shot stopping & Saves",
-      "crosses": "Crosses & Aerial Command",
-      "distribution": "Distribution (Feet/Throws)",
-      "1v1_gk": "1v1 vs Striker",
-
-      "teambuilding": "Teambuilding",
-      "mental": "Mental Training",
-      "fun": "Fun & Games",
-      "rondos": "Rondos"
+      "Generel Opvarmning": "General Warm-up",
+      "Teknisk Opvarmning": "Technical Warm-up",
+      "Fysisk Aktivering": "Physical Activation",
+      "Leg og Boldleg": "Fun & Games",
+      "Aflevering & Modtagelse": "Passing & Receiving",
+      "Dribling & Vendinger": "Dribbling & Turns",
+      "1v1": "1v1",
+      "Afslutning": "Finishing",
+      "Angrebsspil": "Attacking",
+      "Forsvarsspil": "Defending",
+      "Boldbesiddelse": "Possession",
+      "Omstillinger": "Transitions",
+      "Rondos": "Rondos",
+      "Småspil (SSG)": "Small Sided Games",
+      "Spil til to mål": "Match Play",
+      "Positionsspil": "Positional Play",
+      "Hurtighed & Sprint": "Speed & Sprint",
+      "Styrke & Power": "Strength & Power",
+      "Udholdenhed": "Endurance",
+      "Skadesforebyggelse": "Injury Prevention",
+      "Hjørnespark": "Corners",
+      "Frispark": "Free Kicks",
+      "Straffespark": "Penalties",
+      "Indkast": "Throw-ins",
+      "Skudtræning": "Shot Stopping",
+      "Indlæg & Feltet": "Crosses & Box",
+      "Reaktion & Redninger": "Reaction & Saves",
+      "Spil med fødderne": "Distribution"
     }
   }
 }
