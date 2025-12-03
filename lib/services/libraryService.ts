@@ -13,7 +13,6 @@ import {
   orderBy,
   serverTimestamp
 } from "firebase/firestore";
-// Sørg for at stien herunder er korrekt ift. din mappestruktur
 import { DrillAsset } from "../server/libraryData";
 
 const COLLECTION_NAME = "drills";
@@ -43,8 +42,14 @@ export async function createDrill(drillData: DrillAsset) {
 
 /**
  * Henter øvelser baseret på adgangsniveau.
+ * OPDATERET: Understøtter nu 'Team' og teamId
  */
-export async function getDrills(accessLevel: 'Global' | 'Club' | 'Personal', userId?: string, clubId?: string) {
+export async function getDrills(
+    accessLevel: 'Global' | 'Club' | 'Team' | 'Personal', 
+    userId?: string, 
+    clubId?: string,
+    teamId?: string
+) {
   try {
     const drillsRef = collection(db, COLLECTION_NAME);
     let q = query(drillsRef);
@@ -53,6 +58,9 @@ export async function getDrills(accessLevel: 'Global' | 'Club' | 'Personal', use
       q = query(drillsRef, where("accessLevel", "==", "Personal"), where("authorId", "==", userId));
     } else if (accessLevel === 'Club' && clubId) {
       q = query(drillsRef, where("accessLevel", "==", "Club"), where("clubId", "==", clubId));
+    } else if (accessLevel === 'Team' && teamId) {
+       // Henter øvelser for et specifikt hold
+       q = query(drillsRef, where("accessLevel", "==", "Team"), where("teamId", "==", teamId));
     } else if (accessLevel === 'Global') {
       q = query(drillsRef, where("accessLevel", "==", "Global"));
     }
@@ -76,6 +84,7 @@ export async function getDrills(accessLevel: 'Global' | 'Club' | 'Personal', use
     return [];
   }
 }
+
 export async function deleteDrill(drillId: string) {
   try {
     const docRef = doc(db, COLLECTION_NAME, drillId);

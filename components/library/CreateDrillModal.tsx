@@ -8,7 +8,7 @@ import {
   Minus, Trophy, TrendingUp, TrendingDown, PackagePlus, Calculator,
   Megaphone, PauseOctagon, ListChecks, ChevronRight, BarChart3,
   Brain, Zap, User, TrafficCone, GitPullRequestArrow, Dumbbell, Lock, Info,
-  Ruler
+  Ruler, Shield, Globe, User as UserIcon
 } from 'lucide-react';
 import { 
     DrillAsset, 
@@ -25,6 +25,7 @@ import { createDrill } from '@/lib/services/libraryService';
 import { uploadFile } from '@/lib/services/storageService';
 import { useUser } from '@/components/UserContext';
 import imageCompression from 'browser-image-compression';
+import { UserRole } from '@/lib/server/data';
 
 interface CreateDrillModalProps {
   isOpen: boolean;
@@ -64,7 +65,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
   const [newMaterial, setNewMaterial] = useState<MaterialItem>({ name: 'eq_balls', count: 1, details: '' });
   const [customMaterialName, setCustomMaterialName] = useState('');
   
-  const [activeCorner, setActiveCorner] = useState<FourCornerTag>('Teknisk');
+  const [activeCorner, setActiveCorner] = useState<FourCornerTag>('Technical');
   const [activeSubCat, setActiveSubCat] = useState<string>(''); 
 
   const [teams, setTeams] = useState<TeamSetup[]>([
@@ -76,7 +77,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
     title: '',
     description: '',
     mainCategory: 'technical', 
-    subCategory: 'Aflevering',
+    subCategory: 'Passing', // Standard er nu engelsk
     phase: '', 
     primaryTheme: '',
     secondaryTheme: '',
@@ -92,7 +93,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
     progression: [''],
     regression: [''],
     ageGroups: [],
-    physicalLoad: 'Aerob – moderat intensitet',
+    physicalLoad: 'Aerobic – Moderate Intensity', // Standard er nu engelsk
     rpe: 5, 
     accessLevel: 'Personal',
     tags: [],
@@ -103,6 +104,8 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
 
   const isPremium = ['Complete', 'Elite', 'Enterprise'].includes(user?.subscriptionLevel || '');
   const isPremiumCalc = ['Complete', 'Elite', 'Enterprise'].includes(user?.subscriptionLevel || '');
+  
+  const isDtlEmployee = user?.role === UserRole.Developer; 
 
   useEffect(() => {
      if (!DRILL_TAGS || !DRILL_TAGS[activeCorner]) return;
@@ -112,11 +115,16 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
      }
   }, [activeCorner, activeSubCat]);
 
+  // --- RETTET HER: Oversætter nu rigtigt når sproget er DANSK ---
   const translateVal = (value: string, type: 'sub' | 'load' | 'tag') => {
-     if (lang === 'da') return value; 
+     // Hvis vi er på engelsk, skal vi bare vise værdien (som allerede er engelsk i DB)
+     if (lang === 'en') return value; 
+     
+     // Hvis vi er på dansk (eller andet), slår vi op i ordbogen
      if (type === 'sub' && t.val_sub) return t.val_sub[value] || value;
      if (type === 'load' && t.val_load) return t.val_load[value] || value;
      if (type === 'tag' && t.val_tags) return t.val_tags[value] || value;
+     
      return value;
   };
 
@@ -220,23 +228,23 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
 
   const getIntensityLevel = (load: PhysicalLoadType | undefined) => {
       if (!load) return 'yellow';
-      if (load.includes('lav intensitet')) return 'green';
-      if (load.includes('moderat')) return 'yellow';
+      if (load.includes('Low')) return 'green'; 
+      if (load.includes('Moderate')) return 'yellow';
       return 'red'; 
   };
 
   const setIntensityByColor = (color: 'green' | 'yellow' | 'red') => {
-      let newLoad: PhysicalLoadType = 'Aerob – moderat intensitet';
+      let newLoad: PhysicalLoadType = 'Aerobic – Moderate Intensity';
       let newRPE = 5;
 
       if (color === 'green') {
-          newLoad = 'Aerob – lav intensitet';
+          newLoad = 'Aerobic – Low Intensity';
           newRPE = 3;
       } else if (color === 'yellow') {
-          newLoad = 'Aerob – moderat intensitet';
+          newLoad = 'Aerobic – Moderate Intensity';
           newRPE = 6;
       } else if (color === 'red') {
-          newLoad = 'Aerob – høj intensitet';
+          newLoad = 'Aerobic – High Intensity';
           newRPE = 9;
       }
       setFormData({ ...formData, physicalLoad: newLoad, rpe: newRPE });
@@ -245,11 +253,11 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
   const handleLoadChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       const newLoad = e.target.value as PhysicalLoadType;
       let newRPE = formData.rpe || 5;
-      if (newLoad.includes('lav intensitet')) newRPE = 3;
-      else if (newLoad.includes('moderat')) newRPE = 6;
-      else if (newLoad.includes('høj intensitet')) newRPE = 8;
-      else if (newLoad.includes('Anaerob')) newRPE = 9; 
-      if (newLoad.includes('Produktion') || newLoad.includes('Tolerance')) newRPE = 10; 
+      if (newLoad.includes('Low')) newRPE = 3;
+      else if (newLoad.includes('Moderate')) newRPE = 6;
+      else if (newLoad.includes('High')) newRPE = 8;
+      else if (newLoad.includes('Anaerobic')) newRPE = 9; 
+      if (newLoad.includes('Production') || newLoad.includes('Tolerance')) newRPE = 10; 
 
       setFormData({ ...formData, physicalLoad: newLoad, rpe: newRPE });
   };
@@ -286,7 +294,6 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
       setTeams(newTeams);
   };
 
-  // --- Beregning af Smart Pitch Data ---
   const calculatePitchData = () => {
     if (!formData.pitchSize?.width || !formData.pitchSize?.length || !formData.maxPlayers) {
         return null;
@@ -328,6 +335,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
         authorId: user?.id || 'unknown',
         authorName: user?.name || 'Ukendt Træner',
         clubId: user?.clubId,
+        teamId: user?.teamId,
         createdAt: new Date(),
         thumbnailUrl: formData.thumbnailUrl || '/images/tactical-analysis.jpeg', 
         videoUrl: formData.videoUrl,
@@ -370,10 +378,10 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
   const getCornerIcon = (corner: FourCornerTag, isActive: boolean) => {
       const iconClass = isActive ? "text-orange-500" : "text-slate-400 group-hover:text-orange-500 transition-colors duration-200";
       switch(corner) {
-          case 'Teknisk': return <TrafficCone size={20} className={iconClass} />;
-          case 'Taktisk': return <GitPullRequestArrow size={20} className={iconClass} />;
-          case 'Fysisk': return <Dumbbell size={20} className={iconClass} />;
-          case 'Mentalt': return <Brain size={20} className={iconClass} />;
+          case 'Technical': return <TrafficCone size={20} className={iconClass} />;
+          case 'Tactical': return <GitPullRequestArrow size={20} className={iconClass} />;
+          case 'Physical': return <Dumbbell size={20} className={iconClass} />;
+          case 'Mental': return <Brain size={20} className={iconClass} />;
       }
   };
 
@@ -660,7 +668,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
 
                 <div className="grid grid-cols-2 gap-3 mb-3">
                    <div>
-                      <label className={labelClass}>{t.lbl_main_category || 'ØVELSESTYPE'}</label>
+                      <label className={labelClass}>{t.lbl_main_category || 'KATEGORI'}</label>
                       <div className="relative">
                         <select className={`${inputClass} appearance-none pr-6`} value={formData.mainCategory} onChange={e => handleMainCategoryChange(e.target.value as MainCategory)}>
                             {Object.keys(DRILL_CATEGORIES).map(cat => (
@@ -671,7 +679,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                       </div>
                    </div>
                    <div>
-                      <label className={labelClass}>{t.lbl_sub_category || 'FOKUS'}</label>
+                      <label className={labelClass}>{t.lbl_sub_category || 'EMNE'}</label>
                       <div className="relative">
                         <select className={`${inputClass} appearance-none pr-6`} value={formData.subCategory} onChange={e => setFormData({...formData, subCategory: e.target.value})}>
                             {formData.mainCategory && DRILL_CATEGORIES[formData.mainCategory as MainCategory] && DRILL_CATEGORIES[formData.mainCategory as MainCategory].map(sub => (
@@ -683,13 +691,50 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                    </div>
                 </div>
                 
+                {/* --- NY VISIBILITY SELECTOR (KNAPPER MED RETTET DESIGN) --- */}
                 <div className="mb-1">
-                    <label className={labelClass}>{t.lbl_visibility || 'SYNLIGHED'}</label>
-                    <select className={inputClass} value={formData.accessLevel} onChange={e => setFormData({...formData, accessLevel: e.target.value as any})}>
-                        <option value="Personal">{t.access_personal || 'Personligt (Kun mig)'}</option>
-                        <option value="Club">{t.access_club || 'Klubben (Alle trænere)'}</option>
-                        <option value="Global">{t.access_global || 'Global (DTL Community)'}</option>
-                    </select>
+                    <label className={labelClass}>{t.lbl_visibility || 'KATALOG'}</label>
+                    {/* RETTET: Samme style som Four Corner Tags */}
+                    <div className="flex gap-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                        {[
+                            { id: 'Global', label: t.lbl_vis_global || 'DTL Global', icon: Globe, restricted: !isDtlEmployee },
+                            { id: 'Club', label: t.lbl_vis_club || 'Club Library', icon: Shield, restricted: false },
+                            { id: 'Team', label: t.lbl_vis_team || 'Team Library', icon: Users, restricted: false },
+                            { id: 'Personal', label: t.lbl_vis_personal || 'Personal Library', icon: UserIcon, restricted: false },
+                        ].map((option) => {
+                            const isSelected = formData.accessLevel === option.id;
+                            const isRestricted = option.restricted;
+                            
+                            return (
+                                <button
+                                    key={option.id}
+                                    onClick={() => !isRestricted && setFormData({ ...formData, accessLevel: option.id as any })}
+                                    disabled={isRestricted}
+                                    className={`
+                                        relative flex-1 py-2 flex items-center justify-center rounded-lg border transition-all duration-200 group
+                                        ${isSelected 
+                                            ? 'bg-black border-black text-white shadow-md transform -translate-y-0.5' 
+                                            : isRestricted 
+                                                ? 'bg-gray-50 border-gray-200 text-gray-300 cursor-not-allowed'
+                                                : 'bg-white border-slate-200 text-slate-500 hover:border-orange-500 hover:text-orange-500'
+                                        }
+                                    `}
+                                >
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                                        <option.icon size={16} className={isSelected ? "text-orange-500" : isRestricted ? "text-gray-300" : "text-slate-400 group-hover:text-orange-500 transition-colors duration-200"} />
+                                    </div>
+                                    <span className={`text-[10px] font-black uppercase tracking-wider transition-colors duration-200 w-full text-center ${isSelected ? 'text-white' : isRestricted ? 'text-gray-300' : 'text-slate-500 group-hover:text-orange-500'}`}>
+                                        {option.label}
+                                    </span>
+                                    {isRestricted && (
+                                        <div className="absolute top-1 right-1">
+                                            <Lock size={8} className="text-gray-300" />
+                                        </div>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
               </div>
 
@@ -707,13 +752,13 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                             </div>
                        </div>
                        <select className={inputClass} value={formData.physicalLoad} onChange={handleLoadChange}>
-                          <option value="Aerob – lav intensitet">{translateVal('Aerob – lav intensitet', 'load')}</option>
-                          <option value="Aerob – moderat intensitet">{translateVal('Aerob – moderat intensitet', 'load')}</option>
-                          <option value="Aerob – høj intensitet">{translateVal('Aerob – høj intensitet', 'load')}</option>
-                          <option value="Anaerob – Sprint">{translateVal('Anaerob – Sprint', 'load')}</option>
-                          <option value="Anaerob – Sprint udholdenhed">{translateVal('Anaerob – Sprint udholdenhed', 'load')}</option>
-                          <option value="Anaerob – Produktion">{translateVal('Anaerob – Produktion', 'load')}</option>
-                          <option value="Anaerob – Tolerance">{translateVal('Anaerob – Tolerance', 'load')}</option>
+                          <option value="Aerobic – Low Intensity">{translateVal('Aerobic – Low Intensity', 'load')}</option>
+                          <option value="Aerobic – Moderate Intensity">{translateVal('Aerobic – Moderate Intensity', 'load')}</option>
+                          <option value="Aerobic – High Intensity">{translateVal('Aerobic – High Intensity', 'load')}</option>
+                          <option value="Anaerobic – Sprint">{translateVal('Anaerobic – Sprint', 'load')}</option>
+                          <option value="Anaerobic – Sprint Endurance">{translateVal('Anaerobic – Sprint Endurance', 'load')}</option>
+                          <option value="Anaerobic – Production">{translateVal('Anaerobic – Production', 'load')}</option>
+                          <option value="Anaerobic – Tolerance">{translateVal('Anaerobic – Tolerance', 'load')}</option>
                         </select>
                   </div>
                   
@@ -726,8 +771,8 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                                         <label className={labelClass + " mb-0"}>{t.lbl_rpe || 'RPE (INTENSITET 1-10)'}</label>
                                         <div className="group/info relative">
                                             <Info size={12} className="text-slate-400 cursor-help hover:text-slate-600" />
-                                            {/* SORT BACKGROUND TOOLTIP */}
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 bg-black text-white text-[9px] p-3 rounded-md shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-50 leading-relaxed border border-orange-500">
+                                            {/* SORT BACKGROUND TOOLTIP MED ORANGE KANT */}
+                                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-60 bg-black text-white text-[9px] p-3 rounded-md shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-[100] leading-relaxed border border-orange-500">
                                                 <p className="font-bold text-orange-500 mb-1.5 border-b border-white/20 pb-1">{t.rpe_info_title || 'RPE Skala (Borg)'}</p>
                                                 <ul className="space-y-1.5 text-white/90">
                                                     <li><strong className="text-red-500">10:</strong> {t.rpe_10 || 'Maksimal indsats.'}</li>
@@ -760,13 +805,12 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                           {/* Header */}
                            <div className="flex justify-between items-center mb-1 relative z-10">
                               <div className="flex items-center gap-1.5">
-                                  {/* HER BRUGER VI NU OVERSÆTTELSEN */}
                                   <span className="text-[9px] font-black text-orange-500 uppercase tracking-widest">{t.lbl_smart_pitch || 'SMART PITCH'}</span>
                                   {/* Info Icon with Tooltip */}
                                   <div className="group/info relative">
                                       <Info size={12} className="text-white cursor-help hover:text-orange-400 transition-colors" />
-                                      {/* TOOLTIP MED OVERSÆTTELSER */}
-                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-black border border-orange-500 text-white text-[9px] p-2 rounded shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-[100]">
+                                      {/* TOOLTIP OVER IKONET (bottom-full) */}
+                                      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-black border border-orange-500 text-white text-[9px] p-2 rounded shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-[100]">
                                           <p className="font-bold text-orange-500 mb-1">{t.lbl_area_per_player || 'M² pr. spiller beregning'}</p>
                                           <p className="text-white leading-relaxed">
                                               {t.tooltip_high || '< 80m² = Høj Intensitet (Genpres)'}<br/>
@@ -829,12 +873,14 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                 </div>
                 
                 <div className="flex gap-2 mb-3 bg-slate-50 p-2 rounded-lg border border-slate-100">
-                    {(['Teknisk', 'Taktisk', 'Fysisk', 'Mentalt'] as FourCornerTag[]).map(corner => {
+                    {(['Technical', 'Tactical', 'Physical', 'Mental'] as FourCornerTag[]).map(corner => {
                         const isActive = activeCorner === corner;
                         return (
                             <button key={corner} onClick={() => setActiveCorner(corner)} className={`relative flex-1 py-2 flex items-center justify-center rounded-lg border transition-all duration-200 group ${isActive ? 'bg-black border-black text-white shadow-md transform -translate-y-0.5' : 'bg-white border-slate-200 text-slate-500 hover:border-orange-500'}`}>
                                 <div className="absolute left-3 top-1/2 -translate-y-1/2">{getCornerIcon(corner, isActive)}</div>
-                                <span className={`text-[11px] font-black uppercase tracking-wider transition-colors duration-200 w-full text-center ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-orange-500'}`}>{corner}</span>
+                                <span className={`text-[11px] font-black uppercase tracking-wider transition-colors duration-200 w-full text-center ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-orange-500'}`}>
+                                    {translateVal(corner, 'tag')}
+                                </span>
                             </button>
                         )
                     })}
@@ -881,7 +927,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
             </div>
           )}
 
-          {/* --- FANE 3: MEDIER --- */}
+          {/* ... FANE 3 MEDIA (Beholdt som den er) ... */}
           {activeTab === 'media' && (
             <div className="space-y-3">
               <div className={boxClassBlack}>
