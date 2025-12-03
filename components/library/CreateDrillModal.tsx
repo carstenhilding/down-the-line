@@ -7,7 +7,8 @@ import {
   Cone, Image as ImageIcon, Video, Youtube, Link as LinkIcon, 
   Minus, Trophy, TrendingUp, TrendingDown, PackagePlus, Calculator,
   Megaphone, PauseOctagon, ListChecks, ChevronRight, BarChart3,
-  Brain, Zap, User, TrafficCone, GitPullRequestArrow, Dumbbell, Lock, Info
+  Brain, Zap, User, TrafficCone, GitPullRequestArrow, Dumbbell, Lock, Info,
+  Ruler
 } from 'lucide-react';
 import { 
     DrillAsset, 
@@ -100,7 +101,8 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
     gamification: '' 
   });
 
-  const isPremium = ['Expert', 'Complete', 'Elite', 'Enterprise'].includes(user?.subscriptionLevel || '');
+  const isPremium = ['Complete', 'Elite', 'Enterprise'].includes(user?.subscriptionLevel || '');
+  const isPremiumCalc = ['Complete', 'Elite', 'Enterprise'].includes(user?.subscriptionLevel || '');
 
   useEffect(() => {
      if (!DRILL_TAGS || !DRILL_TAGS[activeCorner]) return;
@@ -283,6 +285,36 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
       newTeams[index] = { ...newTeams[index], [field]: value };
       setTeams(newTeams);
   };
+
+  // --- Beregning af Smart Pitch Data ---
+  const calculatePitchData = () => {
+    if (!formData.pitchSize?.width || !formData.pitchSize?.length || !formData.maxPlayers) {
+        return null;
+    }
+    const area = formData.pitchSize.width * formData.pitchSize.length;
+    const m2PerPlayer = Math.round(area / formData.maxPlayers);
+    
+    const maxScale = 300; 
+    const percentage = Math.min((m2PerPlayer / maxScale) * 100, 100);
+
+    let intensityHint = '';
+    let activeCategory = '';
+
+    if (m2PerPlayer < 80) {
+        intensityHint = t.hint_high_intensity || 'HØJ INTENSITET';
+        activeCategory = 'high';
+    } else if (m2PerPlayer > 150) {
+        intensityHint = t.hint_endurance || 'UDHOLDENHED';
+        activeCategory = 'endurance';
+    } else {
+        intensityHint = t.hint_moderate || 'MODERAT';
+        activeCategory = 'moderate';
+    }
+
+    return { m2PerPlayer, intensityHint, activeCategory, percentage };
+  };
+
+  const pitchData = calculatePitchData();
 
   const handleSave = async () => {
     if (!formData.title) return alert(t.ph_title || "Titel mangler!");
@@ -661,7 +693,10 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* --- GRID FOR FYSISK DATA (3 KOLONNER VED PREMIUM, 1 VED IKKE-PREMIUM) --- */}
+              <div className={`grid gap-3 ${isPremiumCalc ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1'}`}>
+                  
+                  {/* 1. FYSISK BELASTNING (Altid synlig) */}
                   <div className={boxClassOrange}>
                        <div className="flex items-center justify-between mb-1">
                             <label className={labelClass + " mb-0"}>{t.lbl_physical_load || 'FYSISK BELASTNING'}</label>
@@ -682,43 +717,107 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                         </select>
                   </div>
                   
-                  <div className={boxClassOrange}>
-                       <div className="relative h-full flex flex-col justify-center">
-                            {!isPremium && (
-                                <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-10 flex items-center justify-center rounded">
-                                    <div className="flex items-center gap-1.5 text-slate-400">
-                                        <Lock size={12} />
-                                        <span className="text-[10px] font-bold uppercase tracking-wider">{t.premium_feature || 'PREMIUM'}</span>
-                                    </div>
-                                </div>
-                            )}
-                            <div className="flex justify-between items-center mb-2">
-                                <div className="flex items-center gap-1">
-                                    <label className={labelClass + " mb-0"}>{t.lbl_rpe || 'RPE (INTENSITET 1-10)'}</label>
-                                    <div className="group relative">
-                                        <Info size={12} className="text-slate-400 cursor-help hover:text-slate-600" />
-                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 bg-slate-900 text-white text-[9px] p-3 rounded-md shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 leading-relaxed border border-slate-700">
-                                            <p className="font-bold text-orange-400 mb-1.5 border-b border-slate-700 pb-1">{t.rpe_info_title || 'RPE Skala (Borg)'}</p>
-                                            <ul className="space-y-1.5">
-                                                <li><strong className="text-red-500">10:</strong> {t.rpe_10 || 'Maksimal indsats.'}</li>
-                                                <li><strong className="text-orange-500">9:</strong> {t.rpe_9 || 'En gentagelse mere.'}</li>
-                                                <li><strong className="text-orange-400">8:</strong> {t.rpe_8 || 'To gentagelser mere.'}</li>
-                                                <li><strong className="text-yellow-400">7:</strong> {t.rpe_7 || 'Tre gentagelser mere.'}</li>
-                                                <li><strong className="text-yellow-300">6:</strong> {t.rpe_6 || 'Relativt let.'}</li>
-                                                <li><strong className="text-green-400">1-5:</strong> {t.rpe_1_5 || 'Meget let.'}</li>
-                                            </ul>
+                  {/* 2. RPE (KUN PREMIUM) */}
+                  {isPremiumCalc && (
+                    <div className={boxClassOrange}>
+                        <div className="relative h-full flex flex-col justify-start">
+                                <div className="flex justify-between items-center mb-1">
+                                    <div className="flex items-center gap-1">
+                                        <label className={labelClass + " mb-0"}>{t.lbl_rpe || 'RPE (INTENSITET 1-10)'}</label>
+                                        <div className="group/info relative">
+                                            <Info size={12} className="text-slate-400 cursor-help hover:text-slate-600" />
+                                            {/* SORT BACKGROUND TOOLTIP */}
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 bg-black text-white text-[9px] p-3 rounded-md shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-50 leading-relaxed border border-orange-500">
+                                                <p className="font-bold text-orange-500 mb-1.5 border-b border-white/20 pb-1">{t.rpe_info_title || 'RPE Skala (Borg)'}</p>
+                                                <ul className="space-y-1.5 text-white/90">
+                                                    <li><strong className="text-red-500">10:</strong> {t.rpe_10 || 'Maksimal indsats.'}</li>
+                                                    <li><strong className="text-orange-500">9:</strong> {t.rpe_9 || 'En gentagelse mere.'}</li>
+                                                    <li><strong className="text-orange-400">8:</strong> {t.rpe_8 || 'To gentagelser mere.'}</li>
+                                                    <li><strong className="text-yellow-400">7:</strong> {t.rpe_7 || 'Tre gentagelser mere.'}</li>
+                                                    <li><strong className="text-yellow-300">6:</strong> {t.rpe_6 || 'Relativt let.'}</li>
+                                                    <li><strong className="text-green-400">1-5:</strong> {t.rpe_1_5 || 'Meget let.'}</li>
+                                                </ul>
+                                            </div>
                                         </div>
                                     </div>
+                                    <span className={`text-[10px] font-bold px-1.5 rounded ${(formData.rpe || 5) > 7 ? 'text-red-600 bg-red-50' : (formData.rpe || 5) > 4 ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50'}`}>{formData.rpe || 5}</span>
                                 </div>
-                                <span className={`text-[10px] font-bold px-1.5 rounded ${(formData.rpe || 5) > 7 ? 'text-red-600 bg-red-50' : (formData.rpe || 5) > 4 ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50'}`}>{formData.rpe || 5}</span>
-                            </div>
-                            <input type="range" min="1" max="10" step="1" value={formData.rpe || 5} onChange={(e) => setFormData({...formData, rpe: parseInt(e.target.value)})} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-500" disabled={!isPremium} />
-                            <div className="flex justify-between text-[8px] text-slate-400 font-medium mt-1">
-                                <span>{t.rpe_easy || 'Let'} (1)</span>
-                                <span>{t.rpe_hard || 'Hård'} (10)</span>
-                            </div>
-                       </div>
-                  </div>
+                                <input type="range" min="1" max="10" step="1" value={formData.rpe || 5} onChange={(e) => setFormData({...formData, rpe: parseInt(e.target.value)})} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-500 mt-auto mb-auto" />
+                                <div className="flex justify-between text-[8px] text-slate-400 font-medium mt-1">
+                                    <span>{t.rpe_easy || 'Let'} (1)</span>
+                                    <span>{t.rpe_hard || 'Hård'} (10)</span>
+                                </div>
+                        </div>
+                    </div>
+                  )}
+
+                  {/* 3. SMART PITCH (KUN PREMIUM) */}
+                  {isPremiumCalc && (
+                      <div className="bg-black rounded-lg border border-white/20 p-3 flex flex-col justify-between relative h-full min-h-[80px] group transition-all duration-300 overflow-visible">
+                          {/* Visual Effect (Background Radial) */}
+                          <div className="absolute top-0 right-0 w-24 h-24 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-orange-500/20 to-transparent opacity-50 pointer-events-none overflow-hidden rounded-lg"></div>
+
+                          {/* Header */}
+                           <div className="flex justify-between items-center mb-1 relative z-10">
+                              <div className="flex items-center gap-1.5">
+                                  {/* HER BRUGER VI NU OVERSÆTTELSEN */}
+                                  <span className="text-[9px] font-black text-orange-500 uppercase tracking-widest">{t.lbl_smart_pitch || 'SMART PITCH'}</span>
+                                  {/* Info Icon with Tooltip */}
+                                  <div className="group/info relative">
+                                      <Info size={12} className="text-white cursor-help hover:text-orange-400 transition-colors" />
+                                      {/* TOOLTIP MED OVERSÆTTELSER */}
+                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-black border border-orange-500 text-white text-[9px] p-2 rounded shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-[100]">
+                                          <p className="font-bold text-orange-500 mb-1">{t.lbl_area_per_player || 'M² pr. spiller beregning'}</p>
+                                          <p className="text-white leading-relaxed">
+                                              {t.tooltip_high || '< 80m² = Høj Intensitet (Genpres)'}<br/>
+                                              {t.tooltip_mod || '80-150m² = Moderat / Teknisk'}<br/>
+                                              {t.tooltip_end || '> 150m² = Udholdenhed (Stort rum)'}
+                                          </p>
+                                      </div>
+                                  </div>
+                              </div>
+                           </div>
+
+                           {/* Content: Horizontal Layout to save height */}
+                           <div className="relative z-10 flex items-center justify-between h-full">
+                              {/* Left: The Number */}
+                              <div className="flex items-baseline gap-1">
+                                  {pitchData ? (
+                                      <>
+                                          <span className="text-2xl font-black text-white tracking-tighter leading-none">
+                                              {pitchData.m2PerPlayer}
+                                          </span>
+                                          <span className="text-[8px] font-bold text-white uppercase">M²</span>
+                                      </>
+                                  ) : (
+                                      <span className="text-2xl font-black text-white/30 tracking-tighter leading-none">-</span>
+                                  )}
+                              </div>
+                              
+                              {/* Right: The Bar & Status */}
+                              <div className="flex flex-col items-end gap-1 w-2/3">
+                                  {/* Active Status Text or Missing Data Text */}
+                                  <div className="text-[8px] font-bold uppercase tracking-wide text-right">
+                                       {pitchData ? (
+                                           <span className="text-white">{pitchData.intensityHint}</span>
+                                       ) : (
+                                           <span className="text-white font-black tracking-tight">{t.msg_missing_pitch_data || 'MANGLER DATA'}</span>
+                                       )}
+                                  </div>
+
+                                  {/* Visual Meter */}
+                                  <div className="w-full h-1 bg-white/20 rounded-full relative overflow-hidden">
+                                      {/* Fill */}
+                                      <div 
+                                        className="h-full bg-orange-500 transition-all duration-500 ease-out relative z-10" 
+                                        style={{ width: `${pitchData ? pitchData.percentage : 0}%` }}
+                                      ></div>
+                                  </div>
+                              </div>
+                           </div>
+                      </div>
+                  )}
+
               </div>
 
               <div className={boxClassOrange}>

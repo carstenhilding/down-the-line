@@ -211,6 +211,17 @@ export const secureI18n = {
       lbl_goals_tactical: "TACTICAL GOALS",
       lbl_goals_mental: "MENTAL GOALS",
 
+      // --- SMART PITCH CALCULATOR (ENGLISH) ---
+      lbl_smart_pitch: "SMART PITCH",
+      lbl_area_per_player: "M² per player calculation",
+      tooltip_high: "< 80m² = High Intensity (Pressing)",
+      tooltip_mod: "80-150m² = Moderate / Technical",
+      tooltip_end: "> 150m² = Endurance (Large space)",
+      msg_missing_pitch_data: "GO TO STEP 1 AND FILL IN 'PITCH SIZE' AND 'PLAYER COUNT' TO GET A CALCULATION",
+      hint_high_intensity: "HIGH INTENSITY",
+      hint_moderate: "MODERATE",
+      hint_endurance: "ENDURANCE",
+
       rpe_info_title: "RPE Scale (Borg)",
       rpe_10: "Maximal effort. Cannot do one more rep.",
       rpe_9: "Could have done one more rep.",
@@ -641,6 +652,17 @@ export const secureI18n = {
       lbl_goals_mental: "MENTALE MÅL",
       btn_add_goal: "Tilføj Mål",
       ph_goal: "Mål",
+
+      // --- SMART PITCH CALCULATOR (DANSK) ---
+      lbl_smart_pitch: "SMART PITCH",
+      lbl_area_per_player: "M² pr. spiller beregning",
+      tooltip_high: "< 80m² = Høj Intensitet (Genpres)",
+      tooltip_mod: "80-150m² = Moderat / Teknisk",
+      tooltip_end: "> 150m² = Udholdenhed (Stort rum)",
+      msg_missing_pitch_data: "GÅ TIL TRIN 1 OG UDFYLD 'BANESTØRRELSE' OG 'ANTAL SPILLERE' FOR AT FÅ EN BEREGNING",
+      hint_high_intensity: "HØJ INTENSITET",
+      hint_moderate: "MODERAT",
+      hint_endurance: "UDHOLDENHED",
 
       rpe_info_title: "RPE Skala (Borg)",
       rpe_10: "Maksimal indsats. Du kan ikke udføre én gentagelse mere.",
