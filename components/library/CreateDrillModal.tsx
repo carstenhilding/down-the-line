@@ -628,7 +628,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
 
                 <div className="grid grid-cols-2 gap-3 mb-3">
                    <div>
-                      <label className={labelClass}>{t.lbl_main_category || 'HOVEDKATEGORI'}</label>
+                      <label className={labelClass}>{t.lbl_main_category || 'ØVELSESTYPE'}</label>
                       <div className="relative">
                         <select className={`${inputClass} appearance-none pr-6`} value={formData.mainCategory} onChange={e => handleMainCategoryChange(e.target.value as MainCategory)}>
                             {Object.keys(DRILL_CATEGORIES).map(cat => (
@@ -639,7 +639,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                       </div>
                    </div>
                    <div>
-                      <label className={labelClass}>{t.lbl_sub_category || 'UNDERKATEGORI'}</label>
+                      <label className={labelClass}>{t.lbl_sub_category || 'FOKUS'}</label>
                       <div className="relative">
                         <select className={`${inputClass} appearance-none pr-6`} value={formData.subCategory} onChange={e => setFormData({...formData, subCategory: e.target.value})}>
                             {formData.mainCategory && DRILL_CATEGORIES[formData.mainCategory as MainCategory] && DRILL_CATEGORIES[formData.mainCategory as MainCategory].map(sub => (

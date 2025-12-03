@@ -177,6 +177,7 @@ export const secureI18n = {
       btn_add_point: "Add point",
       btn_add_team: "Add Team",
       btn_add_material: "Add Equipment",
+      btn_add_goal: "Add Goal",
       
       lbl_title: "DRILL NAME *",
       lbl_age: "AGE GROUP",
@@ -194,8 +195,8 @@ export const secureI18n = {
       lbl_materials: "EQUIPMENT",
       lbl_primary_theme: "PRIMARY THEME",
       lbl_secondary_theme: "SECONDARY THEME",
-      lbl_main_category: "MAIN CATEGORY",
-      lbl_sub_category: "SUB CATEGORY",
+      lbl_main_category: "DRILL TYPE",
+      lbl_sub_category: "FOCUS",
       lbl_visibility: "VISIBILITY",
       lbl_physical_load: "PHYSICAL LOAD",
       lbl_rpe: "RPE (INTENSITY 1-10)",
@@ -204,6 +205,11 @@ export const secureI18n = {
       lbl_selected_tags: "SELECTED TAGS",
       lbl_progression: "PROGRESSION (HARDER)",
       lbl_regression: "REGRESSION (EASIER)",
+      lbl_gamification: "GAMIFICATION / COMPETITION",
+      ph_gamification: "How do we compete? Points, time, winner...",
+      lbl_goals_technical: "TECHNICAL GOALS",
+      lbl_goals_tactical: "TACTICAL GOALS",
+      lbl_goals_mental: "MENTAL GOALS",
 
       rpe_info_title: "RPE Scale (Borg)",
       rpe_10: "Maximal effort. Cannot do one more rep.",
@@ -232,6 +238,7 @@ export const secureI18n = {
       ph_rule: "Rule",
       ph_point: "Point",
       ph_team: "Team Name",
+      ph_goal: "Goal",
 
       access_personal: "Personal (Only me)",
       access_club: "Club (All coaches)",
@@ -316,6 +323,7 @@ export const secureI18n = {
         "Anaerob – Tolerance": "Anaerobic – Tolerance"
       },
       val_tags: {
+        // TEKNISK
         "Aflevering inderside": "Inside pass",
         "Aflevering yderside": "Outside pass",
         "Aflæg": "Lay-off",
@@ -376,8 +384,10 @@ export const secureI18n = {
         "Hurtige fødder": "Quick feet",
         "Koordination": "Coordination",
         "Føre bold i luften": "Aerial control",
+        
+        // TAKTISK
         "Spille ud fra Keeper": "Play out from GK",
-        "Positionering": "Positioning",
+        "Positioning": "Positioning",
         "Spilbredde": "Width",
         "Spildybde": "Depth",
         "Relationer i bagkæden": "Back line relations",
@@ -428,11 +438,15 @@ export const secureI18n = {
         "Genpres straks": "Immediate counter-press",
         "Delay/Falde tilbage": "Delay/Drop back",
         "Taktisk frispark": "Tactical foul",
+
+        // SET PIECES
         "Hjørnespark (Off)": "Corner (Off)",
         "Hjørnespark (Def)": "Corner (Def)",
         "Frispark": "Free kick",
         "Straffespark": "Penalty",
         "Indkast": "Throw-in",
+        
+        // FYSISK
         "Acceleration": "Acceleration",
         "Topfart": "Top speed",
         "Reaktionsevne": "Reaction",
@@ -447,6 +461,8 @@ export const secureI18n = {
         "Knækontrol": "Knee Control",
         "Stabilitet": "Stability",
         "Mobilitet": "Mobility",
+        
+        // MENTALT
         "Koncentration": "Concentration",
         "Nulstilling (Next Action)": "Next Action",
         "Beslutningstagning": "Decision Making",
@@ -610,14 +626,22 @@ export const secureI18n = {
       lbl_materials: "MATERIALER",
       lbl_primary_theme: "PRIMÆRT TEMA",
       lbl_secondary_theme: "SEKUNDÆRT TEMA",
-      lbl_main_category: "HOVEDKATEGORI",
-      lbl_sub_category: "UNDERKATEGORI",
+      lbl_main_category: "ØVELSESTYPE",
+      lbl_sub_category: "FOKUS",
       lbl_visibility: "SYNLIGHED",
       lbl_physical_load: "FYSISK BELASTNING",
       lbl_rpe: "RPE (INTENSITET 1-10)",
       lbl_tags_header: "ØVELSENS (TAGS)",
       lbl_tags_select: "Vælg for at definere",
       lbl_selected_tags: "VALGTE TAGS",
+      lbl_gamification: "GAMIFICATION / KONKURRENCE",
+      ph_gamification: "Hvordan konkurrerer vi? Point, tid, vinder...",
+      lbl_goals_technical: "TEKNISKE MÅL",
+      lbl_goals_tactical: "TAKTISKE MÅL",
+      lbl_goals_mental: "MENTALE MÅL",
+      btn_add_goal: "Tilføj Mål",
+      ph_goal: "Mål",
+
       rpe_info_title: "RPE Skala (Borg)",
       rpe_10: "Maksimal indsats. Du kan ikke udføre én gentagelse mere.",
       rpe_9: "Du kunne have klaret én gentagelse mere.",
