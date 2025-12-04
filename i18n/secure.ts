@@ -250,6 +250,29 @@ export const secureI18n = {
       eq_poles: "Poles",
       eq_other: "Other...",
       
+      // NYE MEDIA KEYS
+      lbl_add_media: "ADD MEDIA",
+      lbl_media_source: "IMPORT VISUALS (VIDEO, IMAGE, 3D)",
+      
+      lbl_gallery: "GALLERY & COVER",
+      lbl_gallery_sub: "Star indicates cover image",
+      
+      btn_source_upload: "File Upload",
+      btn_source_youtube: "YouTube",
+      btn_source_studio: "DTL Studio",
+      
+      msg_drag_drop: "Drag & Drop or Click to Upload",
+      msg_formats: "JPG, PNG, MP4 (Max 50MB)",
+      
+      ph_youtube_link: "Paste YouTube URL here...",
+      lbl_youtube_preview: "PREVIEW",
+      btn_edit_link: "Change Link", // Tilføjet hvis den manglede
+      
+      msg_studio_connect: "DTL Studio Integration Active",
+      btn_studio_import: "Import from Studio",
+      btn_studio_launch: "LAUNCH DTL STUDIO", // Tilføjet til den store knap
+      msg_studio_desc: "Fetch diagrams directly from your workspace.",
+
       // Empty maps for EN
       val_sub: {},
       val_load: {},
@@ -501,6 +524,29 @@ export const secureI18n = {
       eq_hurdles: "Hække",
       eq_poles: "Stænger",
       eq_other: "Andet...",
+
+      // NYE MEDIA KEYS
+      lbl_add_media: "TILFØJ MEDIER",
+      lbl_media_source: "IMPORTER VISUELT INDHOLD (VIDEO, BILLEDE, 3D)",
+      
+      lbl_gallery: "GALLERI & FORSIDE",
+      lbl_gallery_sub: "Stjerne indikerer forsidebillede",
+      
+      btn_source_upload: "Fil Upload",
+      btn_source_youtube: "YouTube",
+      btn_source_studio: "DTL Studio",
+      
+      msg_drag_drop: "Træk & Slip eller Klik for Upload",
+      msg_formats: "JPG, PNG, MP4 (Max 50MB)",
+      
+      ph_youtube_link: "Indsæt YouTube link her...",
+      lbl_youtube_preview: "FORHÅNDSVISNING",
+      btn_edit_link: "Skift Link", // Tilføjet hvis den manglede
+      
+      msg_studio_connect: "DTL Studio Integration Aktiv",
+      btn_studio_import: "Importer fra Studio",
+      btn_studio_launch: "ÅBEN DTL STUDIO", // Tilføjet til den store knap
+      msg_studio_desc: "Hent tegninger direkte fra dit workspace.",
       
       // --- RETTEDE OVERSÆTTELSER: ENGELSK NØGLE -> DANSK VÆRDI ---
       val_sub: {

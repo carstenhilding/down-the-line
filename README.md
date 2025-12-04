@@ -277,3 +277,23 @@ Data-laget (`lib/server/data.ts`) er nu opdateret til at understøtte **live Fir
 - **Produktion:** Systemet forsøger at hente brugerdata fra `users`-kollektionen i Firestore baseret på Auth ID.
 - **Development:** Hvis brugeren ikke findes i databasen (eller ved lokal test), falder systemet tilbage på en "Developer"-profil, så man kan arbejde uden at oprette data først.
 - **Roller:** Systemet understøtter nu alle roller defineret i Master Dokumentet (inkl. specialister som `KeeperCoach`, `Analyst`, etc.).
+
+## 🚀 Nuværende Status (Fase 3: Library UI)
+
+Vi er i gang med at bygge **Library UI** og **Asset Engine** (værktøjet til at oprette øvelser).
+
+**Status pr. [Dags Dato]:**
+- [x] **Asset Engine (CreateDrillModal):**
+    - Fane 1: Praktisk Info (Færdig)
+    - Fane 2: Data & Analyse (Færdig) - Inkl. Tags, Kategorier og Visibility.
+- [x] **Smart Pitch Calculator:**
+    - Automatisk beregning af m² pr. spiller.
+    - Visuelt "Black Box" design med live feedback.
+    - Kun aktiv for 'Complete', 'Elite' og 'Enterprise'.
+- [x] **i18n Struktur (Refactoring):**
+    - `secure.ts` er ændret til at bruge **Engelsk** som base-nøgler.
+    - Dansk bruges nu som oversættelseslag.
+    - Dette sikrer korrekt visning af data i dropdowns og knapper.
+- [ ] **Fane 3: Medier:** (Næste skridt)
+
+---
