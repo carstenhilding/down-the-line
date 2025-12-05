@@ -146,6 +146,24 @@ export const secureI18n = {
       title: "Library & Assets",
       subtitle: "Intelligent Asset Management",
       createBtn: "Create Drill",
+
+      // HEADER TABS
+      create_drill_title: "Create New Drill",
+      tab_practical: "1. Practical Info",
+      tab_data: "2. Data & Analysis",
+      tab_media: "3. Media",
+
+      // KNAPPER & TEXT FRA FANE 1 (Røde ringe)
+      btn_add_rule: "Add Rule",
+      btn_add_point: "Add Point",
+      btn_add_team: "Add Team",
+      btn_add_material: "Add Equipment",
+      
+      // NAVIGATION (Røde ringe bund)
+      step_indicator: "Step {{current}} of 3",
+      btn_next: "Next",
+      btn_back: "Back",
+
       lbl_choose: "Select...", 
       lbl_title: "DRILL NAME *",
       lbl_age: "AGE GROUP",
@@ -159,6 +177,9 @@ export const secureI18n = {
       lbl_players: "NUMBER OF PLAYERS",
       lbl_pitch: "PITCH SIZE (M)",
       lbl_teams: "NUMBER OF TEAMS",
+      lbl_goalkeeper: "GOALKEEPER",
+      lbl_yes: "YES",
+      lbl_no: "NO",
       lbl_materials: "EQUIPMENT",
       lbl_primary_theme: "PRIMARY THEME",
       lbl_secondary_theme: "SECONDARY THEME",
@@ -193,7 +214,7 @@ export const secureI18n = {
       lbl_vis_global: "DTL Global",
       lbl_vis_club: "Club Library",
       lbl_vis_team: "Team Library",
-      lbl_vis_personal: "Personal Library",
+      lbl_vis_personal: "My Library",
 
       rpe_info_title: "RPE Scale (Borg)",
       rpe_10: "Maximal effort. Cannot do one more rep.",
@@ -254,7 +275,8 @@ export const secureI18n = {
       lbl_add_media: "ADD MEDIA",
       lbl_media_source: "IMPORT VISUALS (VIDEO, IMAGE, 3D)",
       
-      lbl_gallery: "GALLERY & COVER",
+      // RETTET HER: Navneændring
+      lbl_gallery: "ILLUSTRATIONS & ANIMATIONS",
       lbl_gallery_sub: "Star indicates cover image",
       
       btn_source_upload: "File Upload",
@@ -266,12 +288,37 @@ export const secureI18n = {
       
       ph_youtube_link: "Paste YouTube URL here...",
       lbl_youtube_preview: "PREVIEW",
-      btn_edit_link: "Change Link", // Tilføjet hvis den manglede
+      btn_edit_link: "Change Link", 
       
       msg_studio_connect: "DTL Studio Integration Active",
       btn_studio_import: "Import from Studio",
-      btn_studio_launch: "LAUNCH DTL STUDIO", // Tilføjet til den store knap
+      btn_studio_launch: "LAUNCH DTL STUDIO", 
       msg_studio_desc: "Fetch diagrams directly from your workspace.",
+
+      // DTL STUDIO POPUP KEYS (EN)
+      studio_title: "DTL Studio",
+      studio_desc: "Choose how to create your content. Design yourself, import, or use video.",
+      studio_create_title: "Create Illustration",
+      studio_create_desc: "Start with a blank canvas.",
+      studio_import_title: "Import Image",
+      studio_import_desc: "Fetch from library / upload.",
+      studio_video_title: "Animation / Video",
+      studio_video_desc: "Import video clips.",
+      studio_powered: "Powered by DTL Studio v1.0",
+      studio_status: "Studio Online",
+
+      // UPLOAD POPUP KEYS (EN)
+      upload_title: "Upload File",
+      upload_desc: "Upload images or video to your library.",
+      upload_btn_click: "Click to select file",
+      upload_format_hint: "JPG, PNG, MP4 (Max 50MB)",
+      upload_status: "Uploading file...",
+
+      // YOUTUBE POPUP KEYS (EN)
+      youtube_title: "Add YouTube Link",
+      youtube_desc: "Paste a link to integrate video directly into the drill.",
+      youtube_label_url: "Paste URL",
+      btn_add_video: "Add to Gallery",
 
       // Empty maps for EN
       val_sub: {},
@@ -426,6 +473,24 @@ export const secureI18n = {
       title: "Bibliotek & Assets",
       subtitle: "Intelligent Asset Management",
       createBtn: "Opret Øvelse",
+
+      // HEADER TABS
+      create_drill_title: "Opret Ny Øvelse",
+      tab_practical: "1. Praktisk Info",
+      tab_data: "2. Data & Analyse",
+      tab_media: "3. Medier",
+
+      // KNAPPER & TEXT FRA FANE 1 (Røde ringe)
+      btn_add_rule: "Tilføj regel",
+      btn_add_point: "Tilføj punkt",
+      btn_add_team: "Tilføj Hold",
+      btn_add_material: "Tilføj Materiale",
+
+      // NAVIGATION (Røde ringe bund)
+      step_indicator: "Trin {{current}} af 3",
+      btn_next: "Næste",
+      btn_back: "Tilbage",
+
       lbl_choose: "Vælg...", 
       lbl_title: "ØVELSESNAVN *",
       lbl_age: "ALDERSGRUPPE",
@@ -439,6 +504,9 @@ export const secureI18n = {
       lbl_players: "ANTAL SPILLERE",
       lbl_pitch: "BANESTØRRELSE (M)",
       lbl_teams: "ANTAL HOLD",
+      lbl_goalkeeper: "MÅLMAND",
+      lbl_yes: "JA",
+      lbl_no: "NEJ",
       lbl_materials: "MATERIALER",
       lbl_primary_theme: "PRIMÆRT TEMA",
       lbl_secondary_theme: "SEKUNDÆRT TEMA",
@@ -529,7 +597,8 @@ export const secureI18n = {
       lbl_add_media: "TILFØJ MEDIER",
       lbl_media_source: "IMPORTER VISUELT INDHOLD (VIDEO, BILLEDE, 3D)",
       
-      lbl_gallery: "GALLERI & FORSIDE",
+      // RETTET HER: Navneændring
+      lbl_gallery: "ILLUSTRATIONER & ANIMATIONER",
       lbl_gallery_sub: "Stjerne indikerer forsidebillede",
       
       btn_source_upload: "Fil Upload",
@@ -541,31 +610,50 @@ export const secureI18n = {
       
       ph_youtube_link: "Indsæt YouTube link her...",
       lbl_youtube_preview: "FORHÅNDSVISNING",
-      btn_edit_link: "Skift Link", // Tilføjet hvis den manglede
+      btn_edit_link: "Skift Link", 
       
       msg_studio_connect: "DTL Studio Integration Aktiv",
       btn_studio_import: "Importer fra Studio",
-      btn_studio_launch: "ÅBEN DTL STUDIO", // Tilføjet til den store knap
+      btn_studio_launch: "ÅBEN DTL STUDIO", 
       msg_studio_desc: "Hent tegninger direkte fra dit workspace.",
+
+      // DTL STUDIO POPUP KEYS (DA)
+      studio_title: "DTL Studio",
+      studio_desc: "Vælg hvordan du vil skabe dit indhold. Design selv, importer eller brug video.",
+      studio_create_title: "Opret Illustration",
+      studio_create_desc: "Start med et tomt lærred.",
+      studio_import_title: "Importer Billede",
+      studio_import_desc: "Hent fra bibliotek / upload.",
+      studio_video_title: "Animation / Video",
+      studio_video_desc: "Importer videoklip.",
+      studio_powered: "Powered by DTL Studio v1.0",
+      studio_status: "Studio Online",
+
+      // UPLOAD POPUP KEYS (DA)
+      upload_title: "Upload Fil",
+      upload_desc: "Upload billeder eller video til dit bibliotek.",
+      upload_btn_click: "Klik for at vælge fil",
+      upload_format_hint: "JPG, PNG, MP4 (Max 50MB)",
+      upload_status: "Uploader fil...",
+
+      // YOUTUBE POPUP KEYS (DA)
+      youtube_title: "Tilføj YouTube Link",
+      youtube_desc: "Indsæt et link for at integrere video direkte i øvelsen.",
+      youtube_label_url: "Indsæt URL",
+      btn_add_video: "Tilføj til Galleri",
       
       // --- RETTEDE OVERSÆTTELSER: ENGELSK NØGLE -> DANSK VÆRDI ---
       val_sub: {
-        // WARMUP
-        "General Warm-up": "Generel Opvarmning",
-        "Technical Warm-up": "Teknisk Opvarmning",
-        "Physical Activation": "Fysisk Aktivering",
-        "Fun & Games": "Leg og Boldleg",
-        
-        // TECHNICAL
+        // Technical
         "Passing": "Aflevering",
         "First Touch": "Første berøring",
         "1v1 Offensive": "1v1 Offensivt",
-        "Turns": "Vendinger",
+        "Dribbling & Turns": "Driblinger & Vendinger",
         "Finishing": "Afslutninger",
         "1v1 Defensive": "1v1 Defensiv",
         "Coordination": "Fodboldkoordination",
-        
-        // TACTICAL
+
+        // Tactical
         "Build-up - Phase 1": "Opbygningsspil - Fase 1",
         "Build-up - Phase 2": "Opbygningsspil - Fase 2",
         "Attacking Phase": "Afslutningsspil",
@@ -573,49 +661,22 @@ export const secureI18n = {
         "Defending": "Forsvarsspil",
         "Transition - Offensive": "Omstilling - Offensiv",
         "Transition - Defensive": "Omstilling - Defensiv",
-        "Positional Play": "Positionsspil",
-        
-        // GAME FORMS
-        "Rondos": "Rondos",
-        "Small Sided Games": "Småspil (SSG)",
-        "Match Play": "Spil til to mål",
-        
-        // PHYSICAL
+        "Formation": "Formation (Opstilling)",
+
+        // Physical
         "Energy & Capacity": "Energi & Kapacitet",
         "Speed & Power": "Fart & Power",
         "Movement": "Bevægelse",
-        
-        // SET PIECES
-        "Corners": "Hjørnespark",
-        "Free Kicks": "Frispark",
-        "Penalties": "Straffespark",
-        "Throw-ins": "Indkast",
-        
-        // GOALKEEPER
-        "Shot Stopping": "Skudtræning",
-        "Crosses & Box": "Indlæg & Feltet",
-        "Reaction & Saves": "Reaktion & Redninger",
-        "Distribution": "Spil med fødderne"
-      },
-      
-      val_load: {
-        "Aerobic – Low Intensity": "Aerob – lav intensitet",
-        "Aerobic – Moderate Intensity": "Aerob – moderat intensitet",
-        "Aerobic – High Intensity": "Aerob – høj intensitet",
-        "Anaerobic – Sprint": "Anaerob – Sprint",
-        "Anaerobic – Sprint Endurance": "Anaerob – Sprint udholdenhed",
-        "Anaerobic – Production": "Anaerob – Produktion",
-        "Anaerobic – Tolerance": "Anaerob – Tolerance"
+
+        // Mental
+        "Individual": "Individuelt",
+        "Relational": "Relationelt"
       },
 
+      // --- TAG OVERSÆTTELSER (Selve knapperne) ---
       val_tags: {
-        // DE 4 HOVEDKNAPPER
-        "Technical": "Teknisk",
-        "Tactical": "Taktisk",
-        "Physical": "Fysisk",
-        "Mental": "Mentalt",
-
-        // TAGS
+        // --- 1. TEKNISK ---
+        // Passing
         "Inside pass": "Aflevering inderside",
         "Outside pass": "Aflevering yderside",
         "Lay-off": "Aflæg",
@@ -624,8 +685,10 @@ export const secureI18n = {
         "Curled pass": "Aflevering med curl",
         "Chip": "Chip bold",
         "Through ball": "Stikning",
-        "Cross": "Indlæg",
+        "Crossing": "Indlæg",
         "Cut-back": "Cut-back",
+
+        // First Touch
         "Inside": "Inderside",
         "Outside": "Yderside",
         "Sole": "Sålen",
@@ -637,14 +700,17 @@ export const secureI18n = {
         "Shielding": "Afskærmende",
         "Aerial": "I luften",
         "Turn on reception": "Vending i modtagelse",
-        "Dribble": "Dribble",
+
+        // 1v1 Offensive
+        "Dribble": "Drible",
         "Feints": "Finter",
         "High speed dribbling": "Driblinger med højt tempo",
         "Body feints": "Kropsfinter",
         "1v1 Frontal": "1v1 Frontalt",
         "1v1 Shoulder to shoulder": "1v1 Skulder mod skulder",
         "1v1 Back to goal": "1v1 Ryggen til mål",
-        "Challenge": "Udfordre",
+
+        // Dribbling & Turns
         "Inside cut": "Inderside cut",
         "Outside cut": "Yderside cut",
         "Cruyff turn": "Cruyff-vending",
@@ -652,15 +718,19 @@ export const secureI18n = {
         "Turn on support leg": "Vending om støtteben",
         "Turn away from pressure": "Vending væk fra pres",
         "Blind-side turn": "Blind-side vending",
+
+        // Finishing
         "Instep power": "Vristspark/Power",
         "Placed inside": "Placeret inderside",
         "Curled shot": "Skruet spark",
         "Volley": "Flugtning/Volley",
         "Header": "Afslutning med hovedet",
-        "Chip over keeper": "Chip over keeper",
         "1v1 vs GK": "1v1 mod keeper",
         "Long shot": "Langskud",
         "Rebound": "Rebound/Tap-in",
+        "Chip": "Chip over keeper",
+
+        // 1v1 Defensive
         "Pressing run": "Pres-løb og vinkel",
         "Defensive stance": "Defensiv holdning",
         "Body position": "Kropsstilling",
@@ -671,17 +741,27 @@ export const secureI18n = {
         "Conquest": "Erobring (Prikke/Stjæle bolden)",
         "Physical duel": "Fysisk duel (Skulder/Arm)",
         "Pressing cues": "Pres-signaler",
-        "Jonglering": "Jonglering",
+
+        // Coordination
+        "Juggling": "Jonglering",
         "Quick feet": "Hurtige fødder",
         "Coordination": "Koordination",
         "Aerial control": "Føre bold i luften",
+        // Movement findes også under physical, men genbruges her hvis nøglen er ens
+
+        // --- 2. TAKTISK ---
+        // Build-up Phase 1
         "Play out from GK": "Spille ud fra Keeper",
         "Positioning": "Positionering",
-        "Width": "Spilbredde",
+        "Width and Depth": "Bredde og Dybde",
         "Depth": "Spildybde",
         "Back line relations": "Relationer i bagkæden",
         "Seek pressure": "Opsøge pres",
-        "Switch play": "Vende spillet",
+        "Switch play": "Spilvendinger",
+        "Support player": "Støttespiller",
+        "Rotations": "Rotationer",
+
+        // Build-up Phase 2
         "Play through lines": "Spil gennem kæder",
         "Overloads": "Overtalsspil (2v1/3v2)",
         "Breaking lines": "Breaking lines",
@@ -691,73 +771,105 @@ export const secureI18n = {
         "Triangles": "Trekantsspil",
         "Retain possession": "Fast holde bolden",
         "Rest attack/defense": "Rest angreb/forsvar",
-        "Crosses & Box": "Indlæg og boksspil",
         "Combinations": "Kombinationsspil",
+        "Penetration": "Gennembrud",
+        "Possession": "Fasthomme bolden",
+
+        // Attacking Phase
+        "Crosses & Box": "Indlæg og boksspil",
+        "Movement to finish": "Bevægelse ind i feltet",
         "Deep runs": "Dybdeløb",
         "Chance creation": "Chance skabelse",
         "Box positioning": "Positionering i feltet",
         "Overlap/Underlap": "Overlap/Underlap",
         "Long shots": "Skud fra distancen",
         "Opposite movements": "Modsatrettede bevægelser",
+
+        // Pressing
         "High press": "Højt pres",
-        "Zone press": "Zonepres",
-        "Pressing traps": "Presfælder",
-        "Triggers": "Triggers/Signaler",
-        "Press as a unit": "Presse som en enhed",
         "Mid press": "Middelpres",
         "Low press": "Lavt pres",
+        "Zone press": "Zonepres",
+        "Press and cover": "Pres, støtte og sikring",
+        "Press as a unit": "Presse som en enhed",
         "Compactness": "Kompakthed",
-        "Sliding": "Sideforskydning",
+        "Sliding - Shifting": "Sideforskydning",
+        "Pressing traps": "Presfælder",
+        "Triggers": "Triggers/Signaler",
         "Rest defense": "Restforsvar",
+
+        // Defending
         "Low block": "Lav blok",
         "Mid block": "Mellem blok",
         "Defending crosses": "Forsvar af indlæg",
-        "1v1 Defensive": "1v1 Defensivt",
         "Zonal defense": "Zone-forsvar",
         "Man marking": "Mandsopdækning",
         "Offside line": "Offside-linjen",
-        "Defending box": "Forsvar af feltet",
+        "Defend the Goal": "Forsvar af feltet",
+
+        // Transition Offensive
         "Transition to Attack": "Omstilling til angreb",
         "Direct play": "Direkte spil",
         "Vertical play": "Vertikalt spil",
         "Play out of trouble": "Spille ud af tætte områder",
         "Secure first pass": "Sikre første aflevering",
+
+        // Transition Defensive
         "Transition to Defense": "Omstilling til forsvar",
-        "Immediate counter-press": "Genpres straks",
+        "Counter-press": "Genpres",
         "Delay/Drop back": "Delay/Falde tilbage",
         "Tactical foul": "Taktisk frispark",
-        "Corner (Off)": "Hjørnespark (Off)",
-        "Corner (Def)": "Hjørnespark (Def)",
-        "Free kick": "Frispark",
-        "Penalty": "Straffespark",
-        "Throw-in": "Indkast",
-        "Acceleration": "Acceleration",
-        "Top speed": "Topfart",
-        "Reaction": "Reaktionsevne",
-        "Change of Direction": "Retningsskift",
+
+        // Formation
+        "442 Diamond": "442 Diamant",
+
+        // --- 3. FYSISK ---
+        // Energy & Capacity
+        "Aerobic Capacity": "Aerob (Udholdenhed)",
+        "Anaerobic Threshold": "Anaerob (Høj intensitet)",
+        "RSA": "RSA (Gentagne sprinter)",
+        "Recovery": "Restitutionsevne",
+
+        // Speed & Power
+        "Acceleration": "Acceleration (0-10m)",
+        "Top speed": "Topfart (30m+)",
         "Explosiveness": "Eksplosivitet",
         "Jump Power": "Springkraft",
         "Duel Strength": "Duelstyrke",
-        "Core": "Core",
-        "Aerobic Capacity": "Aerob kapacitet",
-        "Anaerobic Threshold": "Anaerob tærskel",
-        "Recovery": "Restitutionsevne",
-        "Knee Control": "Knækontrol",
-        "Stability": "Stabilitet",
-        "Mobilitet": "Mobility",
+
+        // Movement
+        "Agility": "Agility",
+        "Change of Direction": "Retningsskift (COD)",
+        "Deceleration": "Deceleration (Bremse op)",
+        "Balance": "Balance",
+        
+        // --- 4. MENTALT ---
+        // Individual
         "Concentration": "Koncentration",
         "Next Action": "Nulstilling (Next Action)",
         "Decision Making": "Beslutningstagning",
         "Scanning": "Scanning/Orientering",
-        "Anticipation": "Anticipation",
-        "Courage": "Mod",
+        "Anticipation": "Anticipation (Forudseenhed)",
+        "Courage": "Mod (Growth Mindset)",
         "Aggression": "Vilje/Aggressivitet",
+
+        // Relational
         "Communication (Verbal)": "Kommunikation (Verbal)",
         "Communication (Non-verbal)": "Kommunikation (Non-verbal)",
         "Leadership": "Lederskab",
         "Cooperation": "Samarbejde",
         "Responsibility": "Ansvarlighed"
-      }
+      },
+      
+      val_load: {
+        "Aerobic – Low Intensity": "Aerob – lav intensitet",
+        "Aerobic – Moderate Intensity": "Aerob – moderat intensitet",
+        "Aerobic – High Intensity": "Aerob – høj intensitet",
+        "Anaerobic – Sprint": "Anaerob – Sprint",
+        "Anaerobic – Sprint Endurance": "Anaerob – Sprint udholdenhed",
+        "Anaerobic – Production": "Anaerob – Produktion",
+        "Anaerobic – Tolerance": "Anaerob – Tolerance"
+      },
     }
   }
 };

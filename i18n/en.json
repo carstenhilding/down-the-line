@@ -79,6 +79,33 @@
     "subtitle": "Intelligent Asset Management",
     "createBtn": "Create Drill",
     "searchPlaceholder": "Search (e.g. \"Pressing\" or \"U12\")",
+    "tab_media": "3. Media",
+
+    "studio_title": "DTL Studio",
+    "studio_desc": "Choose how to create your content. Design yourself, import, or use video.",
+    "studio_create_title": "Create Illustration",
+    "studio_create_desc": "Start with a blank canvas.",
+    "studio_import_title": "Import Image",
+    "studio_import_desc": "Fetch from library / upload.",
+    "studio_video_title": "Animation / Video",
+    "studio_video_desc": "Import video clips.",
+    "studio_powered": "Powered by DTL Studio v1.0",
+    "studio_status": "Studio Online",
+
+    "upload_title": "Upload File",
+    "upload_desc": "Upload images or video to your library.",
+    "upload_btn_click": "Click to select file",
+    "upload_format_hint": "JPG, PNG, MP4 (Max 50MB)",
+    "upload_status": "Uploading file...",
+
+    "youtube_title": "Add YouTube Link",
+    "youtube_desc": "Paste a link to integrate video directly into the drill.",
+    "youtube_label_url": "Paste URL",
+    "btn_add_video": "Add to Gallery",
+
+    "lbl_gallery": "ILLUSTRATIONS & ANIMATIONS",
+    "lbl_gallery_sub": "Select cover image",
+    
     "tabs": {
       "global": "DTL Global",
       "club": "Club Curriculum",

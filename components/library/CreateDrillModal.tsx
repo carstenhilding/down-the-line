@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   X, Save, Upload, Activity, Users, Target, Plus, Trash2, Shirt, 
   Cone, Image as ImageIcon, Video, Youtube, Link as LinkIcon, 
@@ -9,7 +10,8 @@ import {
   Megaphone, PauseOctagon, ListChecks, ChevronRight, BarChart3,
   Brain, Zap, User, TrafficCone, GitPullRequestArrow, Dumbbell, Lock, Info,
   Ruler, Shield, Globe, User as UserIcon, Star, Check, PenTool, LayoutTemplate,
-  Loader2, Play, MonitorPlay, RefreshCw, Edit2, Film, MousePointer2, ArrowRight
+  Loader2, Play, MonitorPlay, RefreshCw, Edit2, Film, MousePointer2, ArrowRight,
+  Monitor, Maximize2, Move
 } from 'lucide-react';
 import { 
     DrillAsset, 
@@ -48,14 +50,12 @@ const EQUIPMENT_KEYS = [
 
 const COLOR_ITEMS = ['eq_cones', 'eq_flatmarkers', 'eq_bibs'];
 
-// Hjælpefunktion til YouTube ID
 const getYouTubeID = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
 };
 
-// Hjælpefunktion til at tjekke om en URL er en video (simpel tjek)
 const isVideoUrl = (url: string) => {
     if (!url) return false;
     return url.toLowerCase().endsWith('.mp4') || url.toLowerCase().endsWith('.mov') || url.includes('video');
@@ -64,6 +64,7 @@ const isVideoUrl = (url: string) => {
 export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSuccess }: CreateDrillModalProps) {
   if (!isOpen) return null;
   const { user } = useUser();
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const t = dict?.library || {};
@@ -76,7 +77,10 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
   // MODAL STATES
   const [activeModal, setActiveModal] = useState<'none' | 'studio' | 'upload' | 'youtube'>('none');
 
-  const [localGallery, setLocalGallery] = useState<string[]>([]); 
+  // GALLERI & DRAG DROP STATE
+  const [localGallery, setLocalGallery] = useState<string[]>([]);
+  const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+  const [zoomedAsset, setZoomedAsset] = useState<string | null>(null); // Til Lightbox
 
   // MATERIAL MODAL
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
@@ -126,14 +130,12 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
   const isPremium = ['Complete', 'Elite', 'Enterprise'].includes(user?.subscriptionLevel || '');
   const isDtlEmployee = user?.role === UserRole.Developer; 
 
-  // Initialize gallery if formData has a thumbnail
   useEffect(() => {
       if (formData.thumbnailUrl && !localGallery.includes(formData.thumbnailUrl)) {
           setLocalGallery(prev => [...prev, formData.thumbnailUrl!]);
       }
   }, [formData.thumbnailUrl]);
 
-  // Init Tags
   useEffect(() => {
      if (!DRILL_TAGS || !DRILL_TAGS[activeCorner]) return;
      const subCats = Object.keys(DRILL_TAGS[activeCorner]);
@@ -141,6 +143,37 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
          if (subCats.length > 0) setActiveSubCat(subCats[0]);
      }
   }, [activeCorner, activeSubCat]);
+
+  // --- DRAG AND DROP HANDLERS ---
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+      setDraggedItemIndex(index);
+      // DataTransfer er nødvendig for Firefox
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/html', e.currentTarget.innerHTML);
+      // Gør elementet en smule gennemsigtigt mens det trækkes
+      (e.target as HTMLElement).style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+      setDraggedItemIndex(null);
+      (e.target as HTMLElement).style.opacity = '1';
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+      e.preventDefault();
+      if (draggedItemIndex === null || draggedItemIndex === index) return;
+      
+      const newGallery = [...localGallery];
+      const draggedItem = newGallery[draggedItemIndex];
+      
+      // Fjern item fra gammel plads
+      newGallery.splice(draggedItemIndex, 1);
+      // Indsæt på ny plads
+      newGallery.splice(index, 0, draggedItem);
+      
+      setLocalGallery(newGallery);
+      setDraggedItemIndex(index);
+  };
 
   const translateVal = (value: string, type: 'sub' | 'load' | 'tag') => {
      if (lang === 'en') return value; 
@@ -365,29 +398,20 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
   const handleStudioAction = (action: 'create' | 'import-image' | 'import-animation') => {
       setActiveModal('none'); 
       
-      let mockUrl = '';
-      let type: 'image' | 'video' = 'image';
-
       if (action === 'create') {
-          mockUrl = "https://firebasestorage.googleapis.com/v0/b/down-the-line-88033.appspot.com/o/placeholders%2Ftactical-drawing.jpg?alt=media"; 
-          alert("Opening DTL Studio...");
+          router.push(`/${lang}/trainer/studio`);
       } else if (action === 'import-image') {
-          mockUrl = "/images/tactical-analysis.jpeg"; 
+          let mockUrl = "/images/tactical-analysis.jpeg"; 
           alert("Importing from Library...");
-      } else if (action === 'import-animation') {
-          mockUrl = "https://www.w3schools.com/html/mov_bbb.mp4"; 
-          type = 'video';
-          alert("Importing Animation...");
-      }
-
-      setLocalGallery(prev => [...prev, mockUrl]);
-      
-      if (type === 'video') {
-           setFormData(prev => ({ ...prev, videoUrl: mockUrl, mediaType: 'video', thumbnailUrl: undefined }));
-      } else {
-           if (!formData.thumbnailUrl) {
+          setLocalGallery(prev => [...prev, mockUrl]);
+          if (!formData.thumbnailUrl) {
                setFormData(prev => ({ ...prev, thumbnailUrl: mockUrl, mediaType: 'image' }));
-           }
+          }
+      } else if (action === 'import-animation') {
+          let mockUrl = "https://www.w3schools.com/html/mov_bbb.mp4"; 
+          alert("Importing Animation...");
+          setLocalGallery(prev => [...prev, mockUrl]);
+          setFormData(prev => ({ ...prev, videoUrl: mockUrl, mediaType: 'video', thumbnailUrl: undefined }));
       }
   };
 
@@ -487,13 +511,13 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
         {/* HEADER */}
         <div className="px-3 py-2 border-b border-neutral-100 flex justify-between items-center bg-white shrink-0">
           <div className="flex items-center gap-2">
-             <span className="bg-orange-500 w-1 h-4 rounded-sm"></span>
-             <div>
-                <h2 className="text-sm font-black text-neutral-900 uppercase tracking-tight leading-none">
-                  {t.create_drill_title || 'Opret Ny Øvelse'}
-                </h2>
-                <p className="text-[9px] text-neutral-400 font-medium">{t.subtitle || 'DTL Asset Management'}</p>
-             </div>
+              <span className="bg-orange-500 w-1 h-4 rounded-sm"></span>
+              <div>
+                 <h2 className="text-sm font-black text-neutral-900 uppercase tracking-tight leading-none">
+                   {t.create_drill_title || 'Opret Ny Øvelse'}
+                 </h2>
+                 <p className="text-[9px] text-neutral-400 font-medium">{t.subtitle || 'DTL Asset Management'}</p>
+              </div>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-neutral-100 rounded-full transition-colors"><X size={16} className="text-neutral-400 hover:text-neutral-900" /></button>
         </div>
@@ -508,9 +532,11 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
         {/* CONTENT */}
         <div className="p-3 overflow-y-auto custom-scrollbar flex-1 bg-[#F8FAFC]">
           
-          {/* FANE 1: PRAKTISK (Eksisterende) */}
+          {/* FANE 1: PRAKTISK */}
           {activeTab === 'practical' && (
             <div className="space-y-3">
+              
+              {/* 1. TITEL & ALDER */}
               <div className={boxClassBlack}>
                   <div className="grid grid-cols-4 gap-2">
                       <div className="col-span-3">
@@ -526,12 +552,77 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                       </div>
                   </div>
               </div>
-              {/* ... (Resten af Fane 1) ... */}
-              <div className={boxClassOrange}><div><label className={labelClass}>{t.lbl_desc || 'BESKRIVELSE'}</label><textarea className={textareaClass} placeholder={t.ph_desc || "Kort beskrivelse..."} value={formData.description || ''} onChange={e => setFormData({...formData, description: e.target.value})} /></div><div className="mt-2"><label className={labelClass}>{t.lbl_rules || 'REGLER'}</label><div className="space-y-1.5">{formData.rules?.map((rule, idx) => (<div key={idx} className="flex gap-1.5 items-center"><span className="text-[10px] font-bold text-neutral-400 w-3 text-right">{idx + 1}.</span><input type="text" className={inputClass} placeholder={`${t.ph_rule || 'Regel'} ${idx + 1}...`} value={rule} onChange={(e) => updateRule(idx, e.target.value)} />{idx > 2 && <button onClick={() => removeRule(idx)} className="text-neutral-300 hover:text-red-500"><X size={14}/></button>}</div>))}<button onClick={addRule} className={`${addBtnClass} ml-5`}><Plus size={14} /> {t.btn_add_rule || 'Tilføj regel'}</button></div></div></div>
+
+              {/* 2. BESKRIVELSE & REGLER (Nu flyttet op før parametrene) */}
+              <div className={boxClassOrange}>
+                  <div>
+                      <label className={labelClass}>{t.lbl_desc || 'BESKRIVELSE'}</label>
+                      <textarea className={textareaClass} placeholder={t.ph_desc || "Kort beskrivelse..."} value={formData.description || ''} onChange={e => setFormData({...formData, description: e.target.value})} />
+                  </div>
+                  <div className="mt-2">
+                      <label className={labelClass}>{t.lbl_rules || 'REGLER'}</label>
+                      <div className="space-y-1.5">
+                          {formData.rules?.map((rule, idx) => (<div key={idx} className="flex gap-1.5 items-center"><span className="text-[10px] font-bold text-neutral-400 w-3 text-right">{idx + 1}.</span><input type="text" className={inputClass} placeholder={`${t.ph_rule || 'Regel'} ${idx + 1}...`} value={rule} onChange={(e) => updateRule(idx, e.target.value)} />{idx > 2 && <button onClick={() => removeRule(idx)} className="text-neutral-300 hover:text-red-500"><X size={14}/></button>}</div>))}
+                          <button onClick={addRule} className={`${addBtnClass} ml-5`}><Plus size={14} /> {t.btn_add_rule || 'Tilføj regel'}</button>
+                      </div>
+                  </div>
+              </div>
+
+              {/* 3. PARAMETRE (DE 5 BOKSE) - Nu placeret over Coach Instruction */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                  <div className={paramBoxClass}>
+                      <label className={boxLabelClass}>{t.lbl_time || 'TID (MIN)'}</label>
+                      <input type="number" className={boxInputClass} value={formData.durationMin || ''} onChange={e => setFormData({...formData, durationMin: (parseInt(e.target.value) || undefined) as any})} placeholder="15" />
+                  </div>
+                  <div className={paramBoxClass}>
+                      <label className={boxLabelClass}>{t.lbl_work_rest || 'ARBEJDE / PAUSE'}</label>
+                      <div className="flex items-center justify-center gap-1 w-full">
+                          <input type="number" className={boxInputClass} placeholder="4" value={formData.workDuration || ''} onChange={e => setFormData({...formData, workDuration: (parseInt(e.target.value) || undefined) as any})} />
+                          <span className="text-neutral-300 text-lg font-light">/</span>
+                          <input type="number" className={boxInputClass} placeholder="1" value={formData.restDuration || ''} onChange={e => setFormData({...formData, restDuration: (parseInt(e.target.value) || undefined) as any})} />
+                      </div>
+                  </div>
+                  <div className={paramBoxClass}>
+                      <label className={boxLabelClass}>{t.lbl_players || 'ANTAL SPILLERE'}</label>
+                      <div className="flex items-center justify-center gap-1 w-full">
+                          <input type="number" className={boxInputClass} placeholder="Min" value={formData.minPlayers || ''} onChange={e => setFormData({...formData, minPlayers: (parseInt(e.target.value) || undefined) as any})} />
+                          <span className="text-neutral-300 text-lg font-light">-</span>
+                          <input type="number" className={boxInputClass} placeholder="Max" value={formData.maxPlayers || ''} onChange={e => setFormData({...formData, maxPlayers: (parseInt(e.target.value) || undefined) as any})} />
+                      </div>
+                  </div>
+                  <div className={paramBoxClass}>
+                      <label className={boxLabelClass}>{t.lbl_pitch || 'BANESTØRRELSE (M)'}</label>
+                      <div className="flex items-center justify-center gap-1 w-full">
+                          <input type="number" className={boxInputClass} placeholder="30" value={formData.pitchSize?.width || ''} onChange={e => setFormData({...formData, pitchSize: { ...formData.pitchSize!, width: (parseInt(e.target.value) || undefined) as any }})} />
+                          <span className="text-neutral-300 text-lg font-light">x</span>
+                          <input type="number" className={boxInputClass} placeholder="40" value={formData.pitchSize?.length || ''} onChange={e => setFormData({...formData, pitchSize: { ...formData.pitchSize!, length: (parseInt(e.target.value) || undefined) as any }})} />
+                      </div>
+                  </div>
+                  {/* MÅLMAND BOKS */}
+                  <div className={paramBoxClass}>
+                      <label className={boxLabelClass}>{t.lbl_goalkeeper || 'MÅLMAND'}</label>
+                      <div className="flex gap-1 w-full h-full items-center">
+                          <button 
+                              onClick={() => setFormData({ ...formData, goalKeeper: true })}
+                              className={`flex-1 h-[22px] flex items-center justify-center rounded text-[9px] font-black transition-colors ${formData.goalKeeper ? 'bg-orange-500 text-white shadow-sm' : 'bg-neutral-50 text-neutral-400 hover:bg-neutral-100'}`}
+                          >
+                              {t.lbl_yes || 'JA'}
+                          </button>
+                          <button 
+                              onClick={() => setFormData({ ...formData, goalKeeper: false })}
+                              className={`flex-1 h-[22px] flex items-center justify-center rounded text-[9px] font-black transition-colors ${formData.goalKeeper === false ? 'bg-neutral-900 text-white shadow-sm' : 'bg-neutral-50 text-neutral-400 hover:bg-neutral-100'}`}
+                          >
+                              {t.lbl_no || 'NEJ'}
+                          </button>
+                      </div>
+                  </div>
+              </div>
+
+              {/* 4. INSTRUKTION & FOKUS */}
               <div className={boxClassOrange}>
                 <div className="grid grid-cols-2 gap-3">
                     <div><label className={labelClass}>{t.lbl_coach_instruction || 'TRÆNER INSTRUKTION'}</label><textarea className={textareaClass} placeholder={t.ph_instruction || "Hvad skal træneren sige/gøre?"} value={formData.coachingPoints?.instruction || ''} onChange={e => setFormData({...formData, coachingPoints: { ...formData.coachingPoints!, instruction: e.target.value }})} /></div>
-                    <div><label className={`${labelClass} text-red-600`}>{t.lbl_stop_freeze || 'STOP / FRYS'}</label><textarea className={textareaClass} placeholder={t.ph_stop || "Hvornår stopper vi?"} value={formData.stopFreeze || ''} onChange={e => setFormData({...formData, stopFreeze: e.target.value })} /></div>
+                    <div><label className={labelClass}>{t.lbl_stop_freeze || 'STOP / FRYS'}</label><textarea className={textareaClass} placeholder={t.ph_stop || "Hvornår stopper vi?"} value={formData.stopFreeze || ''} onChange={e => setFormData({...formData, stopFreeze: e.target.value })} /></div>
                 </div>
                 <div className="mt-2">
                     <label className={labelClass}>{t.lbl_key_points || 'FOKUSPUNKTER'}</label>
@@ -541,16 +632,14 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                     </div>
                 </div>
               </div>
+
+              {/* 5. PROGRESSION */}
               <div className="grid grid-cols-2 gap-3">
-                  <div className={boxClassOrange}><label className={`${labelClass} text-orange-600 mb-2`}>{t.lbl_progression || 'PROGRESSION (SVÆRERE)'}</label><div className="space-y-1.5">{(formData.progression || ['']).map((item, idx) => (<div key={`prog-${idx}`} className="flex gap-1.5 items-center"><span className="text-[10px] font-bold text-neutral-400 w-3 text-center">+</span><input type="text" className={inputClass} placeholder="..." value={item} onChange={(e) => updateProgression(idx, e.target.value)} />{idx > 0 && <button onClick={() => removeProgression(idx)} className="text-neutral-300 hover:text-red-500"><X size={14}/></button>}</div>))}<button onClick={addProgression} className={`${addBtnClass} ml-5`}><Plus size={14} /> {t.mod_btn_add || 'Tilføj'}</button></div></div>
+                  <div className={boxClassOrange}><label className={`${labelClass} mb-2`}>{t.lbl_progression || 'PROGRESSION (SVÆRERE)'}</label><div className="space-y-1.5">{(formData.progression || ['']).map((item, idx) => (<div key={`prog-${idx}`} className="flex gap-1.5 items-center"><span className="text-[10px] font-bold text-neutral-400 w-3 text-center">+</span><input type="text" className={inputClass} placeholder="..." value={item} onChange={(e) => updateProgression(idx, e.target.value)} />{idx > 0 && <button onClick={() => removeProgression(idx)} className="text-neutral-300 hover:text-red-500"><X size={14}/></button>}</div>))}<button onClick={addProgression} className={`${addBtnClass} ml-5`}><Plus size={14} /> {t.mod_btn_add || 'Tilføj'}</button></div></div>
                   <div className={boxClassOrange}><label className={`${labelClass} text-neutral-500 mb-2`}>{t.lbl_regression || 'REGRESSION (LETTERE)'}</label><div className="space-y-1.5">{(formData.regression || ['']).map((item, idx) => (<div key={`reg-${idx}`} className="flex gap-1.5 items-center"><span className="text-[10px] font-bold text-neutral-400 w-3 text-center">-</span><input type="text" className={inputClass} placeholder="..." value={item} onChange={(e) => updateRegression(idx, e.target.value)} />{idx > 0 && <button onClick={() => removeRegression(idx)} className="text-neutral-300 hover:text-red-500"><X size={14}/></button>}</div>))}<button onClick={addRegression} className={`${addBtnClass} ml-5`}><Plus size={14} /> {t.mod_btn_add || 'Tilføj'}</button></div></div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <div className={paramBoxClass}><label className={boxLabelClass}>{t.lbl_time || 'TID (MIN)'}</label><input type="number" className={boxInputClass} value={formData.durationMin || ''} onChange={e => setFormData({...formData, durationMin: (parseInt(e.target.value) || undefined) as any})} placeholder="15" /></div>
-                  <div className={paramBoxClass}><label className={boxLabelClass}>{t.lbl_work_rest || 'ARBEJDE / PAUSE'}</label><div className="flex items-center justify-center gap-1 w-full"><input type="number" className={boxInputClass} placeholder="4" value={formData.workDuration || ''} onChange={e => setFormData({...formData, workDuration: (parseInt(e.target.value) || undefined) as any})} /><span className="text-neutral-300 text-lg font-light">/</span><input type="number" className={boxInputClass} placeholder="1" value={formData.restDuration || ''} onChange={e => setFormData({...formData, restDuration: (parseInt(e.target.value) || undefined) as any})} /></div></div>
-                  <div className={paramBoxClass}><label className={boxLabelClass}>{t.lbl_players || 'ANTAL SPILLERE'}</label><div className="flex items-center justify-center gap-1 w-full"><input type="number" className={boxInputClass} placeholder="Min" value={formData.minPlayers || ''} onChange={e => setFormData({...formData, minPlayers: (parseInt(e.target.value) || undefined) as any})} /><span className="text-neutral-300 text-lg font-light">-</span><input type="number" className={boxInputClass} placeholder="Max" value={formData.maxPlayers || ''} onChange={e => setFormData({...formData, maxPlayers: (parseInt(e.target.value) || undefined) as any})} /></div></div>
-                  <div className={paramBoxClass}><label className={boxLabelClass}>{t.lbl_pitch || 'BANESTØRRELSE (M)'}</label><div className="flex items-center justify-center gap-1 w-full"><input type="number" className={boxInputClass} placeholder="30" value={formData.pitchSize?.width || ''} onChange={e => setFormData({...formData, pitchSize: { ...formData.pitchSize!, width: (parseInt(e.target.value) || undefined) as any }})} /><span className="text-neutral-300 text-lg font-light">x</span><input type="number" className={boxInputClass} placeholder="40" value={formData.pitchSize?.length || ''} onChange={e => setFormData({...formData, pitchSize: { ...formData.pitchSize!, length: (parseInt(e.target.value) || undefined) as any }})} /></div></div>
-              </div>
+
+              {/* 6. HOLD & MATERIALER */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className={`${boxClassBlack} md:col-span-2 h-full flex flex-col`}><label className={labelClass}>{t.lbl_teams || 'ANTAL HOLD'}</label><div className="space-y-2 flex-1">{teams.map((team, idx) => (<div key={idx} className="flex items-center gap-2 bg-neutral-50 p-1.5 rounded-lg border border-neutral-200"><div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${getColorClass(team.color)}`}><Shirt size={12} className={team.color === 'white' ? 'text-black' : 'text-white'} /></div><div className="flex-1"><input type="text" value={team.name} onChange={(e) => updateTeam(idx, 'name', e.target.value)} className="w-full bg-transparent text-xs font-bold text-neutral-800 focus:outline-none border-b border-transparent focus:border-orange-300 px-1" placeholder={t.ph_team || "Hold Navn"} /></div><div className="flex items-center gap-1"><span className="text-[9px] font-bold text-neutral-500 uppercase">{t.mod_mat_count || 'ANTAL'}:</span><input type="number" value={team.playerCount} onChange={(e) => updateTeam(idx, 'playerCount', parseInt(e.target.value) || 0)} className="w-8 text-center bg-white border border-neutral-300 rounded text-xs py-0.5" /></div><div className="flex gap-1">{['orange', 'red', 'blue', 'green', 'yellow', 'white', 'black'].map(c => (<button key={c} onClick={() => updateTeam(idx, 'color', c as any)} className={`w-3 h-3 rounded-full border border-black/10 ${getColorClass(c)} ${team.color === c ? 'ring-1 ring-offset-1 ring-neutral-400' : ''}`} />))}</div><button onClick={() => removeTeam(idx)} className="ml-1 text-neutral-400 hover:text-red-500"><Trash2 size={12} /></button></div>))}</div><button onClick={addTeam} className={addBtnClass}><Plus size={14} /> {t.btn_add_team || 'Tilføj Hold'}</button></div>
                   <div className={`${boxClassBlack} h-full flex flex-col`}><div className="flex justify-between items-center mb-1"><label className={labelClass}>{t.lbl_materials || 'MATERIALER'}</label>{formData.materials && formData.materials.length > 0 && (<span className="text-[9px] text-neutral-400">{formData.materials.length}</span>)}</div><div className="flex-1 bg-white flex flex-col min-h-[60px]"><div className="overflow-y-auto custom-scrollbar flex-1 max-h-[160px]">{formData.materials && formData.materials.length > 0 ? (<div className="divide-y divide-neutral-100">{formData.materials.map((item, idx) => (<div key={idx} className="flex items-center justify-between py-0.5 group"><div className="flex items-center gap-2 min-w-0"><span className="text-[10px] font-bold text-neutral-400 w-4">{idx + 1}.</span><div className="truncate flex items-center gap-1"><span className="text-[10px] font-bold text-neutral-900">{t[item.name] || item.name}</span>{item.details && <span className="text-[9px] text-neutral-400 font-medium truncate">- {item.details}</span>}</div></div><div className="flex items-center gap-2 shrink-0"><span className="text-[10px] font-bold text-neutral-500">{item.count}</span><button onClick={() => removeMaterial(idx)} className="text-neutral-300 hover:text-red-500 transition-colors"><Trash2 size={10} /></button></div></div>))}</div>) : (<div className="h-full flex items-center justify-center text-[10px] text-neutral-300 italic">{t.no_materials || 'Ingen materialer'}</div>)}</div></div><button onClick={openMaterialModal} className={addBtnClass}><Plus size={14} /> {t.btn_add_material || 'Tilføj Materiale'}</button></div>
@@ -558,11 +647,10 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
             </div>
           )}
 
-          {/* FANE 2: DATA (Eksisterende) */}
+          {/* FANE 2: DATA */}
           {activeTab === 'data' && (
             <div className="space-y-3">
               <div className={boxClassBlack}>
-                {/* ... (Existing Data Content) ... */}
                 <div className="grid grid-cols-2 gap-3 mb-3">
                     <div><label className={labelClass}>{t.lbl_primary_theme || 'PRIMÆRT TEMA'}</label><input type="text" className={inputClass} placeholder={t.ph_theme_primary || "Fx Defensiv Org..."} value={formData.primaryTheme || ''} onChange={e => setFormData({...formData, primaryTheme: e.target.value})} /></div>
                     <div><label className={labelClass}>{t.lbl_secondary_theme || 'SEKUNDÆRT TEMA'}</label><input type="text" className={inputClass} placeholder={t.ph_theme_secondary || "Fx Genpres..."} value={formData.secondaryTheme || ''} onChange={e => setFormData({...formData, secondaryTheme: e.target.value})} /></div>
@@ -575,15 +663,59 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                     <label className={labelClass}>{t.lbl_visibility || 'KATALOG'}</label>
                     <div className="flex gap-2 bg-neutral-50 p-2 rounded-lg border border-neutral-100">
                         {[{ id: 'Global', label: t.lbl_vis_global || 'DTL Global', icon: Globe, restricted: !isDtlEmployee }, { id: 'Club', label: t.lbl_vis_club || 'Club Library', icon: Shield, restricted: false }, { id: 'Team', label: t.lbl_vis_team || 'Team Library', icon: Users, restricted: false }, { id: 'Personal', label: t.lbl_vis_personal || 'Personal Library', icon: UserIcon, restricted: false }].map((option) => {
-                            const isSelected = formData.accessLevel === option.id; const isRestricted = option.restricted;
-                            return (<button key={option.id} onClick={() => !isRestricted && setFormData({ ...formData, accessLevel: option.id as any })} disabled={isRestricted} className={`relative flex-1 py-2 flex items-center justify-center rounded-lg border transition-all duration-200 group ${isSelected ? 'bg-black border-black text-white shadow-md transform -translate-y-0.5' : isRestricted ? 'bg-gray-50 border-gray-200 text-gray-300 cursor-not-allowed' : 'bg-white border-neutral-200 text-neutral-500 hover:border-orange-500 hover:text-orange-500'}`}><div className="absolute left-3 top-1/2 -translate-y-1/2"><option.icon size={16} className={isSelected ? "text-orange-500" : isRestricted ? "text-gray-300" : "text-neutral-400 group-hover:text-orange-500 transition-colors duration-200"} /></div><span className={`text-[10px] font-black uppercase tracking-wider transition-colors duration-200 w-full text-center ${isSelected ? 'text-white' : isRestricted ? 'text-gray-300' : 'text-neutral-500 group-hover:text-orange-500'}`}>{option.label}</span>{isRestricted && (<div className="absolute top-1 right-1"><Lock size={8} className="text-gray-300" /></div>)}</button>);
+                            const isSelected = formData.accessLevel === option.id; 
+                            const isRestricted = option.restricted;
+                            
+                            return (
+                                <button 
+                                    key={option.id} 
+                                    onClick={() => !isRestricted && setFormData({ ...formData, accessLevel: option.id as any })} 
+                                    disabled={isRestricted} 
+                                    className={`
+                                        relative flex-1 py-2 flex items-center justify-center rounded-lg border transition-all duration-200 group
+                                        ${isSelected 
+                                            ? 'bg-black border-black text-white shadow-md transform -translate-y-0.5' 
+                                            : isRestricted 
+                                                ? 'bg-gray-50 border-gray-200 text-gray-300 cursor-not-allowed' 
+                                                : 'bg-white border-neutral-200 text-neutral-500 hover:border-orange-500'
+                                        }
+                                    `}
+                                >
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                                        <option.icon 
+                                            size={20} 
+                                            className={
+                                                isSelected 
+                                                    ? "text-orange-500" 
+                                                    : isRestricted 
+                                                        ? "text-gray-300" 
+                                                        : "text-neutral-400 group-hover:text-orange-500 transition-colors duration-200"
+                                            } 
+                                        />
+                                    </div>
+                                    <span 
+                                        className={`
+                                            text-[11px] font-black uppercase tracking-wider transition-colors duration-200 w-full text-center
+                                            ${isSelected 
+                                                ? 'text-white' 
+                                                : isRestricted 
+                                                    ? 'text-gray-300' 
+                                                    : 'text-neutral-500 group-hover:text-orange-500'
+                                            }
+                                        `}
+                                    >
+                                        {option.label}
+                                    </span>
+                                    {isRestricted && (<div className="absolute top-1 right-1"><Lock size={8} className="text-gray-300" /></div>)}
+                                </button>
+                            );
                         })}
                     </div>
                 </div>
               </div>
               <div className={`grid gap-3 ${isPremium ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1'}`}>
                   <div className={boxClassOrange}>
-                       <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center justify-between mb-1">
                             <label className={labelClass + " mb-0"}>{t.lbl_physical_load || 'FYSISK BELASTNING'}</label>
                             <div className="flex items-center gap-1.5"><button onClick={() => setIntensityByColor('green')} className={`w-3 h-3 rounded-full border transition-all ${intensity === 'green' ? 'bg-green-500 border-green-600 scale-125 shadow-sm' : 'bg-green-100 border-green-200 hover:bg-green-300'}`} title="Lav Intensitet" /><button onClick={() => setIntensityByColor('yellow')} className={`w-3 h-3 rounded-full border transition-all ${intensity === 'yellow' ? 'bg-yellow-400 border-yellow-500 scale-125 shadow-sm' : 'bg-yellow-100 border-yellow-200 hover:bg-yellow-200'}`} title="Middel Intensitet" /><button onClick={() => setIntensityByColor('red')} className={`w-3 h-3 rounded-full border transition-all ${intensity === 'red' ? 'bg-red-500 border-red-600 scale-125 shadow-sm' : 'bg-red-100 border-red-200 hover:bg-red-300'}`} title="Høj Intensitet" /></div>
                        </div>
@@ -610,104 +742,156 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                 <div className="flex items-center justify-between mb-2"><div className="flex items-center gap-2"><span className="text-[9px] font-black text-neutral-900 uppercase tracking-wider">{t.lbl_tags_header || 'ØVELSENS (TAGS)'}</span></div><span className="text-[9px] text-neutral-400 font-medium">{t.lbl_tags_select || 'Vælg for at definere'}</span></div>
                 <div className="flex gap-2 mb-3 bg-neutral-50 p-2 rounded-lg border border-neutral-100">{(['Technical', 'Tactical', 'Physical', 'Mental'] as FourCornerTag[]).map(corner => {const isActive = activeCorner === corner; return (<button key={corner} onClick={() => setActiveCorner(corner)} className={`relative flex-1 py-2 flex items-center justify-center rounded-lg border transition-all duration-200 group ${isActive ? 'bg-black border-black text-white shadow-md transform -translate-y-0.5' : 'bg-white border-neutral-200 text-neutral-500 hover:border-orange-500'}`}><div className="absolute left-3 top-1/2 -translate-y-1/2">{getCornerIcon(corner, isActive)}</div><span className={`text-[11px] font-black uppercase tracking-wider transition-colors duration-200 w-full text-center ${isActive ? 'text-white' : 'text-neutral-500 group-hover:text-orange-500'}`}>{translateVal(corner, 'tag')}</span></button>)})}</div>
                 <div className="mb-3 overflow-x-auto custom-scrollbar p-1"><div className="flex flex-wrap gap-2">{DRILL_TAGS && DRILL_TAGS[activeCorner] && Object.keys(DRILL_TAGS[activeCorner]).map(sub => (<button key={sub} onClick={() => setActiveSubCat(sub)} className={`px-3 py-1.5 text-[10px] font-bold rounded-full whitespace-nowrap transition-all duration-200 ${activeSubCat === sub ? 'bg-white border-2 border-orange-500 text-orange-600 shadow-sm' : 'bg-white border border-neutral-200 text-neutral-500 hover:border-orange-500 hover:text-orange-500 hover:-translate-y-0.5'}`}>{translateVal(sub, 'sub')}</button>))}</div></div>
-                <div className="grid grid-cols-4 gap-2 mb-4 max-h-[120px] overflow-y-auto custom-scrollbar p-1">{DRILL_TAGS && DRILL_TAGS[activeCorner] && activeSubCat && DRILL_TAGS[activeCorner][activeSubCat] ? (DRILL_TAGS[activeCorner][activeSubCat].map(tag => {const isSelected = formData.tags?.includes(tag); return (<button key={tag} onClick={() => toggleDetailedTag(tag)} className={`text-left px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center justify-between group ${isSelected ? 'bg-orange-500 text-white border-orange-500 shadow-sm' : 'bg-white border-neutral-100 text-neutral-600 hover:border-orange-300'}`}><span className="truncate pr-1">{translateVal(tag, 'tag')}</span>{isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}</button>)})) : (<div className="col-span-4 text-center text-[10px] text-neutral-400 italic py-4">Indlæser tags...</div>)}</div>
+                <div className="grid grid-cols-4 gap-2 mb-4 max-h-[120px] overflow-y-auto custom-scrollbar p-1">{DRILL_TAGS && DRILL_TAGS[activeCorner] && activeSubCat && DRILL_TAGS[activeCorner][activeSubCat] ? (DRILL_TAGS[activeCorner][activeSubCat].map(tag => {const isSelected = formData.tags?.includes(tag); return (<button key={tag} onClick={() => toggleDetailedTag(tag)} className={`text-left px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center justify-center group ${isSelected ? 'bg-orange-500 text-white border-orange-500 shadow-sm' : 'bg-white border-neutral-100 text-neutral-600 hover:border-orange-300'}`}><span className="truncate pr-1">{translateVal(tag, 'tag')}</span>{isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white ml-1"></div>}</button>)})) : (<div className="col-span-4 text-center text-[10px] text-neutral-400 italic py-4">Indlæser tags...</div>)}</div>
                 {formData.tags && formData.tags.length > 0 && (<div className="pt-2 border-t border-neutral-100"><label className={labelClass}>{t.lbl_selected_tags || 'VALGTE TAGS'}</label><div className="flex flex-wrap gap-1.5">{formData.tags.map(tag => (<span key={tag} className="bg-neutral-800 text-white text-[9px] font-bold px-2 py-0.5 rounded flex items-center gap-1">{translateVal(tag, 'tag')} <button onClick={() => toggleDetailedTag(tag)} className="hover:text-red-300"><X size={10} /></button></span>))}</div></div>)}
               </div>
             </div>
           )}
 
-          {/* FANE 3: MEDIA (RESTORERET & RETTET) */}
+          {/* FANE 3: MEDIA */}
           {activeTab === 'media' && (
             <div className="space-y-4">
               
-              {/* ACTIONS HEADER */}
-              <div className={boxClassBlack}>
-                  <div className="flex items-center justify-between mb-3">
-                      <label className={labelClass}>{t.lbl_media_source || 'IMPORT VISUAL ASSETS'}</label>
-                  </div>
+              {/* TOP: ACTION CARDS (GRID) */}
+              <div className="grid grid-cols-3 gap-3">
                   
-                  {/* DIRECT ACTION BUTTONS */}
-                  <div className="flex gap-3">
-                      
-                      {/* 1. DTL STUDIO BUTTON (Sort bg, orange ikon, hvid tekst) */}
-                      <button
-                          onClick={() => setActiveModal('studio')}
-                          className="relative flex-1 py-8 flex flex-row items-center justify-center gap-3 rounded-xl bg-black border-2 border-neutral-800 hover:border-orange-500 transition-all duration-200 group"
-                      >
-                          <GitPullRequestArrow size={32} className="text-orange-500 transition-transform group-hover:scale-110" />
-                          <span className="text-sm font-black uppercase tracking-widest text-white">
-                              DTL Studio
-                          </span>
-                      </button>
+                  {/* 1. DTL STUDIO (PREMIUM) */}
+                  <button
+                      onClick={() => setActiveModal('studio')}
+                      className="group relative flex flex-col items-center justify-center p-6 bg-black rounded-xl border-2 border-neutral-800 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1 shadow-lg overflow-hidden"
+                  >
+                      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center border-2 border-orange-500 group-hover:border-orange-400 transition-all mb-3 z-10 shadow-lg shadow-orange-500/20 group-hover:scale-105">
+                          <GitPullRequestArrow className="text-white w-6 h-6 group-hover:scale-110 transition-transform" />
+                      </div>
+                      <h3 className="text-xs font-black text-white uppercase tracking-wider z-10">{t.studio_title || 'DTL Studio'}</h3>
+                      <p className="text-[9px] text-neutral-400 mt-1 z-10 font-medium">Design & Animation</p>
+                  </button>
 
-                      {/* 2. UPLOAD BUTTON */}
-                      <button
-                          onClick={() => setActiveModal('upload')}
-                          className="relative flex-1 py-8 flex flex-row items-center justify-center gap-3 rounded-xl bg-black border-2 border-neutral-800 hover:border-orange-500 transition-all duration-200 group"
-                      >
-                          <Upload size={32} className="text-orange-500 transition-transform group-hover:scale-110" />
-                          <span className="text-sm font-black uppercase tracking-widest text-white">
-                              Upload
-                          </span>
-                      </button>
+                  {/* 2. UPLOAD */}
+                  <button
+                      onClick={() => setActiveModal('upload')}
+                      className="group relative flex flex-col items-center justify-center p-6 bg-white rounded-xl border-2 border-neutral-200 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1 shadow-sm"
+                  >
+                      <div className="w-12 h-12 bg-neutral-50 rounded-full flex items-center justify-center border border-neutral-100 group-hover:border-orange-500 transition-colors mb-3">
+                          <Upload className="text-neutral-400 group-hover:text-orange-500 w-6 h-6 transition-colors" />
+                      </div>
+                      <h3 className="text-xs font-black text-neutral-900 group-hover:text-orange-500 uppercase tracking-wider transition-colors">{t.upload_title || 'Upload Fil'}</h3>
+                      <p className="text-[9px] text-neutral-400 mt-1 font-medium group-hover:text-orange-400 transition-colors">JPG, PNG, MP4</p>
+                  </button>
 
-                      {/* 3. YOUTUBE BUTTON */}
-                      <button
-                          onClick={() => setActiveModal('youtube')}
-                          className="relative flex-1 py-8 flex flex-row items-center justify-center gap-3 rounded-xl bg-black border-2 border-neutral-800 hover:border-orange-500 transition-all duration-200 group"
-                      >
-                          <Youtube size={32} className="text-orange-500 transition-transform group-hover:scale-110" />
-                          <span className="text-sm font-black uppercase tracking-widest text-white">
-                              YouTube
-                          </span>
-                      </button>
-
-                  </div>
+                  {/* 3. YOUTUBE */}
+                  <button
+                      onClick={() => setActiveModal('youtube')}
+                      className="group relative flex flex-col items-center justify-center p-6 bg-white rounded-xl border-2 border-neutral-200 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1 shadow-sm"
+                  >
+                      <div className="w-12 h-12 bg-neutral-50 rounded-full flex items-center justify-center border border-neutral-100 group-hover:border-orange-500 transition-colors mb-3">
+                          <Youtube className="text-neutral-400 group-hover:text-orange-500 w-6 h-6 transition-colors" />
+                      </div>
+                      <h3 className="text-xs font-black text-neutral-900 group-hover:text-orange-500 uppercase tracking-wider transition-colors">YouTube</h3>
+                      <p className="text-[9px] text-neutral-400 mt-1 font-medium group-hover:text-orange-400 transition-colors">Link Integration</p>
+                  </button>
               </div>
 
-              {/* GALLERY SECTION (Orange Boks - STORE 16:9 KORT) */}
+              {/* GALLERY SECTION */}
               <div className={boxClassOrange}>
-                  <div className="flex justify-between items-center mb-2">
-                      <h4 className="text-[10px] font-black text-neutral-900 uppercase tracking-wider flex items-center gap-2">
-                          {t.lbl_gallery || 'GALLERI & FORSIDE'}
-                      </h4>
+                  <div className="flex justify-between items-center mb-3">
+                      <div className="flex items-center gap-2">
+                          <h4 className="text-[10px] font-black text-neutral-900 uppercase tracking-wider">
+                              {t.lbl_gallery || 'ILLUSTRATIONS & ANIMATIONS'}
+                          </h4>
+                          <span className="bg-orange-100 text-orange-700 text-[8px] font-bold px-1.5 py-0.5 rounded">
+                              {localGallery.length}
+                          </span>
+                      </div>
                       <span className="text-[9px] text-neutral-400 font-medium flex items-center gap-1">
-                          <Star size={10} className="text-orange-500 fill-current" /> {t.lbl_gallery_sub || 'Stjerne vælger forside'}
+                          <Star size={10} className="text-orange-500 fill-current" /> {t.lbl_gallery_sub || 'Vælg forsidebillede'}
                       </span>
                   </div>
 
                   {localGallery.length > 0 ? (
-                      // 16:9 GRID - 2 KOLONNER
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-white p-3 rounded-lg border border-neutral-200">
+                      // RETTET HER: grid-cols-2 for større billeder
+                      <div className="grid grid-cols-2 gap-3">
                           {localGallery.map((url, idx) => {
                               const isCover = formData.thumbnailUrl === url;
                               const isVideo = isVideoUrl(url) || formData.videoUrl === url; 
+                              
                               return (
-                                  <div key={idx} className={`relative aspect-video rounded-lg overflow-hidden group cursor-pointer border-2 transition-all shadow-sm hover:shadow-md ${isCover ? 'border-orange-500 ring-2 ring-orange-500/20' : 'border-neutral-100 hover:border-neutral-300'}`}>
+                                  <div 
+                                    key={idx} 
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, idx)}
+                                    onDragOver={(e) => handleDragOver(e, idx)}
+                                    onDragEnd={handleDragEnd}
+                                    className={`
+                                        group relative aspect-video rounded-lg overflow-hidden cursor-grab active:cursor-grabbing transition-all duration-300
+                                        ${isCover ? 'ring-2 ring-orange-500 shadow-md transform scale-[1.02]' : 'border border-neutral-200 hover:shadow-lg'}
+                                        ${draggedItemIndex === idx ? 'opacity-50' : 'opacity-100'}
+                                    `}
+                                    // KLIK FOR ZOOM I STEDET FOR SET COVER
+                                    onClick={() => setZoomedAsset(url)}
+                                  >
+                                      {/* Content Rendering */}
                                       {isVideo ? (
-                                           <div className="w-full h-full bg-neutral-900 flex flex-col items-center justify-center relative">
-                                                <Video size={32} className="text-white/50 mb-2" />
-                                                <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">VIDEO ASSET</span>
-                                                <div className="absolute top-2 right-2 bg-black/60 text-white px-1.5 py-0.5 rounded text-[8px] font-bold">MP4</div>
+                                           <div className="w-full h-full bg-black relative">
+                                                {/* Vi bruger video-tagget her, men uden controls, så det ligner et billede */}
+                                                <video 
+                                                    src={url} 
+                                                    className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                                                    muted       // Skal være muted for at vise preview
+                                                    preload="metadata" // Henter kun starten for at spare data
+                                                    playsInline
+                                                    onMouseOver={e => e.currentTarget.play()} // Afspil når musen er over (valgfrit)
+                                                    onMouseOut={e => e.currentTarget.pause()} // Pause når musen flyttes
+                                                />
+                                                
+                                                {/* Play Ikon Overlay så man ved det er en video */}
+                                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                    <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/20">
+                                                        <Play size={16} className="text-white fill-white ml-1" />
+                                                    </div>
+                                                </div>
+                                                
+                                                <span className="absolute bottom-2 right-2 text-[8px] font-black text-white bg-black/60 px-1.5 py-0.5 rounded uppercase tracking-widest">VIDEO</span>
                                            </div>
                                       ) : (
                                            <img src={url} alt="Asset" className="w-full h-full object-cover" />
                                       )}
                                       
-                                      {/* Overlay Controls */}
-                                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
-                                          <div className="flex justify-end">
-                                              {!isVideo && (
-                                                <button 
-                                                    onClick={(e) => { e.stopPropagation(); handleSetCover(url); }}
-                                                    className={`px-2 py-1 rounded-md backdrop-blur-sm transition-all flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wide ${isCover ? 'bg-orange-500 text-white' : 'bg-black/60 text-white hover:bg-orange-500'}`}
-                                                >
-                                                    <Star size={10} fill={isCover ? "currentColor" : "none"} /> {isCover ? 'COVER' : 'SÆT COVER'}
-                                                </button>
-                                              )}
+                                      {/* Cover Badge */}
+                                      {isCover && (
+                                          <div className="absolute top-2 left-2 bg-orange-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 z-10 pointer-events-none">
+                                              <Star size={8} fill="currentColor" /> COVER
                                           </div>
-                                          <div className="flex justify-end">
-                                              <button onClick={(e) => { e.stopPropagation(); handleDeleteMedia(url); }} className="p-1.5 bg-red-500/90 hover:bg-red-600 text-white rounded-md backdrop-blur-sm transition-colors">
+                                      )}
+
+                                      {/* Drag Indicator */}
+                                      <div className="absolute top-2 right-2 p-1 bg-black/20 rounded text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                          <Move size={12} />
+                                      </div>
+
+                                      {/* Hover Overlay */}
+                                      <div className={`absolute inset-0 bg-black/40 transition-opacity duration-200 flex flex-col justify-end p-2 ${isCover ? 'opacity-0 hover:opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                          <div className="flex justify-between items-end gap-2">
+                                              
+                                              {/* SET COVER BUTTON (NY PLACERING) */}
+                                              {!isCover ? (
+                                                  <button 
+                                                      onClick={(e) => { e.stopPropagation(); handleSetCover(url); }}
+                                                      className="flex-1 bg-white/90 hover:bg-orange-500 hover:text-white text-neutral-900 py-1.5 rounded-md text-[9px] font-bold uppercase tracking-wide transition-colors flex items-center justify-center gap-1"
+                                                  >
+                                                      <Star size={10} /> Sæt Cover
+                                                  </button>
+                                              ) : (
+                                                  <div className="flex-1"></div> // Spacer
+                                              )}
+
+                                              {/* DELETE BUTTON (NY FARVE: Neutral -> Orange) */}
+                                              <button 
+                                                  onClick={(e) => { e.stopPropagation(); handleDeleteMedia(url); }}
+                                                  className="p-1.5 bg-neutral-900/80 hover:bg-orange-500 text-white rounded-md backdrop-blur-sm transition-colors"
+                                                  title="Slet"
+                                              >
                                                   <Trash2 size={12} />
                                               </button>
                                           </div>
@@ -716,22 +900,22 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                               )
                           })}
                           
-                          {/* Ghost Card (Trigger Upload) */}
-                          <div 
+                          {/* Add More Ghost Card (Stadig sidst, men i 2-kolonne grid) */}
+                          <button 
                               onClick={() => setActiveModal('upload')}
-                              className="aspect-video rounded-lg border-2 border-dashed border-neutral-200 hover:border-orange-300 bg-neutral-50 hover:bg-orange-50/10 flex flex-col items-center justify-center cursor-pointer group transition-colors"
+                              className="aspect-video rounded-lg border-2 border-dashed border-neutral-200 hover:border-orange-300 bg-neutral-50 hover:bg-white flex flex-col items-center justify-center gap-2 group transition-all"
                           >
-                              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm mb-2 group-hover:scale-110 transition-transform">
-                                <Plus className="text-neutral-400 group-hover:text-orange-500" size={20} />
+                              <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-neutral-400 group-hover:text-orange-500 transition-colors">
+                                <Plus size={20} />
                               </div>
-                              <span className="text-[9px] font-bold text-neutral-400 uppercase group-hover:text-orange-500 tracking-wider">Add Media</span>
-                          </div>
+                              <span className="text-[10px] font-bold text-neutral-400 group-hover:text-orange-500 uppercase tracking-wider">Tilføj mere</span>
+                          </button>
                       </div>
                   ) : (
-                      <div className="h-32 flex flex-col items-center justify-center text-neutral-300 bg-neutral-50 rounded-lg border border-neutral-100">
-                          <ImageIcon size={32} className="mb-2 opacity-30" />
-                          <p className="text-[10px] font-medium text-neutral-400">Ingen medier i galleriet</p>
-                          <p className="text-[9px] text-neutral-300">Vælg kilde ovenfor for at tilføje</p>
+                      <div className="h-40 flex flex-col items-center justify-center text-neutral-300 bg-neutral-50/50 rounded-lg border-2 border-dashed border-neutral-100">
+                          <ImageIcon size={32} className="mb-2 opacity-20" />
+                          <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide">Galleriet er tomt</p>
+                          <p className="text-[9px] text-neutral-300 mt-1">Vælg en kilde ovenfor for at starte</p>
                       </div>
                   )}
               </div>
@@ -758,6 +942,36 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
            </div>
         </div>
         
+        {/* LIGHTBOX / ZOOM OVERLAY (NY FUNKTION) */}
+        {zoomedAsset && (
+            <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setZoomedAsset(null)}>
+                <button className="absolute top-4 right-4 text-white/50 hover:text-white p-2" onClick={() => setZoomedAsset(null)}>
+                    <X size={32} />
+                </button>
+                <div className="max-w-5xl max-h-[85vh] w-full flex justify-center" onClick={(e) => e.stopPropagation()}>
+                    {isVideoUrl(zoomedAsset) ? (
+                        <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl border border-white/10">
+                             {/* Tjek om det er YouTube eller fil */}
+                             {zoomedAsset.includes('youtube') || zoomedAsset.includes('youtu.be') ? (
+                                 <iframe 
+                                    width="100%" 
+                                    height="100%" 
+                                    src={`https://www.youtube.com/embed/${getYouTubeID(zoomedAsset)}?autoplay=1`} 
+                                    frameBorder="0" 
+                                    allow="autoplay; encrypted-media" 
+                                    allowFullScreen
+                                 ></iframe>
+                             ) : (
+                                 <video src={zoomedAsset} controls autoPlay className="w-full h-full object-contain" />
+                             )}
+                        </div>
+                    ) : (
+                        <img src={zoomedAsset} alt="Full size" className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" />
+                    )}
+                </div>
+            </div>
+        )}
+
         {/* MATERIAL MODAL (Uændret) */}
         {isMaterialModalOpen && (
             <div className="absolute inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
@@ -780,71 +994,148 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
             </div>
         )}
 
-        {/* 1. DTL STUDIO POPUP (RETTET: Sort bg, orange highlights) */}
+        {/* 1. DTL STUDIO POPUP */}
         {activeModal === 'studio' && (
-            <div className="absolute inset-0 z-[120] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-                <div className="bg-neutral-950 w-full max-w-2xl rounded-2xl border border-neutral-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 relative">
-                     
-                     <div className="relative z-10 p-6 pb-2 flex justify-between items-start">
-                         <div>
-                             <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                                <GitPullRequestArrow className="text-orange-500" /> DTL STUDIO INTEGRATION
-                             </h3>
-                             <p className="text-neutral-400 text-xs mt-1">Select an action to proceed with Studio Engine</p>
+            <div className="absolute inset-0 z-[120] bg-neutral-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div className="bg-white w-[95%] sm:w-[90%] md:w-full max-w-sm sm:max-w-xl md:max-w-2xl rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 relative flex flex-col border border-neutral-100">
+                      
+                      {/* HEADER */}
+                      <div className="relative z-10 p-4 pb-2 flex justify-between items-start border-b border-neutral-50 shrink-0 bg-white">
+                          <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                 <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center border border-orange-600 shadow-sm shrink-0">
+                                     <GitPullRequestArrow className="text-white w-4 h-4" />
+                                 </div>
+                                 <div>
+                                     <h3 className="text-sm font-black text-neutral-900 uppercase tracking-tight leading-none">
+                                         {t.studio_title || 'DTL Studio'}
+                                     </h3>
+                                 </div>
+                              </div>
+                              <p className="text-neutral-500 text-[10px] leading-relaxed line-clamp-2">
+                                 {t.studio_desc || 'Vælg hvordan du vil skabe dit indhold. Design selv, importer eller brug video.'}
+                              </p>
+                          </div>
+                          <button 
+                             onClick={() => setActiveModal('none')} 
+                             className="text-neutral-400 hover:text-neutral-900 transition-colors hover:bg-neutral-100 p-1.5 rounded-full"
+                          >
+                             <X size={18} />
+                          </button>
+                      </div>
+
+                      {/* ACTION CARDS */}
+                      <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-4 lg:gap-6 p-4 pt-2 md:p-6 md:pt-3 lg:p-8 lg:pt-4 bg-neutral-50/50 overflow-y-auto">
+                          
+                          {/* Card 1: Create New */}
+                          <button 
+                             onClick={() => handleStudioAction('create')} 
+                             className="group flex sm:flex-col items-center sm:justify-center p-3 md:p-5 lg:p-6 bg-white rounded-lg border border-neutral-200 hover:border-orange-500 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-orange-500/10 hover:-translate-y-0.5 w-full text-left sm:text-center gap-3 sm:gap-0"
+                          >
+                              <div className="w-8 h-8 md:w-12 md:h-12 lg:w-14 lg:h-14 bg-neutral-50 rounded-full flex items-center justify-center sm:mb-3 md:mb-4 group-hover:bg-orange-500 transition-colors duration-300 shadow-inner group-hover:shadow-md group-hover:shadow-orange-500/30 shrink-0">
+                                  <MousePointer2 className="text-neutral-400 group-hover:text-white w-4 h-4 md:w-6 md:h-6 lg:w-7 lg:h-7 transition-colors duration-300" />
+                              </div>
+                              <div>
+                                 <h4 className="text-neutral-900 group-hover:text-orange-600 font-black uppercase text-[10px] md:text-xs lg:text-sm tracking-wider mb-0.5 md:mb-1 transition-colors">
+                                     {t.studio_create_title || 'Opret Illustration'}
+                                 </h4>
+                                 <p className="text-neutral-400 text-[9px] md:text-[10px] lg:text-xs leading-tight sm:leading-relaxed">
+                                    {t.studio_create_desc || 'Start med et tomt lærred.'}
+                                 </p>
+                              </div>
+                          </button>
+
+                          {/* Card 2: Import Image */}
+                          <button 
+                             onClick={() => handleStudioAction('import-image')} 
+                             className="group flex sm:flex-col items-center sm:justify-center p-3 md:p-5 lg:p-6 bg-white rounded-lg border border-neutral-200 hover:border-orange-500 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-orange-500/10 hover:-translate-y-0.5 w-full text-left sm:text-center gap-3 sm:gap-0"
+                          >
+                              <div className="w-8 h-8 md:w-12 md:h-12 lg:w-14 lg:h-14 bg-neutral-50 rounded-full flex items-center justify-center sm:mb-3 md:mb-4 group-hover:bg-orange-500 transition-colors duration-300 shadow-inner group-hover:shadow-md group-hover:shadow-orange-500/30 shrink-0">
+                                  <ImageIcon className="text-neutral-400 group-hover:text-white w-4 h-4 md:w-6 md:h-6 lg:w-7 lg:h-7 transition-colors duration-300" />
+                              </div>
+                              <div>
+                                 <h4 className="text-neutral-900 group-hover:text-orange-600 font-black uppercase text-[10px] md:text-xs lg:text-sm tracking-wider mb-0.5 md:mb-1 transition-colors">
+                                     {t.studio_import_title || 'Importer Billede'}
+                                 </h4>
+                                 <p className="text-neutral-400 text-[9px] md:text-[10px] lg:text-xs leading-tight sm:leading-relaxed">
+                                    {t.studio_import_desc || 'Hent fra bibliotek / upload.'}
+                                 </p>
+                              </div>
+                          </button>
+
+                          {/* Card 3: Video/Animation */}
+                          <button 
+                             onClick={() => handleStudioAction('import-animation')} 
+                             className="group flex sm:flex-col items-center sm:justify-center p-3 md:p-5 lg:p-6 bg-white rounded-lg border border-neutral-200 hover:border-orange-500 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-orange-500/10 hover:-translate-y-0.5 w-full text-left sm:text-center gap-3 sm:gap-0"
+                          >
+                              <div className="w-8 h-8 md:w-12 md:h-12 lg:w-14 lg:h-14 bg-neutral-50 rounded-full flex items-center justify-center sm:mb-3 md:mb-4 group-hover:bg-orange-500 transition-colors duration-300 shadow-inner group-hover:shadow-md group-hover:shadow-orange-500/30 shrink-0">
+                                  <Film className="text-neutral-400 group-hover:text-white w-4 h-4 md:w-6 md:h-6 lg:w-7 lg:h-7 transition-colors duration-300" />
+                              </div>
+                              <div>
+                                 <h4 className="text-neutral-900 group-hover:text-orange-600 font-black uppercase text-[10px] md:text-xs lg:text-sm tracking-wider mb-0.5 md:mb-1 transition-colors">
+                                     {t.studio_video_title || 'Animation / Video'}
+                                 </h4>
+                                 <p className="text-neutral-400 text-[9px] md:text-[10px] lg:text-xs leading-tight sm:leading-relaxed">
+                                    {t.studio_video_desc || 'Importer videoklip.'}
+                                 </p>
+                              </div>
+                          </button>
+
+                      </div>
+                      
+                      {/* FOOTER */}
+                      <div className="bg-neutral-50 p-2 md:p-3 px-4 md:px-6 lg:px-8 border-t border-neutral-100 flex justify-between items-center shrink-0">
+                         <span className="text-[8px] md:text-[9px] lg:text-[10px] text-neutral-400 font-medium">
+                             {t.studio_powered || 'Powered by DTL Studio v1.0'}
+                         </span>
+                         <div className="flex gap-1.5 items-center">
+                             <span className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-green-500 animate-pulse"></span>
+                             <span className="text-[8px] md:text-[9px] lg:text-[10px] text-neutral-500 font-bold uppercase tracking-wide">
+                                 {t.studio_status || 'Studio Online'}
+                             </span>
                          </div>
-                         <button onClick={() => setActiveModal('none')} className="text-neutral-400 hover:text-white transition-colors bg-white/5 p-2 rounded-full hover:bg-white/10">
-                             <X size={20} />
-                         </button>
-                     </div>
-
-                     <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-4 p-6 pt-4">
-                         <button onClick={() => handleStudioAction('create')} className="group flex flex-col items-center justify-center p-6 bg-neutral-800/50 hover:bg-neutral-800 rounded-xl border border-neutral-700 hover:border-orange-500 transition-all duration-300 text-center gap-3">
-                             <div className="w-14 h-14 bg-black rounded-full flex items-center justify-center group-hover:bg-white/5 transition-colors border border-neutral-700 group-hover:border-orange-500/50">
-                                 <MousePointer2 className="text-orange-500 w-7 h-7" />
-                             </div>
-                             <div>
-                                 <h4 className="text-white font-bold uppercase text-sm tracking-wider">Create Illustration</h4>
-                                 <p className="text-neutral-400 text-[10px] group-hover:text-white/80 mt-1">Design new drill or animation.</p>
-                             </div>
-                         </button>
-
-                         <button onClick={() => handleStudioAction('import-image')} className="group flex flex-col items-center justify-center p-6 bg-neutral-800/50 hover:bg-neutral-800 rounded-xl border border-neutral-700 hover:border-orange-500 transition-all duration-300 text-center gap-3">
-                             <div className="w-14 h-14 bg-black rounded-full flex items-center justify-center group-hover:bg-white/5 transition-colors border border-neutral-700 group-hover:border-orange-500/50">
-                                 <ImageIcon className="text-orange-500 w-7 h-7" />
-                             </div>
-                             <div>
-                                 <h4 className="text-white font-bold uppercase text-sm tracking-wider">Import Image</h4>
-                                 <p className="text-neutral-400 text-[10px] group-hover:text-white/80 mt-1">Select existing drawings.</p>
-                             </div>
-                         </button>
-
-                         <button onClick={() => handleStudioAction('import-animation')} className="group flex flex-col items-center justify-center p-6 bg-neutral-800/50 hover:bg-neutral-800 rounded-xl border border-neutral-700 hover:border-orange-500 transition-all duration-300 text-center gap-3">
-                             <div className="w-14 h-14 bg-black rounded-full flex items-center justify-center group-hover:bg-white/5 transition-colors border border-neutral-700 group-hover:border-orange-500/50">
-                                 <Film className="text-orange-500 w-7 h-7" />
-                             </div>
-                             <div>
-                                 <h4 className="text-white font-bold uppercase text-sm tracking-wider">Import Video</h4>
-                                 <p className="text-neutral-400 text-[10px] group-hover:text-white/80 mt-1">Load processed animations.</p>
-                             </div>
-                         </button>
-                     </div>
+                      </div>
                 </div>
             </div>
         )}
 
-        {/* 2. UPLOAD POPUP (RETTET: Sort bg) */}
+        {/* 2. UPLOAD POPUP */}
         {activeModal === 'upload' && (
-            <div className="absolute inset-0 z-[120] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-                <div className="bg-neutral-950 w-full max-w-lg rounded-xl border border-neutral-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 relative">
-                     <div className="p-4 border-b border-neutral-800 flex justify-between items-center bg-black/20">
-                         <h3 className="font-bold text-white text-sm uppercase">Upload File</h3>
-                         <button onClick={() => setActiveModal('none')}><X className="text-neutral-400 hover:text-white" size={18} /></button>
-                     </div>
-                     <div className="p-6">
-                        <div 
+            <div className="absolute inset-0 z-[120] bg-neutral-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div className="bg-white w-[95%] sm:w-full max-w-lg rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 relative flex flex-col border border-neutral-100">
+                      
+                      {/* HEADER */}
+                      <div className="relative z-10 p-4 pb-2 flex justify-between items-start border-b border-neutral-50 shrink-0 bg-white">
+                          <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                 <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center border border-orange-600 shadow-sm shrink-0">
+                                     <Upload className="text-white w-4 h-4" />
+                                 </div>
+                                 <div>
+                                     <h3 className="text-sm font-black text-neutral-900 uppercase tracking-tight leading-none">
+                                         {t.upload_title || 'Upload Fil'}
+                                     </h3>
+                                 </div>
+                              </div>
+                              <p className="text-neutral-500 text-[10px] leading-relaxed">
+                                 {t.upload_desc || 'Upload billeder eller video til dit bibliotek.'}
+                              </p>
+                          </div>
+                          
+                          <button 
+                             onClick={() => setActiveModal('none')} 
+                             className="text-neutral-400 hover:text-neutral-900 transition-colors hover:bg-neutral-100 p-1.5 rounded-full"
+                          >
+                             <X size={18} />
+                          </button>
+                      </div>
+
+                      {/* CONTENT */}
+                      <div className="p-4 bg-neutral-50/50">
+                         <div 
                               className={`
-                                  w-full h-48 rounded-lg border-2 border-dashed flex flex-col items-center justify-center p-6 transition-all duration-300
-                                  ${isUploading ? 'bg-orange-500/5 border-orange-500' : 'bg-neutral-800/50 border-neutral-700 hover:border-orange-500 hover:bg-neutral-800 cursor-pointer'}
+                                  group w-full h-40 rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all duration-300 gap-3
+                                  ${isUploading ? 'bg-orange-50 border-orange-500 cursor-wait' : 'bg-white border-neutral-200 hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/5 cursor-pointer hover:-translate-y-0.5'}
                               `}
                               onClick={() => !isUploading && fileInputRef.current?.click()}
                           >
@@ -852,66 +1143,103 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                               
                               {isUploading ? (
                                   <div className="flex flex-col items-center animate-pulse">
-                                      <Loader2 className="w-10 h-10 text-orange-500 animate-spin mb-3" />
-                                      <p className="text-[11px] font-bold text-orange-500 uppercase tracking-widest">Uploading...</p>
+                                      <Loader2 className="w-8 h-8 text-orange-500 animate-spin mb-2" />
+                                      <p className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">{t.upload_status || 'Uploader fil...'}</p>
                                   </div>
                               ) : (
                                   <>
-                                      <div className="w-12 h-12 rounded-full bg-black flex items-center justify-center mb-3 group-hover:scale-110 transition-transform border border-neutral-700">
-                                          <Upload className="w-6 h-6 text-orange-500" />
+                                      <div className="w-10 h-10 rounded-full bg-neutral-50 flex items-center justify-center group-hover:bg-orange-500 transition-colors duration-300 border border-neutral-100 shadow-sm group-hover:shadow-orange-500/30">
+                                          <Upload className="w-5 h-5 text-neutral-400 group-hover:text-white transition-colors duration-300" />
                                       </div>
-                                      <p className="text-xs font-black text-white uppercase tracking-wide mb-1">Click to Upload</p>
-                                      <p className="text-[10px] text-neutral-400">JPG, PNG, MP4 (Max 50MB)</p>
+                                      <div className="text-center">
+                                          <p className="text-xs font-black text-neutral-900 group-hover:text-orange-600 uppercase tracking-wide transition-colors">
+                                              {t.upload_btn_click || 'Klik for at vælge fil'}
+                                          </p>
+                                          <p className="text-[9px] text-neutral-400 mt-1 group-hover:text-neutral-500 transition-colors">{t.upload_format_hint || 'JPG, PNG, MP4 (Max 50MB)'}</p>
+                                      </div>
                                   </>
                               )}
                           </div>
-                     </div>
+                      </div>
                 </div>
             </div>
         )}
 
-        {/* 3. YOUTUBE POPUP (RETTET: Sort bg) */}
+        {/* 3. YOUTUBE POPUP */}
         {activeModal === 'youtube' && (
-            <div className="absolute inset-0 z-[120] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-                <div className="bg-neutral-950 w-full max-w-lg rounded-xl border border-neutral-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 relative">
-                     <div className="p-4 border-b border-neutral-800 flex justify-between items-center bg-black/20">
-                         <h3 className="font-bold text-white text-sm uppercase">Add YouTube Link</h3>
-                         <button onClick={() => setActiveModal('none')}><X className="text-neutral-400 hover:text-white" size={18} /></button>
-                     </div>
-                     <div className="p-6">
-                        <div className="mb-4">
-                            <label className="text-[10px] font-bold text-neutral-400 uppercase mb-1 block">Paste URL</label>
-                            <input 
-                                type="text" 
-                                className="w-full bg-black border border-neutral-700 text-white rounded p-3 text-xs focus:border-orange-500 outline-none placeholder:text-neutral-600"
-                                placeholder="https://youtube.com/watch?v=..."
-                                value={tempYoutubeLink}
-                                onChange={(e) => setTempYoutubeLink(e.target.value)}
-                                autoFocus
-                            />
-                        </div>
-                        
-                        {/* Preview */}
-                        {getYouTubeID(tempYoutubeLink) && (
-                            <div className="mb-4 aspect-video bg-black rounded overflow-hidden border border-neutral-700">
-                                <iframe 
-                                    width="100%" 
-                                    height="100%" 
-                                    src={`https://www.youtube.com/embed/${getYouTubeID(tempYoutubeLink)}`} 
-                                    frameBorder="0" 
-                                    allowFullScreen
-                                ></iframe>
-                            </div>
-                        )}
+            <div className="absolute inset-0 z-[120] bg-neutral-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div className="bg-white w-[95%] sm:w-full max-w-lg rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 relative flex flex-col border border-neutral-100 max-h-[90vh]">
 
-                        <button 
-                            onClick={handleAddYoutube}
-                            disabled={!getYouTubeID(tempYoutubeLink)}
-                            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded text-xs font-bold uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            Add to Gallery
-                        </button>
-                     </div>
+                      {/* HEADER */}
+                      <div className="relative z-10 p-4 pb-2 flex justify-between items-start border-b border-neutral-50 shrink-0 bg-white">
+                          <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                 <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center border border-orange-600 shadow-sm shrink-0">
+                                     <Youtube className="text-white w-4 h-4" />
+                                 </div>
+                                 <div>
+                                     <h3 className="text-sm font-black text-neutral-900 uppercase tracking-tight leading-none">
+                                         {t.youtube_title || 'Tilføj YouTube Link'}
+                                     </h3>
+                                 </div>
+                              </div>
+                              <p className="text-neutral-500 text-[10px] leading-relaxed">
+                                 {t.youtube_desc || 'Indsæt et link for at integrere video direkte i øvelsen.'}
+                              </p>
+                          </div>
+                          
+                          <button 
+                             onClick={() => setActiveModal('none')} 
+                             className="text-neutral-400 hover:text-neutral-900 transition-colors hover:bg-neutral-100 p-1.5 rounded-full"
+                          >
+                             <X size={18} />
+                          </button>
+                      </div>
+
+                      {/* CONTENT */}
+                      <div className="p-4 bg-neutral-50/50 overflow-y-auto">
+                         <div className="space-y-3">
+                            <div>
+                                <label className="text-[10px] font-bold text-neutral-900 uppercase mb-1.5 block">{t.youtube_label_url || 'Indsæt URL'}</label>
+                                <div className="relative">
+                                    <input 
+                                        type="text" 
+                                        className="w-full bg-white border border-neutral-200 rounded-lg p-2.5 text-xs text-neutral-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all placeholder:text-neutral-400 shadow-sm"
+                                        placeholder={t.ph_youtube_link || "https://youtube.com/watch?v=..."}
+                                        value={tempYoutubeLink}
+                                        onChange={(e) => setTempYoutubeLink(e.target.value)}
+                                        autoFocus
+                                    />
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                        <LinkIcon size={14} className="text-neutral-300" />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Preview Section */}
+                            {getYouTubeID(tempYoutubeLink) ? (
+                                <div className="aspect-video bg-black rounded-lg overflow-hidden border border-neutral-200 shadow-md animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <iframe 
+                                        width="100%" 
+                                        height="100%" 
+                                        src={`https://www.youtube.com/embed/${getYouTubeID(tempYoutubeLink)}`} 
+                                        frameBorder="0" 
+                                        allowFullScreen
+                                    ></iframe>
+                                </div>
+                            ) : (
+                                <div className="h-1 bg-transparent"></div>
+                            )}
+
+                            <button 
+                                onClick={handleAddYoutube}
+                                disabled={!getYouTubeID(tempYoutubeLink)}
+                                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-lg hover:shadow-orange-500/20 hover:-translate-y-0.5"
+                            >
+                                {t.btn_add_video || 'Tilføj til Galleri'}
+                            </button>
+                         </div>
+                      </div>
                 </div>
             </div>
         )}

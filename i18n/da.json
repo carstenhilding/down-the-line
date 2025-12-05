@@ -71,6 +71,33 @@
     "subtitle": "Intelligent Asset Management",
     "createBtn": "Opret Øvelse",
     "searchPlaceholder": "Søg (f.eks. \"Genpres\" eller \"U12\")",
+   
+    "tab_media": "3. Medier",
+    "studio_title": "DTL Studio",
+    "studio_desc": "Vælg hvordan du vil skabe dit indhold. Design selv, importer eller brug video.",
+    "studio_create_title": "Opret Illustration",
+    "studio_create_desc": "Start med et tomt lærred.",
+    "studio_import_title": "Importer Billede",
+    "studio_import_desc": "Hent fra bibliotek / upload.",
+    "studio_video_title": "Animation / Video",
+    "studio_video_desc": "Importer videoklip.",
+    "studio_powered": "Powered by DTL Studio v1.0",
+    "studio_status": "Studio Online",
+
+    "upload_title": "Upload Fil",
+    "upload_desc": "Upload billeder eller video til dit bibliotek.",
+    "upload_btn_click": "Klik for at vælge fil",
+    "upload_format_hint": "JPG, PNG, MP4 (Max 50MB)",
+    "upload_status": "Uploader fil...",
+
+    "youtube_title": "Tilføj YouTube Link",
+    "youtube_desc": "Indsæt et link for at integrere video direkte i øvelsen.",
+    "youtube_label_url": "Indsæt URL",
+    "btn_add_video": "Tilføj til Galleri",
+
+    "lbl_gallery": "ILLUSTRATIONER & ANIMATIONER",
+    "lbl_gallery_sub": "Vælg forsidebillede",
+
     "tabs": {
       "global": "DTL Global",
       "club": "Klubbens Curriculum",
