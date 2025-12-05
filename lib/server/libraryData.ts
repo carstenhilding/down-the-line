@@ -1,79 +1,30 @@
 // lib/server/libraryData.ts
 
-export type DrillCategory = 'Warm-up' | 'Technical' | 'Tactical' | 'Physical' | 'Match Play' | 'Goalkeeper' | 'Set Pieces';
-export type AgeGroup = 'U5-U7' | 'U8-U10' | 'U11-U13' | 'U14-U16' | 'U17-U19' | 'Senior';
-export type PhysicalLoadType = 
-    'Aerobic – Low Intensity' | 
-    'Aerobic – Moderate Intensity' | 
-    'Aerobic – High Intensity' | 
-    'Anaerobic – Sprint' | 
-    'Anaerobic – Sprint Endurance' | 
-    'Anaerobic – Production' | 
-    'Anaerobic – Tolerance';
-
-export type FourCornerTag = 'Technical' | 'Tactical' | 'Physical' | 'Mental';
-export type GamePhase = 
-    'Build-up' | 'Build-up - Phase 1' | 'Build-up - Phase 2' | 
-    'Pressing' | 'Finishing Phase' | 'Defending' | 
-    'Transition Attack' | 'Transition Defend' | 'Set Pieces';
-
-// --- HOVEDKATEGORIER ---
 export type MainCategory = 
-    | 'warmup'
-    | 'technical'
-    | 'tactical'
-    | 'game_forms'
-    | 'physical'
-    | 'set_pieces'
-    | 'goalkeeper';
+  | 'general' | 'warmup' | 'technical' | 'tactical' 
+  | 'game_forms' | 'physical' | 'mental' | 'set_pieces' | 'goalkeeper';
 
-// --- UNDERKATEGORIER (ENGLISH BASE) ---
-export const DRILL_CATEGORIES: Record<MainCategory, string[]> = {
-    warmup: [
-        'General Warm-up', 'Technical Warm-up', 'Physical Activation', 'Fun & Games'
-    ],
-    technical: [
-        'Passing', 'First Touch', '1v1 Offensive', 'Turns', 
-        'Finishing', '1v1 Defensive', 'Coordination'
-    ],
-    tactical: [
-        'Build-up - Phase 1', 
-        'Build-up - Phase 2', 
-        'Attacking Phase', 
-        'Pressing', 
-        'Defending', 
-        'Transition - Offensive', 
-        'Transition - Defensive',
-        'Positional Play'
-    ],
-    game_forms: [
-        'Rondos', 'Small Sided Games', 'Match Play', 'Positional Play'
-    ],
-    physical: [
-        'Energy & Capacity', 'Speed & Power', 'Movement'
-    ],
-    set_pieces: [
-        'Corners', 'Free Kicks', 'Penalties', 'Throw-ins'
-    ],
-    goalkeeper: [
-        'Shot Stopping', 'Crosses & Box', 'Reaction & Saves', 'Distribution'
-    ]
+export type DrillCategoryMap = Record<MainCategory, string[]>;
+
+export const DRILL_CATEGORIES: DrillCategoryMap = {
+  general: ['General'],
+  warmup: ['General Warm-up', 'Technical Warm-up', 'Physical Activation', 'Fun & Games'],
+  technical: ['Passing', 'First Touch', '1v1 Offensive', 'Dribbling & Turns', 'Finishing', '1v1 Defensive', 'Coordination'],
+  tactical: ['Build-up - Phase 1', 'Build-up - Phase 2', 'Attacking Phase', 'Pressing', 'Defending', 'Transition - Offensive', 'Transition - Defensive', 'Positional Play'],
+  game_forms: ['Rondos', 'Small Sided Games', 'Match Play'],
+  physical: ['Energy & Capacity', 'Speed & Power', 'Movement'],
+  mental: ['Individual', 'Relational'],
+  set_pieces: ['Corners', 'Free Kicks', 'Penalties', 'Throw-ins'],
+  goalkeeper: ['Shot Stopping', 'Crosses & Box', 'Reaction & Saves', 'Distribution']
 };
 
-// --- TAGS (ENGLISH BASE) ---
-export interface TagTaxonomy {
-    [key: string]: {
-        [subCategory: string]: string[]
-    }
-}
-
-// lib/server/libraryData.ts
+export type FourCornerTag = 'Technical' | 'Tactical' | 'Physical' | 'Mental';
 
 export const DRILL_TAGS: Record<string, Record<string, string[]>> = {
     Technical: {
         "Passing": [
             "Inside pass", "Outside pass", "Lay-off", "Half-volley instep", 
-            "Vertical instep", "Curled pass", "Chip", "Through ball", "Crossing", "Cut-back"
+            "Vertical instep", "Curled pass", "Chip Pass", "Through ball", "Crossing", "Cut-back"
         ],
         "First Touch": [
             "Inside", "Outside", "Sole", "Instep", "Thigh", "Chest", 
@@ -89,7 +40,7 @@ export const DRILL_TAGS: Record<string, Record<string, string[]>> = {
         ],
         "Finishing": [
             "Instep power", "Placed inside", "Curled shot", "Volley", 
-            "Header", "Chip", "1v1 vs GK", "Long shot", "Rebound"
+            "Header", "Chip Shot", "1v1 vs GK", "Long shot", "Rebound"
         ],
         "1v1 Defensive": [
             "Pressing run", "Defensive stance", "Body position", "Steering", 
@@ -133,6 +84,9 @@ export const DRILL_TAGS: Record<string, Record<string, string[]>> = {
         "Transition - Defensive": [
             "Transition to Defense", "Counter-press", "Delay/Drop back", "Tactical foul"
         ],
+        "Set Pieces": [
+            "Corner (Off)", "Corner (Def)", "Free kick", "Penalty", "Throw-in"
+        ],
         "Formation": [
             "433", "343", "4231", "352", "442 Diamond", "442"
         ]
@@ -160,67 +114,82 @@ export const DRILL_TAGS: Record<string, Record<string, string[]>> = {
     }
 };
 
+export type PhysicalLoadType = 
+  | 'Aerobic – Low Intensity' 
+  | 'Aerobic – Moderate Intensity' 
+  | 'Aerobic – High Intensity'
+  | 'Anaerobic – Sprint'
+  | 'Anaerobic – Sprint Endurance'
+  | 'Anaerobic – Production'
+  | 'Anaerobic – Tolerance';
+
 export interface MaterialItem {
-    name: string;
-    count: number;
-    details?: string;
+  name: string;
+  count: number;
+  details?: string;
 }
 
 export interface TeamSetup {
-    name: string;
-    playerCount: number;
-    color: 'orange' | 'red' | 'blue' | 'green' | 'yellow' | 'white' | 'black';
+  name: string;
+  playerCount: number;
+  color: 'orange' | 'red' | 'blue' | 'green' | 'yellow' | 'white' | 'black';
 }
 
 export interface DrillAsset {
-    id?: string;
-    title: string;
-    description: string;
-    
-    mainCategory: MainCategory | string;
-    subCategory: string;
-    phase: string;
-    accessLevel: 'Personal' | 'Club' | 'Team' | 'Global';
-    primaryTheme?: string;
-    secondaryTheme?: string;
-
-    durationMin: number;
-    minPlayers: number;
-    maxPlayers: number;
-    workDuration?: number;
-    restDuration?: number;
-    pitchSize?: { width: number; length: number };
-
-    setup: TeamSetup[];
-    materials: MaterialItem[];
-    rules: string[];
-    coachingPoints: {
-        instruction: string;
-        keyPoints: string[];
-    };
-    stopFreeze?: string;
-    progression?: string[];
-    regression?: string[];
-    gamification?: string;
-    goalKeeper?: boolean;
-    
-    ageGroups: string[];
-    physicalLoad: PhysicalLoadType;
-    rpe?: number;
-    tags: string[]; 
-    
-    technicalGoals?: string[];
-    tacticalGoals?: string[];
-    mentalGoals?: string[];
-
-    thumbnailUrl?: string;
-    videoUrl?: string;
-    youtubeUrl?: string;
-    mediaType: 'image' | 'video' | 'youtube';
-
-    authorId: string;
-    authorName: string;
-    clubId?: string;
-    teamId?: string;
-    createdAt: any;
+  id?: string;
+  title: string;
+  description?: string;
+  mainCategory: MainCategory;
+  subCategory: string;
+  phase?: string;
+  primaryTheme?: string;
+  secondaryTheme?: string;
+  durationMin?: number;
+  minPlayers?: number;
+  maxPlayers?: number;
+  workDuration?: number;
+  restDuration?: number;
+  pitchSize?: { width: number; length: number };
+  rules?: string[];
+  coachingPoints?: {
+      instruction?: string;
+      keyPoints: string[];
+  };
+  stopFreeze?: string;
+  progression?: string[];
+  regression?: string[];
+  ageGroups?: string[];
+  physicalLoad?: PhysicalLoadType;
+  rpe?: number;
+  accessLevel: 'Global' | 'Club' | 'Team' | 'Personal';
+  
+  // Media
+  thumbnailUrl?: string;
+  videoUrl?: string;
+  youtubeUrl?: string;
+  mediaType: 'image' | 'video' | 'youtube';
+  
+  tags?: string[];
+  materials?: MaterialItem[];
+  setup?: TeamSetup[];
+  
+  authorId: string;
+  authorName: string;
+  clubId?: string;
+  teamId?: string;
+  createdAt: Date;
+  updatedAt?: Date;
+  
+  gamification?: string;
+  goalsTechnical?: string;
+  goalsTactical?: string;
+  goalsMental?: string;
+  
+  // HER ER DET NYE FELT DU MANGLER FOR AT FJERNE DE RØDE STREGER I MODALEN:
+  goalKeeper?: boolean;
+  
+  // NYT FELT TIL SPROG:
+  language?: 'da' | 'en';
 }
+
+export type GamePhase = 'Opbygning' | 'Afslutning' | 'Erobring' | 'Forsvar' | 'Omstilling - Off' | 'Omstilling - Def';

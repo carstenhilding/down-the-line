@@ -11,7 +11,7 @@ import {
   Brain, Zap, User, TrafficCone, GitPullRequestArrow, Dumbbell, Lock, Info,
   Ruler, Shield, Globe, User as UserIcon, Star, Check, PenTool, LayoutTemplate,
   Loader2, Play, MonitorPlay, RefreshCw, Edit2, Film, MousePointer2, ArrowRight,
-  Monitor, Maximize2, Move
+  Monitor, Maximize2, Move, Globe2
 } from 'lucide-react';
 import { 
     DrillAsset, 
@@ -29,6 +29,7 @@ import { uploadFile } from '@/lib/services/storageService';
 import { useUser } from '@/components/UserContext';
 import imageCompression from 'browser-image-compression';
 import { UserRole } from '@/lib/server/data';
+import { secureI18n } from '@/i18n/secure';
 
 interface CreateDrillModalProps {
   isOpen: boolean;
@@ -40,7 +41,7 @@ interface CreateDrillModalProps {
 
 const AGE_OPTIONS = [
     'U5+', 'U6+', 'U7+', 'U8+', 'U9+', 'U10+', 'U11+', 'U12+', 
-    'U13+', 'U14+', 'U15+', 'U16+', 'U17+', 'U19+', 'Senior'
+    'U13+', 'U14+', 'U15+', 'U16+', 'U17+', 'U18+'
 ];
 
 const EQUIPMENT_KEYS = [
@@ -61,33 +62,54 @@ const isVideoUrl = (url: string) => {
     return url.toLowerCase().endsWith('.mp4') || url.toLowerCase().endsWith('.mov') || url.includes('video');
 };
 
+interface LocalizedDrillData {
+    title: string;
+    description: string;
+    rules: string[];
+    coachingPoints: {
+        instruction: string;
+        keyPoints: string[];
+    };
+    stopFreeze: string;
+    progression: string[];
+    regression: string[];
+    gamification: string;
+}
+
+const emptyLocalizedData: LocalizedDrillData = {
+    title: '',
+    description: '',
+    rules: ['', '', ''],
+    coachingPoints: { instruction: '', keyPoints: ['', '', ''] },
+    stopFreeze: '',
+    progression: [''],
+    regression: [''],
+    gamification: ''
+};
+
 export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSuccess }: CreateDrillModalProps) {
   if (!isOpen) return null;
   const { user } = useUser();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const t = dict?.library || {};
+  const [currentLang, setCurrentLang] = useState<'da' | 'en'>(lang);
+  const t = (secureI18n[currentLang]?.library || dict?.library || {}) as any;
 
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   
   const [activeTab, setActiveTab] = useState<'practical' | 'data' | 'media'>('practical');
-  
-  // MODAL STATES
   const [activeModal, setActiveModal] = useState<'none' | 'studio' | 'upload' | 'youtube'>('none');
 
-  // GALLERI & DRAG DROP STATE
   const [localGallery, setLocalGallery] = useState<string[]>([]);
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
-  const [zoomedAsset, setZoomedAsset] = useState<string | null>(null); // Til Lightbox
+  const [zoomedAsset, setZoomedAsset] = useState<string | null>(null);
 
-  // MATERIAL MODAL
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
   const [newMaterial, setNewMaterial] = useState<MaterialItem>({ name: 'eq_balls', count: 1, details: '' });
   const [customMaterialName, setCustomMaterialName] = useState('');
   
-  // YOUTUBE TEMP STATE
   const [tempYoutubeLink, setTempYoutubeLink] = useState('');
 
   const [activeCorner, setActiveCorner] = useState<FourCornerTag>('Technical');
@@ -98,9 +120,12 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
       { name: '', playerCount: 4, color: 'white' }
   ]);
 
+  const [textData, setTextData] = useState<{ da: LocalizedDrillData, en: LocalizedDrillData }>({
+      da: { ...emptyLocalizedData },
+      en: { ...emptyLocalizedData }
+  });
+
   const [formData, setFormData] = useState<Partial<DrillAsset>>({
-    title: '',
-    description: '',
     mainCategory: 'technical', 
     subCategory: 'Passing',
     phase: '', 
@@ -112,11 +137,6 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
     workDuration: undefined,
     restDuration: undefined,
     pitchSize: { width: undefined as any, length: undefined as any },
-    rules: ['', '', ''],
-    coachingPoints: { keyPoints: ['', '', ''], instruction: '' },
-    stopFreeze: '',
-    progression: [''],
-    regression: [''],
     ageGroups: [],
     physicalLoad: 'Aerobic – Moderate Intensity',
     rpe: 5, 
@@ -124,7 +144,9 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
     tags: [],
     materials: [],
     mediaType: 'image', 
-    gamification: '' 
+    gamification: '',
+    goalKeeper: false,
+    language: lang 
   });
 
   const isPremium = ['Complete', 'Elite', 'Enterprise'].includes(user?.subscriptionLevel || '');
@@ -144,13 +166,10 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
      }
   }, [activeCorner, activeSubCat]);
 
-  // --- DRAG AND DROP HANDLERS ---
   const handleDragStart = (e: React.DragEvent, index: number) => {
       setDraggedItemIndex(index);
-      // DataTransfer er nødvendig for Firefox
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/html', e.currentTarget.innerHTML);
-      // Gør elementet en smule gennemsigtigt mens det trækkes
       (e.target as HTMLElement).style.opacity = '0.5';
   };
 
@@ -162,41 +181,37 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
   const handleDragOver = (e: React.DragEvent, index: number) => {
       e.preventDefault();
       if (draggedItemIndex === null || draggedItemIndex === index) return;
-      
       const newGallery = [...localGallery];
       const draggedItem = newGallery[draggedItemIndex];
-      
-      // Fjern item fra gammel plads
       newGallery.splice(draggedItemIndex, 1);
-      // Indsæt på ny plads
       newGallery.splice(index, 0, draggedItem);
-      
       setLocalGallery(newGallery);
       setDraggedItemIndex(index);
   };
 
   const translateVal = (value: string, type: 'sub' | 'load' | 'tag') => {
-     if (lang === 'en') return value; 
-     if (type === 'sub' && t.val_sub) return t.val_sub[value] || value;
-     if (type === 'load' && t.val_load) return t.val_load[value] || value;
-     if (type === 'tag' && t.val_tags) return t.val_tags[value] || value;
+     if (currentLang === 'en') return value; 
+     const activeDict = (secureI18n[currentLang]?.library || {}) as any; 
+     if (type === 'sub' && activeDict.val_sub) return activeDict.val_sub[value] || value;
+     if (type === 'load' && activeDict.val_load) return activeDict.val_load[value] || value;
+     if (type === 'tag' && activeDict.val_tags) return activeDict.val_tags[value] || value;
      return value;
   };
 
   const getTrans = (type: 'main' | 'sub', key: string) => {
+      const currentCats = (secureI18n[currentLang]?.categories?.main || {}) as any; 
       const map: Record<string, string> = {
-          'general': t.cat_general || 'Generel',
-          'warmup': t.cat_warmup || 'Opvarmning',
-          'technical': t.cat_technical || 'Teknisk',
-          'tactical': t.cat_tactical || 'Taktisk',
-          'game_forms': t.cat_game_forms || 'Spilformer',
-          'physical': t.cat_physical || 'Fysisk',
-          'mental': t.cat_mental || 'Mental',
-          'goalkeeper': t.cat_goalkeeper || 'Keepertræning',
-          'set_pieces': t.cat_set_pieces || 'Standardsituationer'
+          'general': currentCats.general || 'Generel',
+          'warmup': currentCats.warmup || 'Opvarmning',
+          'technical': currentCats.technical || 'Teknisk',
+          'tactical': currentCats.tactical || 'Taktisk',
+          'game_forms': currentCats.game_forms || 'Spilformer',
+          'physical': currentCats.physical || 'Fysisk',
+          'mental': currentCats.mental || 'Mental',
+          'goalkeeper': currentCats.goalkeeper || 'Keepertræning',
+          'set_pieces': currentCats.set_pieces || 'Standardsituationer'
       };
-      if (!dict?.categories?.[type]) return map[key] || key; 
-      return dict.categories[type][key] || map[key] || key;
+      return map[key] || key;
   };
 
   const handleMainCategoryChange = (newCategory: MainCategory) => {
@@ -208,53 +223,56 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
       });
   };
 
-  // --- FORM HELPERS ---
-  const updateRule = (index: number, value: string) => {
-      const newRules = [...(formData.rules || [])];
-      newRules[index] = value;
-      setFormData({ ...formData, rules: newRules });
+  const updateText = (field: keyof LocalizedDrillData, value: any) => {
+      setTextData(prev => ({
+          ...prev,
+          [currentLang]: {
+              ...prev[currentLang],
+              [field]: value
+          }
+      }));
   };
-  const addRule = () => setFormData({ ...formData, rules: [...(formData.rules || []), ''] });
-  const removeRule = (index: number) => setFormData({ ...formData, rules: (formData.rules || []).filter((_, i) => i !== index) });
+
+  const updateRule = (index: number, value: string) => {
+      const newRules = [...textData[currentLang].rules];
+      newRules[index] = value;
+      updateText('rules', newRules);
+  };
+  const addRule = () => updateText('rules', [...textData[currentLang].rules, '']);
+  const removeRule = (index: number) => updateText('rules', textData[currentLang].rules.filter((_, i) => i !== index));
 
   const updateKeyPoint = (index: number, value: string) => {
-      const currentPoints = [...(formData.coachingPoints?.keyPoints || [])];
+      const currentPoints = [...textData[currentLang].coachingPoints.keyPoints];
       currentPoints[index] = value;
-      setFormData({ 
-          ...formData, 
-          coachingPoints: { ...formData.coachingPoints!, keyPoints: currentPoints } 
-      });
+      updateText('coachingPoints', { ...textData[currentLang].coachingPoints, keyPoints: currentPoints });
   };
   const addKeyPoint = () => {
-      const currentPoints = [...(formData.coachingPoints?.keyPoints || [])];
-      setFormData({ 
-          ...formData, 
-          coachingPoints: { ...formData.coachingPoints!, keyPoints: [...currentPoints, ''] } 
-      });
+      const currentPoints = [...textData[currentLang].coachingPoints.keyPoints, ''];
+      updateText('coachingPoints', { ...textData[currentLang].coachingPoints, keyPoints: currentPoints });
   };
   const removeKeyPoint = (index: number) => {
-      const currentPoints = (formData.coachingPoints?.keyPoints || []).filter((_, i) => i !== index);
-      setFormData({ 
-          ...formData, 
-          coachingPoints: { ...formData.coachingPoints!, keyPoints: currentPoints } 
-      });
+      const currentPoints = textData[currentLang].coachingPoints.keyPoints.filter((_, i) => i !== index);
+      updateText('coachingPoints', { ...textData[currentLang].coachingPoints, keyPoints: currentPoints });
+  };
+  const updateInstruction = (val: string) => {
+      updateText('coachingPoints', { ...textData[currentLang].coachingPoints, instruction: val });
   };
 
   const updateProgression = (index: number, value: string) => {
-      const newItems = [...(formData.progression || [])];
+      const newItems = [...textData[currentLang].progression];
       newItems[index] = value;
-      setFormData({ ...formData, progression: newItems });
+      updateText('progression', newItems);
   };
-  const addProgression = () => setFormData(prev => ({ ...prev, progression: [...(prev.progression || []), ''] }));
-  const removeProgression = (index: number) => setFormData({ ...formData, progression: (formData.progression || []).filter((_, i) => i !== index) });
+  const addProgression = () => updateText('progression', [...textData[currentLang].progression, '']);
+  const removeProgression = (index: number) => updateText('progression', textData[currentLang].progression.filter((_, i) => i !== index));
 
   const updateRegression = (index: number, value: string) => {
-      const newItems = [...(formData.regression || [])];
+      const newItems = [...textData[currentLang].regression];
       newItems[index] = value;
-      setFormData({ ...formData, regression: newItems });
+      updateText('regression', newItems);
   };
-  const addRegression = () => setFormData(prev => ({ ...prev, regression: [...(prev.regression || []), ''] }));
-  const removeRegression = (index: number) => setFormData({ ...formData, regression: (formData.regression || []).filter((_, i) => i !== index) });
+  const addRegression = () => updateText('regression', [...textData[currentLang].regression, '']);
+  const removeRegression = (index: number) => updateText('regression', textData[currentLang].regression.filter((_, i) => i !== index));
 
   const handleAgeChange = (val: string) => { setFormData({ ...formData, ageGroups: [val] }); };
 
@@ -292,17 +310,9 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
   const setIntensityByColor = (color: 'green' | 'yellow' | 'red') => {
       let newLoad: PhysicalLoadType = 'Aerobic – Moderate Intensity';
       let newRPE = 5;
-
-      if (color === 'green') {
-          newLoad = 'Aerobic – Low Intensity';
-          newRPE = 3;
-      } else if (color === 'yellow') {
-          newLoad = 'Aerobic – Moderate Intensity';
-          newRPE = 6;
-      } else if (color === 'red') {
-          newLoad = 'Aerobic – High Intensity';
-          newRPE = 9;
-      }
+      if (color === 'green') { newLoad = 'Aerobic – Low Intensity'; newRPE = 3; } 
+      else if (color === 'yellow') { newLoad = 'Aerobic – Moderate Intensity'; newRPE = 6; } 
+      else if (color === 'red') { newLoad = 'Aerobic – High Intensity'; newRPE = 9; }
       setFormData({ ...formData, physicalLoad: newLoad, rpe: newRPE });
   };
 
@@ -314,16 +324,13 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
       else if (newLoad.includes('High')) newRPE = 8;
       else if (newLoad.includes('Anaerobic')) newRPE = 9; 
       if (newLoad.includes('Production') || newLoad.includes('Tolerance')) newRPE = 10; 
-
       setFormData({ ...formData, physicalLoad: newLoad, rpe: newRPE });
   };
 
-  // --- UPLOAD LOGIK ---
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Video Check (MP4/MOV)
     if (file.type.startsWith('video/') || file.name.endsWith('.mp4') || file.name.endsWith('.mov')) {
         if (file.size > 50 * 1024 * 1024) return alert("Videoen er for stor (Max 50MB)");
         setIsUploading(true);
@@ -339,7 +346,6 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
         return;
     }
 
-    // Billede Check
     if (file.size > 5 * 1024 * 1024) return alert("Billedet er for stort (Max 5MB)");
     setIsUploading(true);
     try {
@@ -357,56 +363,37 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
     finally { setIsUploading(false); }
   };
 
-  // --- YOUTUBE LOGIK ---
   const handleAddYoutube = () => {
       const id = getYouTubeID(tempYoutubeLink);
       if (id) {
           const thumb = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
-          setFormData({ 
-              ...formData, 
-              youtubeUrl: tempYoutubeLink, 
-              mediaType: 'youtube',
-              thumbnailUrl: thumb
-          });
+          setFormData({ ...formData, youtubeUrl: tempYoutubeLink, mediaType: 'youtube', thumbnailUrl: thumb });
           setLocalGallery(prev => [...prev, thumb]);
           setActiveModal('none');
           setTempYoutubeLink('');
-      } else {
-          alert("Ugyldigt YouTube link");
-      }
+      } else { alert("Ugyldigt YouTube link"); }
   };
 
   const handleSetCover = (url: string) => {
-      if (isVideoUrl(url)) {
-          setFormData(prev => ({ ...prev, videoUrl: url, mediaType: 'video', thumbnailUrl: undefined }));
-      } else {
-          setFormData(prev => ({ ...prev, thumbnailUrl: url, mediaType: 'image', videoUrl: undefined }));
-      }
+      if (isVideoUrl(url)) { setFormData(prev => ({ ...prev, videoUrl: url, mediaType: 'video', thumbnailUrl: undefined })); } 
+      else { setFormData(prev => ({ ...prev, thumbnailUrl: url, mediaType: 'image', videoUrl: undefined })); }
   };
 
   const handleDeleteMedia = (url: string) => {
       setLocalGallery(prev => prev.filter(i => i !== url));
-      if (formData.thumbnailUrl === url) {
-          setFormData(prev => ({ ...prev, thumbnailUrl: undefined }));
-      }
-      if (formData.videoUrl === url) {
-           setFormData(prev => ({ ...prev, videoUrl: undefined }));
-      }
+      if (formData.thumbnailUrl === url) { setFormData(prev => ({ ...prev, thumbnailUrl: undefined })); }
+      if (formData.videoUrl === url) { setFormData(prev => ({ ...prev, videoUrl: undefined })); }
   };
 
-  // --- STUDIO ACTIONS ---
   const handleStudioAction = (action: 'create' | 'import-image' | 'import-animation') => {
       setActiveModal('none'); 
-      
       if (action === 'create') {
-          router.push(`/${lang}/trainer/studio`);
+          router.push(`/${currentLang}/trainer/studio`);
       } else if (action === 'import-image') {
           let mockUrl = "/images/tactical-analysis.jpeg"; 
           alert("Importing from Library...");
           setLocalGallery(prev => [...prev, mockUrl]);
-          if (!formData.thumbnailUrl) {
-               setFormData(prev => ({ ...prev, thumbnailUrl: mockUrl, mediaType: 'image' }));
-          }
+          if (!formData.thumbnailUrl) { setFormData(prev => ({ ...prev, thumbnailUrl: mockUrl, mediaType: 'image' })); }
       } else if (action === 'import-animation') {
           let mockUrl = "https://www.w3schools.com/html/mov_bbb.mp4"; 
           alert("Importing Animation...");
@@ -414,8 +401,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
           setFormData(prev => ({ ...prev, videoUrl: mockUrl, mediaType: 'video', thumbnailUrl: undefined }));
       }
   };
-
-  // ... (Team management logik) ...
+  
   const addTeam = () => setTeams([...teams, { name: '', playerCount: 2, color: 'black' }]);
   const removeTeam = (index: number) => setTeams(teams.filter((_, i) => i !== index));
   const updateTeam = (index: number, field: keyof TeamSetup, value: any) => {
@@ -425,9 +411,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
   };
 
   const calculatePitchData = () => {
-    if (!formData.pitchSize?.width || !formData.pitchSize?.length || !formData.maxPlayers) {
-        return null;
-    }
+    if (!formData.pitchSize?.width || !formData.pitchSize?.length || !formData.maxPlayers) return null;
     const area = formData.pitchSize.width * formData.pitchSize.length;
     const m2PerPlayer = Math.round(area / formData.maxPlayers);
     const maxScale = 300; 
@@ -442,14 +426,31 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
   const pitchData = calculatePitchData();
 
   const handleSave = async () => {
-    if (!formData.title) return alert(t.ph_title || "Titel mangler!");
+    const currentTitle = textData[currentLang].title;
+    if (!currentTitle) return alert(t.ph_title || "Titel mangler!");
+
     setIsSaving(true);
     try {
-      const cleanProgression = (formData.progression || []).filter(s => s.trim() !== '');
-      const cleanRegression = (formData.regression || []).filter(s => s.trim() !== '');
-      const cleanKeyPoints = (formData.coachingPoints?.keyPoints || []).filter(s => s.trim() !== '');
+      const currentText = textData[currentLang];
+      const cleanProgression = (currentText.progression || []).filter(s => s.trim() !== '');
+      const cleanRegression = (currentText.regression || []).filter(s => s.trim() !== '');
+      const cleanKeyPoints = (currentText.coachingPoints?.keyPoints || []).filter(s => s.trim() !== '');
+      
       const newDrill: DrillAsset = {
-        ...formData as DrillAsset,
+        ...formData as DrillAsset, 
+        
+        title: currentText.title,
+        description: currentText.description,
+        rules: currentText.rules,
+        coachingPoints: {
+            instruction: currentText.coachingPoints.instruction,
+            keyPoints: cleanKeyPoints
+        },
+        stopFreeze: currentText.stopFreeze,
+        progression: cleanProgression,
+        regression: cleanRegression,
+        gamification: currentText.gamification,
+
         authorId: user?.id || 'unknown',
         authorName: user?.name || 'Ukendt Træner',
         clubId: user?.clubId,
@@ -463,17 +464,28 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
         minPlayers: formData.minPlayers || 0,
         maxPlayers: formData.maxPlayers || 0,
         pitchSize: { width: formData.pitchSize?.width || 0, length: formData.pitchSize?.length || 0 },
-        progression: cleanProgression,
-        regression: cleanRegression,
-        coachingPoints: { ...formData.coachingPoints!, keyPoints: cleanKeyPoints },
-        setup: teams 
+        setup: teams,
+        goalKeeper: formData.goalKeeper,
+        language: currentLang 
       };
+      
       const result = await createDrill(newDrill);
-      if (result.success) { if (onSuccess) onSuccess(); onClose(); } else { alert("Fejl ved gemning."); }
+      
+      if (result.success) { 
+          if (onSuccess) onSuccess(); 
+          if (isDtlEmployee) {
+              const savedLang = currentLang === 'da' ? 'Dansk' : 'Engelsk';
+              alert(`Øvelse gemt som ${savedLang}!\n\nDu kan nu skifte sprog i toppen, rette titlen/teksten og gemme igen for at oprette den anden version.`);
+              setFormData(prev => ({ ...prev, id: undefined }));
+          } else {
+              onClose(); 
+          }
+      } else { 
+          alert("Fejl ved gemning."); 
+      }
     } catch (e) { console.error(e); } finally { setIsSaving(false); }
   };
 
-  // --- STYLES ---
   const getColorClass = (color: string) => {
       switch(color) {
           case 'orange': return 'bg-orange-500'; 
@@ -503,6 +515,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
   };
 
   const intensity = getIntensityLevel(formData.physicalLoad);
+  const txt = textData[currentLang];
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-2 animate-in fade-in duration-200">
@@ -519,6 +532,29 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                  <p className="text-[9px] text-neutral-400 font-medium">{t.subtitle || 'DTL Asset Management'}</p>
               </div>
           </div>
+
+          {/* DEVELOPER LANGUAGE TOGGLE */}
+          {isDtlEmployee && (
+              <div className="flex items-center gap-2 bg-neutral-50 px-2 py-1 rounded-md border border-neutral-200">
+                  <Globe2 size={14} className="text-neutral-400" />
+                  <span className="text-[9px] font-bold text-neutral-500 uppercase">Target:</span>
+                  <div className="flex gap-1">
+                      <button 
+                          onClick={() => setCurrentLang('da')}
+                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${currentLang === 'da' ? 'bg-red-500 text-white' : 'bg-white text-neutral-400 hover:text-neutral-900'}`}
+                      >
+                          DA
+                      </button>
+                      <button 
+                          onClick={() => setCurrentLang('en')}
+                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${currentLang === 'en' ? 'bg-blue-600 text-white' : 'bg-white text-neutral-400 hover:text-neutral-900'}`}
+                      >
+                          EN
+                      </button>
+                  </div>
+              </div>
+          )}
+
           <button onClick={onClose} className="p-1 hover:bg-neutral-100 rounded-full transition-colors"><X size={16} className="text-neutral-400 hover:text-neutral-900" /></button>
         </div>
 
@@ -541,7 +577,14 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                   <div className="grid grid-cols-4 gap-2">
                       <div className="col-span-3">
                           <label className={labelClass}>{t.lbl_title || 'ØVELSESNAVN *'}</label>
-                          <input type="text" className={inputClass} placeholder={t.ph_title || "Navn på øvelsen..."} value={formData.title || ''} onChange={e => setFormData({...formData, title: e.target.value})} autoFocus />
+                          <input 
+                            type="text" 
+                            className={inputClass} 
+                            placeholder={t.ph_title || "Navn på øvelsen..."} 
+                            value={txt.title} 
+                            onChange={e => updateText('title', e.target.value)} 
+                            autoFocus 
+                          />
                       </div>
                       <div className="col-span-1">
                           <label className={labelClass}>{t.lbl_age || 'ALDERSGRUPPE'}</label>
@@ -553,22 +596,39 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                   </div>
               </div>
 
-              {/* 2. BESKRIVELSE & REGLER (Nu flyttet op før parametrene) */}
+              {/* 2. BESKRIVELSE & REGLER */}
               <div className={boxClassOrange}>
                   <div>
                       <label className={labelClass}>{t.lbl_desc || 'BESKRIVELSE'}</label>
-                      <textarea className={textareaClass} placeholder={t.ph_desc || "Kort beskrivelse..."} value={formData.description || ''} onChange={e => setFormData({...formData, description: e.target.value})} />
+                      <textarea 
+                        className={textareaClass} 
+                        placeholder={t.ph_desc || "Kort beskrivelse..."} 
+                        value={txt.description} 
+                        onChange={e => updateText('description', e.target.value)} 
+                      />
                   </div>
                   <div className="mt-2">
                       <label className={labelClass}>{t.lbl_rules || 'REGLER'}</label>
                       <div className="space-y-1.5">
-                          {formData.rules?.map((rule, idx) => (<div key={idx} className="flex gap-1.5 items-center"><span className="text-[10px] font-bold text-neutral-400 w-3 text-right">{idx + 1}.</span><input type="text" className={inputClass} placeholder={`${t.ph_rule || 'Regel'} ${idx + 1}...`} value={rule} onChange={(e) => updateRule(idx, e.target.value)} />{idx > 2 && <button onClick={() => removeRule(idx)} className="text-neutral-300 hover:text-red-500"><X size={14}/></button>}</div>))}
+                          {txt.rules.map((rule, idx) => (
+                              <div key={idx} className="flex gap-1.5 items-center">
+                                  <span className="text-[10px] font-bold text-neutral-400 w-3 text-right">{idx + 1}.</span>
+                                  <input 
+                                    type="text" 
+                                    className={inputClass} 
+                                    placeholder={`${t.ph_rule || 'Regel'} ${idx + 1}...`} 
+                                    value={rule} 
+                                    onChange={(e) => updateRule(idx, e.target.value)} 
+                                  />
+                                  {idx > 2 && <button onClick={() => removeRule(idx)} className="text-neutral-300 hover:text-red-500"><X size={14}/></button>}
+                              </div>
+                          ))}
                           <button onClick={addRule} className={`${addBtnClass} ml-5`}><Plus size={14} /> {t.btn_add_rule || 'Tilføj regel'}</button>
                       </div>
                   </div>
               </div>
 
-              {/* 3. PARAMETRE (DE 5 BOKSE) - Nu placeret over Coach Instruction */}
+              {/* 3. PARAMETRE (DE 5 BOKSE) */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
                   <div className={paramBoxClass}>
                       <label className={boxLabelClass}>{t.lbl_time || 'TID (MIN)'}</label>
@@ -598,7 +658,6 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                           <input type="number" className={boxInputClass} placeholder="40" value={formData.pitchSize?.length || ''} onChange={e => setFormData({...formData, pitchSize: { ...formData.pitchSize!, length: (parseInt(e.target.value) || undefined) as any }})} />
                       </div>
                   </div>
-                  {/* MÅLMAND BOKS */}
                   <div className={paramBoxClass}>
                       <label className={boxLabelClass}>{t.lbl_goalkeeper || 'MÅLMAND'}</label>
                       <div className="flex gap-1 w-full h-full items-center">
@@ -621,13 +680,41 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
               {/* 4. INSTRUKTION & FOKUS */}
               <div className={boxClassOrange}>
                 <div className="grid grid-cols-2 gap-3">
-                    <div><label className={labelClass}>{t.lbl_coach_instruction || 'TRÆNER INSTRUKTION'}</label><textarea className={textareaClass} placeholder={t.ph_instruction || "Hvad skal træneren sige/gøre?"} value={formData.coachingPoints?.instruction || ''} onChange={e => setFormData({...formData, coachingPoints: { ...formData.coachingPoints!, instruction: e.target.value }})} /></div>
-                    <div><label className={labelClass}>{t.lbl_stop_freeze || 'STOP / FRYS'}</label><textarea className={textareaClass} placeholder={t.ph_stop || "Hvornår stopper vi?"} value={formData.stopFreeze || ''} onChange={e => setFormData({...formData, stopFreeze: e.target.value })} /></div>
+                    <div>
+                        <label className={labelClass}>{t.lbl_coach_instruction || 'TRÆNER INSTRUKTION'}</label>
+                        <textarea 
+                            className={textareaClass} 
+                            placeholder={t.ph_instruction || "Hvad skal træneren sige/gøre?"} 
+                            value={txt.coachingPoints.instruction} 
+                            onChange={e => updateInstruction(e.target.value)} 
+                        />
+                    </div>
+                    <div>
+                        <label className={labelClass}>{t.lbl_stop_freeze || 'STOP / FRYS'}</label>
+                        <textarea 
+                            className={textareaClass} 
+                            placeholder={t.ph_stop || "Hvornår stopper vi?"} 
+                            value={txt.stopFreeze} 
+                            onChange={e => updateText('stopFreeze', e.target.value)} 
+                        />
+                    </div>
                 </div>
                 <div className="mt-2">
                     <label className={labelClass}>{t.lbl_key_points || 'FOKUSPUNKTER'}</label>
                     <div className="space-y-1.5">
-                       {formData.coachingPoints?.keyPoints.map((point, idx) => (<div key={idx} className="flex gap-1.5 items-center"><span className="text-[10px] font-bold text-neutral-400 w-3 text-right">{idx + 1}.</span><input type="text" className={inputClass} placeholder={`${t.ph_point || 'Punkt'} ${idx + 1}...`} value={point} onChange={(e) => updateKeyPoint(idx, e.target.value)} />{idx > 2 && <button onClick={() => removeKeyPoint(idx)} className="text-neutral-300 hover:text-red-500"><X size={14}/></button>}</div>))}
+                       {txt.coachingPoints.keyPoints.map((point, idx) => (
+                           <div key={idx} className="flex gap-1.5 items-center">
+                               <span className="text-[10px] font-bold text-neutral-400 w-3 text-right">{idx + 1}.</span>
+                               <input 
+                                    type="text" 
+                                    className={inputClass} 
+                                    placeholder={`${t.ph_point || 'Punkt'} ${idx + 1}...`} 
+                                    value={point} 
+                                    onChange={(e) => updateKeyPoint(idx, e.target.value)} 
+                               />
+                               {idx > 2 && <button onClick={() => removeKeyPoint(idx)} className="text-neutral-300 hover:text-red-500"><X size={14}/></button>}
+                           </div>
+                       ))}
                        <button onClick={addKeyPoint} className={`${addBtnClass} ml-5`}><Plus size={14} /> {t.btn_add_point || 'Tilføj punkt'}</button>
                     </div>
                 </div>
@@ -635,14 +722,50 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
 
               {/* 5. PROGRESSION */}
               <div className="grid grid-cols-2 gap-3">
-                  <div className={boxClassOrange}><label className={`${labelClass} mb-2`}>{t.lbl_progression || 'PROGRESSION (SVÆRERE)'}</label><div className="space-y-1.5">{(formData.progression || ['']).map((item, idx) => (<div key={`prog-${idx}`} className="flex gap-1.5 items-center"><span className="text-[10px] font-bold text-neutral-400 w-3 text-center">+</span><input type="text" className={inputClass} placeholder="..." value={item} onChange={(e) => updateProgression(idx, e.target.value)} />{idx > 0 && <button onClick={() => removeProgression(idx)} className="text-neutral-300 hover:text-red-500"><X size={14}/></button>}</div>))}<button onClick={addProgression} className={`${addBtnClass} ml-5`}><Plus size={14} /> {t.mod_btn_add || 'Tilføj'}</button></div></div>
-                  <div className={boxClassOrange}><label className={`${labelClass} text-neutral-500 mb-2`}>{t.lbl_regression || 'REGRESSION (LETTERE)'}</label><div className="space-y-1.5">{(formData.regression || ['']).map((item, idx) => (<div key={`reg-${idx}`} className="flex gap-1.5 items-center"><span className="text-[10px] font-bold text-neutral-400 w-3 text-center">-</span><input type="text" className={inputClass} placeholder="..." value={item} onChange={(e) => updateRegression(idx, e.target.value)} />{idx > 0 && <button onClick={() => removeRegression(idx)} className="text-neutral-300 hover:text-red-500"><X size={14}/></button>}</div>))}<button onClick={addRegression} className={`${addBtnClass} ml-5`}><Plus size={14} /> {t.mod_btn_add || 'Tilføj'}</button></div></div>
+                  <div className={boxClassOrange}>
+                      <label className={`${labelClass} mb-2`}>{t.lbl_progression || 'PROGRESSION (SVÆRERE)'}</label>
+                      <div className="space-y-1.5">
+                          {txt.progression.map((item, idx) => (
+                              <div key={`prog-${idx}`} className="flex gap-1.5 items-center">
+                                  <span className="text-[10px] font-bold text-neutral-400 w-3 text-center">+</span>
+                                  <input 
+                                    type="text" 
+                                    className={inputClass} 
+                                    placeholder="..." 
+                                    value={item} 
+                                    onChange={(e) => updateProgression(idx, e.target.value)} 
+                                  />
+                                  {idx > 0 && <button onClick={() => removeProgression(idx)} className="text-neutral-300 hover:text-red-500"><X size={14}/></button>}
+                              </div>
+                          ))}
+                          <button onClick={addProgression} className={`${addBtnClass} ml-5`}><Plus size={14} /> {t.mod_btn_add || 'Tilføj'}</button>
+                      </div>
+                  </div>
+                  <div className={boxClassOrange}>
+                      <label className={`${labelClass} text-neutral-500 mb-2`}>{t.lbl_regression || 'REGRESSION (LETTERE)'}</label>
+                      <div className="space-y-1.5">
+                          {txt.regression.map((item, idx) => (
+                              <div key={`reg-${idx}`} className="flex gap-1.5 items-center">
+                                  <span className="text-[10px] font-bold text-neutral-400 w-3 text-center">-</span>
+                                  <input 
+                                    type="text" 
+                                    className={inputClass} 
+                                    placeholder="..." 
+                                    value={item} 
+                                    onChange={(e) => updateRegression(idx, e.target.value)} 
+                                  />
+                                  {idx > 0 && <button onClick={() => removeRegression(idx)} className="text-neutral-300 hover:text-red-500"><X size={14}/></button>}
+                              </div>
+                          ))}
+                          <button onClick={addRegression} className={`${addBtnClass} ml-5`}><Plus size={14} /> {t.mod_btn_add || 'Tilføj'}</button>
+                      </div>
+                  </div>
               </div>
 
               {/* 6. HOLD & MATERIALER */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className={`${boxClassBlack} md:col-span-2 h-full flex flex-col`}><label className={labelClass}>{t.lbl_teams || 'ANTAL HOLD'}</label><div className="space-y-2 flex-1">{teams.map((team, idx) => (<div key={idx} className="flex items-center gap-2 bg-neutral-50 p-1.5 rounded-lg border border-neutral-200"><div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${getColorClass(team.color)}`}><Shirt size={12} className={team.color === 'white' ? 'text-black' : 'text-white'} /></div><div className="flex-1"><input type="text" value={team.name} onChange={(e) => updateTeam(idx, 'name', e.target.value)} className="w-full bg-transparent text-xs font-bold text-neutral-800 focus:outline-none border-b border-transparent focus:border-orange-300 px-1" placeholder={t.ph_team || "Hold Navn"} /></div><div className="flex items-center gap-1"><span className="text-[9px] font-bold text-neutral-500 uppercase">{t.mod_mat_count || 'ANTAL'}:</span><input type="number" value={team.playerCount} onChange={(e) => updateTeam(idx, 'playerCount', parseInt(e.target.value) || 0)} className="w-8 text-center bg-white border border-neutral-300 rounded text-xs py-0.5" /></div><div className="flex gap-1">{['orange', 'red', 'blue', 'green', 'yellow', 'white', 'black'].map(c => (<button key={c} onClick={() => updateTeam(idx, 'color', c as any)} className={`w-3 h-3 rounded-full border border-black/10 ${getColorClass(c)} ${team.color === c ? 'ring-1 ring-offset-1 ring-neutral-400' : ''}`} />))}</div><button onClick={() => removeTeam(idx)} className="ml-1 text-neutral-400 hover:text-red-500"><Trash2 size={12} /></button></div>))}</div><button onClick={addTeam} className={addBtnClass}><Plus size={14} /> {t.btn_add_team || 'Tilføj Hold'}</button></div>
-                  <div className={`${boxClassBlack} h-full flex flex-col`}><div className="flex justify-between items-center mb-1"><label className={labelClass}>{t.lbl_materials || 'MATERIALER'}</label>{formData.materials && formData.materials.length > 0 && (<span className="text-[9px] text-neutral-400">{formData.materials.length}</span>)}</div><div className="flex-1 bg-white flex flex-col min-h-[60px]"><div className="overflow-y-auto custom-scrollbar flex-1 max-h-[160px]">{formData.materials && formData.materials.length > 0 ? (<div className="divide-y divide-neutral-100">{formData.materials.map((item, idx) => (<div key={idx} className="flex items-center justify-between py-0.5 group"><div className="flex items-center gap-2 min-w-0"><span className="text-[10px] font-bold text-neutral-400 w-4">{idx + 1}.</span><div className="truncate flex items-center gap-1"><span className="text-[10px] font-bold text-neutral-900">{t[item.name] || item.name}</span>{item.details && <span className="text-[9px] text-neutral-400 font-medium truncate">- {item.details}</span>}</div></div><div className="flex items-center gap-2 shrink-0"><span className="text-[10px] font-bold text-neutral-500">{item.count}</span><button onClick={() => removeMaterial(idx)} className="text-neutral-300 hover:text-red-500 transition-colors"><Trash2 size={10} /></button></div></div>))}</div>) : (<div className="h-full flex items-center justify-center text-[10px] text-neutral-300 italic">{t.no_materials || 'Ingen materialer'}</div>)}</div></div><button onClick={openMaterialModal} className={addBtnClass}><Plus size={14} /> {t.btn_add_material || 'Tilføj Materiale'}</button></div>
+                  <div className={`${boxClassBlack} h-full flex flex-col`}><div className="flex justify-between items-center mb-1"><label className={labelClass}>{t.lbl_materials || 'MATERIALER'}</label>{formData.materials && formData.materials.length > 0 && (<span className="text-[9px] text-neutral-400">{formData.materials.length}</span>)}</div><div className="flex-1 bg-white flex flex-col min-h-[60px]"><div className="overflow-y-auto custom-scrollbar flex-1 max-h-[160px]">{formData.materials && formData.materials.length > 0 ? (<div className="divide-y divide-neutral-100">{formData.materials.map((item, idx) => (<div key={idx} className="flex items-center justify-between py-0.5 group"><div className="flex items-center gap-2 min-w-0"><span className="text-[10px] font-bold text-neutral-400 w-4">{idx + 1}.</span><div className="truncate flex items-center gap-1"><span className="text-[10px] font-bold text-neutral-900">{(t as any)[item.name] || item.name}</span>{item.details && <span className="text-[9px] text-neutral-400 font-medium truncate">- {item.details}</span>}</div></div><div className="flex items-center gap-2 shrink-0"><span className="text-[10px] font-bold text-neutral-500">{item.count}</span><button onClick={() => removeMaterial(idx)} className="text-neutral-300 hover:text-red-500 transition-colors"><Trash2 size={10} /></button></div></div>))}</div>) : (<div className="h-full flex items-center justify-center text-[10px] text-neutral-300 italic">{t.no_materials || 'Ingen materialer'}</div>)}</div></div><button onClick={openMaterialModal} className={addBtnClass}><Plus size={14} /> {t.btn_add_material || 'Tilføj Materiale'}</button></div>
               </div>
             </div>
           )}
@@ -810,7 +933,6 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                   </div>
 
                   {localGallery.length > 0 ? (
-                      // RETTET HER: grid-cols-2 for større billeder
                       <div className="grid grid-cols-2 gap-3">
                           {localGallery.map((url, idx) => {
                               const isCover = formData.thumbnailUrl === url;
@@ -828,30 +950,35 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                                         ${isCover ? 'ring-2 ring-orange-500 shadow-md transform scale-[1.02]' : 'border border-neutral-200 hover:shadow-lg'}
                                         ${draggedItemIndex === idx ? 'opacity-50' : 'opacity-100'}
                                     `}
-                                    // KLIK FOR ZOOM I STEDET FOR SET COVER
                                     onClick={() => setZoomedAsset(url)}
                                   >
-                                      {/* Content Rendering */}
+                                      {/* Content Rendering (PUNKT 1: VIDEO HOVER FIX) */}
                                       {isVideo ? (
-                                           <div className="w-full h-full bg-black relative">
-                                                {/* Vi bruger video-tagget her, men uden controls, så det ligner et billede */}
+                                           <div className="w-full h-full bg-black relative"
+                                                onMouseEnter={(e) => { 
+                                                    const video = e.currentTarget.querySelector('video');
+                                                    if(video) video.play().catch(() => {}); 
+                                                }}
+                                                onMouseLeave={(e) => { 
+                                                    const video = e.currentTarget.querySelector('video');
+                                                    if(video) {
+                                                        video.pause();
+                                                        video.currentTime = 0; 
+                                                    }
+                                                }}
+                                           >
                                                 <video 
                                                     src={url} 
-                                                    className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
-                                                    muted       // Skal være muted for at vise preview
-                                                    preload="metadata" // Henter kun starten for at spare data
+                                                    className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity pointer-events-none"
+                                                    muted
+                                                    preload="metadata"
                                                     playsInline
-                                                    onMouseOver={e => e.currentTarget.play()} // Afspil når musen er over (valgfrit)
-                                                    onMouseOut={e => e.currentTarget.pause()} // Pause når musen flyttes
                                                 />
-                                                
-                                                {/* Play Ikon Overlay så man ved det er en video */}
                                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                                     <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/20">
                                                         <Play size={16} className="text-white fill-white ml-1" />
                                                     </div>
                                                 </div>
-                                                
                                                 <span className="absolute bottom-2 right-2 text-[8px] font-black text-white bg-black/60 px-1.5 py-0.5 rounded uppercase tracking-widest">VIDEO</span>
                                            </div>
                                       ) : (
@@ -870,29 +997,29 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                                           <Move size={12} />
                                       </div>
 
-                                      {/* Hover Overlay */}
+                                      {/* Hover Overlay (PUNKT 5: MINDRE KNAP) */}
                                       <div className={`absolute inset-0 bg-black/40 transition-opacity duration-200 flex flex-col justify-end p-2 ${isCover ? 'opacity-0 hover:opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                           <div className="flex justify-between items-end gap-2">
                                               
-                                              {/* SET COVER BUTTON (NY PLACERING) */}
+                                              {/* SET COVER BUTTON */}
                                               {!isCover ? (
                                                   <button 
                                                       onClick={(e) => { e.stopPropagation(); handleSetCover(url); }}
-                                                      className="flex-1 bg-white/90 hover:bg-orange-500 hover:text-white text-neutral-900 py-1.5 rounded-md text-[9px] font-bold uppercase tracking-wide transition-colors flex items-center justify-center gap-1"
+                                                      className="flex-1 h-5 bg-white/90 hover:bg-orange-500 hover:text-white text-neutral-900 rounded-md text-[8px] font-bold uppercase tracking-wide transition-colors flex items-center justify-center gap-1"
                                                   >
-                                                      <Star size={10} /> Sæt Cover
+                                                      <Star size={8} /> {t.btn_set_cover || 'Set Cover'}
                                                   </button>
                                               ) : (
-                                                  <div className="flex-1"></div> // Spacer
+                                                  <div className="flex-1"></div> 
                                               )}
 
-                                              {/* DELETE BUTTON (NY FARVE: Neutral -> Orange) */}
+                                              {/* DELETE BUTTON */}
                                               <button 
                                                   onClick={(e) => { e.stopPropagation(); handleDeleteMedia(url); }}
-                                                  className="p-1.5 bg-neutral-900/80 hover:bg-orange-500 text-white rounded-md backdrop-blur-sm transition-colors"
+                                                  className="h-5 w-6 bg-neutral-900/80 hover:bg-orange-500 text-white rounded-md backdrop-blur-sm transition-colors flex items-center justify-center"
                                                   title="Slet"
                                               >
-                                                  <Trash2 size={12} />
+                                                  <Trash2 size={10} />
                                               </button>
                                           </div>
                                       </div>
@@ -900,7 +1027,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                               )
                           })}
                           
-                          {/* Add More Ghost Card (Stadig sidst, men i 2-kolonne grid) */}
+                          {/* Add More Ghost Card */}
                           <button 
                               onClick={() => setActiveModal('upload')}
                               className="aspect-video rounded-lg border-2 border-dashed border-neutral-200 hover:border-orange-300 bg-neutral-50 hover:bg-white flex flex-col items-center justify-center gap-2 group transition-all"
@@ -908,14 +1035,14 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                               <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-neutral-400 group-hover:text-orange-500 transition-colors">
                                 <Plus size={20} />
                               </div>
-                              <span className="text-[10px] font-bold text-neutral-400 group-hover:text-orange-500 uppercase tracking-wider">Tilføj mere</span>
+                              <span className="text-[10px] font-bold text-neutral-400 group-hover:text-orange-500 uppercase tracking-wider">{t.btn_add_more || 'Tilføj mere'}</span>
                           </button>
                       </div>
                   ) : (
                       <div className="h-40 flex flex-col items-center justify-center text-neutral-300 bg-neutral-50/50 rounded-lg border-2 border-dashed border-neutral-100">
                           <ImageIcon size={32} className="mb-2 opacity-20" />
-                          <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide">Galleriet er tomt</p>
-                          <p className="text-[9px] text-neutral-300 mt-1">Vælg en kilde ovenfor for at starte</p>
+                          <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide">{t.no_media_title || 'Galleriet er tomt'}</p>
+                          <p className="text-[9px] text-neutral-300 mt-1">{t.no_media_desc || 'Vælg en kilde ovenfor for at starte'}</p>
                       </div>
                   )}
               </div>
@@ -942,7 +1069,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
            </div>
         </div>
         
-        {/* LIGHTBOX / ZOOM OVERLAY (NY FUNKTION) */}
+        {/* LIGHTBOX / ZOOM OVERLAY */}
         {zoomedAsset && (
             <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setZoomedAsset(null)}>
                 <button className="absolute top-4 right-4 text-white/50 hover:text-white p-2" onClick={() => setZoomedAsset(null)}>
@@ -951,7 +1078,6 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                 <div className="max-w-5xl max-h-[85vh] w-full flex justify-center" onClick={(e) => e.stopPropagation()}>
                     {isVideoUrl(zoomedAsset) ? (
                         <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl border border-white/10">
-                             {/* Tjek om det er YouTube eller fil */}
                              {zoomedAsset.includes('youtube') || zoomedAsset.includes('youtu.be') ? (
                                  <iframe 
                                     width="100%" 
@@ -972,7 +1098,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
             </div>
         )}
 
-        {/* MATERIAL MODAL (Uændret) */}
+        {/* MATERIAL MODAL (PUNKT 4: RETTET INPUT) */}
         {isMaterialModalOpen && (
             <div className="absolute inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
                 <div className="bg-white rounded-xl shadow-2xl border border-neutral-200 w-[300px] p-4 space-y-3 animate-in zoom-in-95 duration-200">
@@ -981,9 +1107,13 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                         <button onClick={() => setIsMaterialModalOpen(false)} className="text-neutral-400 hover:text-black"><X size={14}/></button>
                     </div>
                     <div className="space-y-2">
-                        <div><label className={labelClass}>{t.mod_mat_type || 'TYPE'}</label><select className={inputClass} value={newMaterial.name} onChange={(e) => setNewMaterial({ ...newMaterial, name: e.target.value })}>{EQUIPMENT_KEYS.map(key => (<option key={key} value={key}>{t[key] || key}</option>))}<option value="eq_other">{t.eq_other || 'Andet...'}</option></select></div>
+                        <div><label className={labelClass}>{t.mod_mat_type || 'TYPE'}</label><select className={inputClass} value={newMaterial.name} onChange={(e) => setNewMaterial({ ...newMaterial, name: e.target.value })}>{EQUIPMENT_KEYS.map(key => (<option key={key} value={key}>{(t as any)[key] || key}</option>))}<option value="eq_other">{t.eq_other || 'Andet...'}</option></select></div>
                         {newMaterial.name === 'eq_other' && (<div><label className={labelClass}>{t.mod_mat_name || 'NAVN'}</label><input type="text" className={inputClass} placeholder="Fx Rebounder..." value={customMaterialName} onChange={(e) => setCustomMaterialName(e.target.value)} autoFocus /></div>)}
-                        <div><label className={labelClass}>{COLOR_ITEMS.includes(newMaterial.name) ? (t.mod_mat_colors || 'ANTAL FARVER') : (t.mod_mat_count || 'ANTAL')}</label><input type="number" className={inputClass} value={newMaterial.count} onChange={(e) => setNewMaterial({ ...newMaterial, count: parseInt(e.target.value) || 1 })} min="1" /></div>
+                        <div>
+                            <label className={labelClass}>{COLOR_ITEMS.includes(newMaterial.name) ? (t.mod_mat_colors || 'ANTAL FARVER') : (t.mod_mat_count || 'ANTAL')}</label>
+                            {/* RETTET HER: onFocus={e => e.target.select()} tilføjet */}
+                            <input type="number" className={inputClass} value={newMaterial.count} onChange={(e) => setNewMaterial({ ...newMaterial, count: parseInt(e.target.value) || 1 })} min="1" onFocus={(e) => e.target.select()} />
+                        </div>
                         <div><label className={labelClass}>{t.mod_mat_details || 'DETALJER (VALGFRI)'}</label><input type="text" className={inputClass} placeholder={t.ph_mat_details || "Fx 3 farver, Str. 5, Store..."} value={newMaterial.details} onChange={(e) => setNewMaterial({ ...newMaterial, details: e.target.value })} /></div>
                     </div>
                     <div className="flex gap-2 pt-1">

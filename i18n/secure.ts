@@ -140,7 +140,7 @@ export const secureI18n = {
             set_pieces: "Set Pieces",
             goalkeeper: "Goalkeeper Training"
         },
-        sub: {} // Base is English, so no mapping needed
+        sub: {} 
     },
     library: {
       title: "Library & Assets",
@@ -275,13 +275,19 @@ export const secureI18n = {
       lbl_add_media: "ADD MEDIA",
       lbl_media_source: "IMPORT VISUALS (VIDEO, IMAGE, 3D)",
       
-      // RETTET HER: Navneændring
       lbl_gallery: "ILLUSTRATIONS & ANIMATIONS",
       lbl_gallery_sub: "Star indicates cover image",
       
       btn_source_upload: "File Upload",
       btn_source_youtube: "YouTube",
       btn_source_studio: "DTL Studio",
+      btn_add_more: "Add More",
+      btn_set_cover: "Set Cover",
+      btn_save: "Save Drill",
+      btn_saving: "Saving...",
+
+      no_media_title: "Gallery is empty",
+      no_media_desc: "Select a source above to start",
       
       msg_drag_drop: "Drag & Drop or Click to Upload",
       msg_formats: "JPG, PNG, MP4 (Max 50MB)",
@@ -604,6 +610,13 @@ export const secureI18n = {
       btn_source_upload: "Fil Upload",
       btn_source_youtube: "YouTube",
       btn_source_studio: "DTL Studio",
+      btn_add_more: "Tilføj Mere",
+      btn_set_cover: "Sæt Cover",
+      btn_save: "Gem Øvelse",
+      btn_saving: "Gemmer...",
+
+      no_media_title: "Galleriet er tomt",
+      no_media_desc: "Vælg en kilde ovenfor for at starte",
       
       msg_drag_drop: "Træk & Slip eller Klik for Upload",
       msg_formats: "JPG, PNG, MP4 (Max 50MB)",
@@ -648,7 +661,7 @@ export const secureI18n = {
         "Passing": "Aflevering",
         "First Touch": "Første berøring",
         "1v1 Offensive": "1v1 Offensivt",
-        "Dribbling & Turns": "Driblinger & Vendinger",
+        "Dribbling & Turns": "Vendinger",
         "Finishing": "Afslutninger",
         "1v1 Defensive": "1v1 Defensiv",
         "Coordination": "Fodboldkoordination",
@@ -661,6 +674,7 @@ export const secureI18n = {
         "Defending": "Forsvarsspil",
         "Transition - Offensive": "Omstilling - Offensiv",
         "Transition - Defensive": "Omstilling - Defensiv",
+        "Set Pieces": "Standardsituationer",
         "Formation": "Formation (Opstilling)",
 
         // Physical
@@ -683,7 +697,7 @@ export const secureI18n = {
         "Half-volley instep": "Halvtliggende vristspark",
         "Vertical instep": "Lodret vristspark",
         "Curled pass": "Aflevering med curl",
-        "Chip": "Chip bold",
+        "Chip Pass": "Chip bold",
         "Through ball": "Stikning",
         "Crossing": "Indlæg",
         "Cut-back": "Cut-back",
@@ -728,7 +742,7 @@ export const secureI18n = {
         "1v1 vs GK": "1v1 mod keeper",
         "Long shot": "Langskud",
         "Rebound": "Rebound/Tap-in",
-        "Chip": "Chip over keeper",
+        "Chip Shot": "Chip over keeper",
 
         // 1v1 Defensive
         "Pressing run": "Pres-løb og vinkel",
@@ -820,8 +834,20 @@ export const secureI18n = {
         "Delay/Drop back": "Delay/Falde tilbage",
         "Tactical foul": "Taktisk frispark",
 
+        // Set Pieces (NY)
+        "Corner (Off)": "Hjørnespark (Off)",
+        "Corner (Def)": "Hjørnespark (Def)",
+        "Free kick": "Frispark",
+        "Penalty": "Straffespark",
+        "Throw-in": "Indkast",
+
         // Formation
-        "442 Diamond": "442 Diamant",
+        "433": "4-3-3",
+        "343": "3-4-3",
+        "4231": "4-2-3-1",
+        "352": "3-5-2",
+        "442 Diamond": "4-4-2 Diamant",
+        "442": "4-4-2",
 
         // --- 3. FYSISK ---
         // Energy & Capacity
