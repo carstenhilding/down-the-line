@@ -71,7 +71,10 @@ export async function fetchUserAccessLevel(userId?: string): Promise<DTLUser> {
         id: 'dev-bypass', 
         role: UserRole.Developer,  // <--- ÆNDRET FRA Unauthenticated
         subscriptionLevel: 'Enterprise', 
-        name: 'Developer Bypass' 
+        name: 'Developer Bypass',
+        // TILFØJET: Mock IDs så Club/Team library virker i dev-mode
+        clubId: 'dev-club-123',
+        teamId: 'dev-team-123'
     };
   }
 
@@ -102,7 +105,10 @@ export async function fetchUserAccessLevel(userId?: string): Promise<DTLUser> {
     role: UserRole.Developer, 
     subscriptionLevel: 'Enterprise', 
     name: 'Dev Bruger (Mangler i Firestore)',
-    clubName: 'System Dev'
+    clubName: 'System Dev',
+    // TILFØJET: Mock IDs så Club/Team library virker hvis bruger ikke findes
+    clubId: 'dev-club-123',
+    teamId: 'dev-team-123'
   };
 }
 

@@ -140,7 +140,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
     ageGroups: [],
     physicalLoad: 'Aerobic – Moderate Intensity',
     rpe: 5, 
-    accessLevel: 'Personal',
+    accessLevel: 'Personal', // Standard fallback, opdateres af useEffect
     tags: [],
     materials: [],
     mediaType: 'image', 
@@ -151,6 +151,19 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
 
   const isPremium = ['Complete', 'Elite', 'Enterprise'].includes(user?.subscriptionLevel || '');
   const isDtlEmployee = user?.role === UserRole.Developer; 
+
+  // NYT: Hent sidst valgte bibliotek fra LocalStorage når modalen åbner
+  useEffect(() => {
+    const lastUsedLibrary = localStorage.getItem('DTL_LAST_LIBRARY_CHOICE');
+    if (lastUsedLibrary && ['Global', 'Club', 'Team', 'Personal'].includes(lastUsedLibrary)) {
+        // Hvis brugeren ikke har adgang til Global (kun developers), skal vi ikke sætte den, selvom den er gemt
+        if (lastUsedLibrary === 'Global' && !isDtlEmployee) {
+            setFormData(prev => ({ ...prev, accessLevel: 'Personal' }));
+        } else {
+            setFormData(prev => ({ ...prev, accessLevel: lastUsedLibrary as any }));
+        }
+    }
+  }, [isDtlEmployee]);
 
   useEffect(() => {
       if (formData.thumbnailUrl && !localGallery.includes(formData.thumbnailUrl)) {
@@ -337,7 +350,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
         try {
             const url = await uploadFile(file, 'drills/videos');
             if (url) {
-                setFormData(prev => ({ ...prev, videoUrl: url, mediaType: 'video', thumbnailUrl: undefined }));
+                setFormData(prev => ({ ...prev, videoUrl: url, mediaType: 'video' }));
                 setLocalGallery(prev => [...prev, url]); 
                 setActiveModal('none'); 
             }
@@ -375,8 +388,17 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
   };
 
   const handleSetCover = (url: string) => {
-      if (isVideoUrl(url)) { setFormData(prev => ({ ...prev, videoUrl: url, mediaType: 'video', thumbnailUrl: undefined })); } 
-      else { setFormData(prev => ({ ...prev, thumbnailUrl: url, mediaType: 'image', videoUrl: undefined })); }
+      if (isVideoUrl(url)) { 
+          setFormData(prev => ({ ...prev, videoUrl: url, mediaType: 'video' })); 
+      } 
+      else { 
+          setFormData(prev => {
+             if (prev.mediaType === 'video' || prev.videoUrl) {
+                 return { ...prev, thumbnailUrl: url };
+             }
+             return { ...prev, thumbnailUrl: url, mediaType: 'image', videoUrl: undefined };
+          });
+      }
   };
 
   const handleDeleteMedia = (url: string) => {
@@ -472,6 +494,11 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
       const result = await createDrill(newDrill);
       
       if (result.success) { 
+          // NYT: Gem det valgte bibliotek i localStorage
+          if (formData.accessLevel) {
+              localStorage.setItem('DTL_LAST_LIBRARY_CHOICE', formData.accessLevel);
+          }
+
           if (onSuccess) onSuccess(); 
           if (isDtlEmployee) {
               const savedLang = currentLang === 'da' ? 'Dansk' : 'Engelsk';
@@ -764,7 +791,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
 
               {/* 6. HOLD & MATERIALER */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className={`${boxClassBlack} md:col-span-2 h-full flex flex-col`}><label className={labelClass}>{t.lbl_teams || 'ANTAL HOLD'}</label><div className="space-y-2 flex-1">{teams.map((team, idx) => (<div key={idx} className="flex items-center gap-2 bg-neutral-50 p-1.5 rounded-lg border border-neutral-200"><div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${getColorClass(team.color)}`}><Shirt size={12} className={team.color === 'white' ? 'text-black' : 'text-white'} /></div><div className="flex-1"><input type="text" value={team.name} onChange={(e) => updateTeam(idx, 'name', e.target.value)} className="w-full bg-transparent text-xs font-bold text-neutral-800 focus:outline-none border-b border-transparent focus:border-orange-300 px-1" placeholder={t.ph_team || "Hold Navn"} /></div><div className="flex items-center gap-1"><span className="text-[9px] font-bold text-neutral-500 uppercase">{t.mod_mat_count || 'ANTAL'}:</span><input type="number" value={team.playerCount} onChange={(e) => updateTeam(idx, 'playerCount', parseInt(e.target.value) || 0)} className="w-8 text-center bg-white border border-neutral-300 rounded text-xs py-0.5" /></div><div className="flex gap-1">{['orange', 'red', 'blue', 'green', 'yellow', 'white', 'black'].map(c => (<button key={c} onClick={() => updateTeam(idx, 'color', c as any)} className={`w-3 h-3 rounded-full border border-black/10 ${getColorClass(c)} ${team.color === c ? 'ring-1 ring-offset-1 ring-neutral-400' : ''}`} />))}</div><button onClick={() => removeTeam(idx)} className="ml-1 text-neutral-400 hover:text-red-500"><Trash2 size={12} /></button></div>))}</div><button onClick={addTeam} className={addBtnClass}><Plus size={14} /> {t.btn_add_team || 'Tilføj Hold'}</button></div>
+                  <div className={`${boxClassBlack} md:col-span-2 h-full flex flex-col`}><label className={labelClass}>{t.lbl_teams || 'ANTAL HOLD'}</label><div className="space-y-2 flex-1">{teams.map((team, idx) => (<div key={idx} className="flex items-center gap-2 bg-neutral-50 p-1.5 rounded-lg border border-neutral-200"><div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${getColorClass(team.color)}`}><Shirt size={12} className={team.color === 'white' ? 'text-black' : 'text-white'} /></div><div className="flex-1"><input type="text" value={team.name} onChange={(e) => updateTeam(idx, 'name', e.target.value)} className="w-full bg-transparent text-xs font-bold text-neutral-800 focus:outline-none border-b border-transparent focus:border-orange-300 px-1" placeholder={t.ph_team || "Hold Navn"} /></div><div className="flex items-center gap-1"><span className="text-[9px] font-bold text-neutral-500 uppercase">{t.mod_mat_count || 'ANTAL'}:</span><input type="number" value={team.playerCount} onChange={(e) => updateTeam(idx, 'playerCount', parseInt(e.target.value) || 0)} className="w-8 text-center bg-white border border-neutral-200 rounded text-xs py-0.5 text-neutral-900 font-bold focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" onFocus={(e) => e.target.select()} /></div><div className="flex gap-1">{['orange', 'red', 'blue', 'green', 'yellow', 'white', 'black'].map(c => (<button key={c} onClick={() => updateTeam(idx, 'color', c as any)} className={`w-3 h-3 rounded-full border border-black/10 ${getColorClass(c)} ${team.color === c ? 'ring-1 ring-offset-1 ring-neutral-400' : ''}`} />))}</div><button onClick={() => removeTeam(idx)} className="ml-1 text-neutral-400 hover:text-red-500"><Trash2 size={12} /></button></div>))}</div><button onClick={addTeam} className={addBtnClass}><Plus size={14} /> {t.btn_add_team || 'Tilføj Hold'}</button></div>
                   <div className={`${boxClassBlack} h-full flex flex-col`}><div className="flex justify-between items-center mb-1"><label className={labelClass}>{t.lbl_materials || 'MATERIALER'}</label>{formData.materials && formData.materials.length > 0 && (<span className="text-[9px] text-neutral-400">{formData.materials.length}</span>)}</div><div className="flex-1 bg-white flex flex-col min-h-[60px]"><div className="overflow-y-auto custom-scrollbar flex-1 max-h-[160px]">{formData.materials && formData.materials.length > 0 ? (<div className="divide-y divide-neutral-100">{formData.materials.map((item, idx) => (<div key={idx} className="flex items-center justify-between py-0.5 group"><div className="flex items-center gap-2 min-w-0"><span className="text-[10px] font-bold text-neutral-400 w-4">{idx + 1}.</span><div className="truncate flex items-center gap-1"><span className="text-[10px] font-bold text-neutral-900">{(t as any)[item.name] || item.name}</span>{item.details && <span className="text-[9px] text-neutral-400 font-medium truncate">- {item.details}</span>}</div></div><div className="flex items-center gap-2 shrink-0"><span className="text-[10px] font-bold text-neutral-500">{item.count}</span><button onClick={() => removeMaterial(idx)} className="text-neutral-300 hover:text-red-500 transition-colors"><Trash2 size={10} /></button></div></div>))}</div>) : (<div className="h-full flex items-center justify-center text-[10px] text-neutral-300 italic">{t.no_materials || 'Ingen materialer'}</div>)}</div></div><button onClick={openMaterialModal} className={addBtnClass}><Plus size={14} /> {t.btn_add_material || 'Tilføj Materiale'}</button></div>
               </div>
             </div>

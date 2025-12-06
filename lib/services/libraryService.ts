@@ -3,14 +3,11 @@ import { db } from "@/firebase/config";
 import { 
   collection, 
   addDoc, 
-  updateDoc,
   deleteDoc, 
   doc, 
   getDocs, 
-  getDoc,
   query, 
   where, 
-  orderBy,
   serverTimestamp
 } from "firebase/firestore";
 import { DrillAsset } from "../server/libraryData";
@@ -42,15 +39,35 @@ export async function createDrill(drillData: DrillAsset) {
 
 /**
  * Henter øvelser baseret på adgangsniveau.
- * OPDATERET: Understøtter nu 'Team' og teamId
+ * OPDATERET: Eksplicit returtype tilføjet for at fixe rekursions-fejl
  */
 export async function getDrills(
-    accessLevel: 'Global' | 'Club' | 'Team' | 'Personal', 
+    accessLevel: 'Global' | 'Club' | 'Team' | 'Personal' | 'All', 
     userId?: string, 
     clubId?: string,
     teamId?: string
-) {
+): Promise<DrillAsset[]> { // <--- HER VAR FEJLEN: Manglende returtype
   try {
+    // HVIS 'ALL': Hent fra alle kilder parallelt (Global Search)
+    if (accessLevel === 'All') {
+        const [globalDrills, clubDrills, teamDrills, personalDrills] = await Promise.all([
+            getDrills('Global'), 
+            clubId ? getDrills('Club', undefined, clubId) : Promise.resolve([]), 
+            teamId ? getDrills('Team', undefined, undefined, teamId) : Promise.resolve([]),
+            userId ? getDrills('Personal', userId) : Promise.resolve([]) 
+        ]);
+
+        // Flet sammen 
+        const allDrills = [...globalDrills, ...clubDrills, ...teamDrills, ...personalDrills];
+        
+        // Fjern dubletter baseret på ID og returner
+        // Vi typer 'item' eksplicit for at være sikre
+        const uniqueDrills = Array.from(new Map(allDrills.map((item: DrillAsset) => [item.id, item])).values());
+        
+        return uniqueDrills;
+    }
+
+    // STANDARD LOGIK (Enkelt bibliotek)
     const drillsRef = collection(db, COLLECTION_NAME);
     let q = query(drillsRef);
 
@@ -59,10 +76,11 @@ export async function getDrills(
     } else if (accessLevel === 'Club' && clubId) {
       q = query(drillsRef, where("accessLevel", "==", "Club"), where("clubId", "==", clubId));
     } else if (accessLevel === 'Team' && teamId) {
-       // Henter øvelser for et specifikt hold
        q = query(drillsRef, where("accessLevel", "==", "Team"), where("teamId", "==", teamId));
     } else if (accessLevel === 'Global') {
       q = query(drillsRef, where("accessLevel", "==", "Global"));
+    } else {
+        return [];
     }
 
     const querySnapshot = await getDocs(q);
@@ -70,10 +88,10 @@ export async function getDrills(
     const drills: DrillAsset[] = [];
     querySnapshot.forEach((doc) => {
       const data = doc.data();
-      // Double-cast for at undgå TypeScript fejl ved timestamp
       drills.push({
         id: doc.id,
         ...data,
+        // Sikrer at datoer er korrekte JS Date objekter
         createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(), 
       } as unknown as DrillAsset);
     });

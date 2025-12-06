@@ -14,20 +14,25 @@ export default async function LibraryPage({
   const { lang } = await params;
   const locale = validateLang(lang);
 
-  // 1. Adgangskontrol (Samme mønster som i Trainer Hub)
+  // 1. Adgangskontrol
   const user = await fetchUserAccessLevel();
   if (user.role === UserRole.Unauthenticated) {
     return notFound();
   }
 
-  // 2. Hent oversættelser (Inkl. den nye 'library' del)
+  // 2. Hent oversættelser
   const dict = await fetchSecureTranslations(locale);
+
+  // 3. Serialiser data for at undgå "Expected static flag was missing" fejl
+  // Dette fjerner potentielle ikke-serialiserbare felter fra både user og dict
+  const plainUser = JSON.parse(JSON.stringify(user));
+  const plainDict = JSON.parse(JSON.stringify(dict));
 
   return (
     <LibraryClient 
-       dict={dict}
+       dict={plainDict}
        lang={locale}
-       user={user}
+       user={plainUser}
     />
   );
 }
