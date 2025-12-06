@@ -278,22 +278,20 @@ Data-laget (`lib/server/data.ts`) er nu opdateret til at understøtte **live Fir
 - **Development:** Hvis brugeren ikke findes i databasen (eller ved lokal test), falder systemet tilbage på en "Developer"-profil, så man kan arbejde uden at oprette data først.
 - **Roller:** Systemet understøtter nu alle roller defineret i Master Dokumentet (inkl. specialister som `KeeperCoach`, `Analyst`, etc.).
 
-## 🚀 Nuværende Status (Fase 3: Library UI)
+## 🚀 Status & Roadmap (Feature: Library UI)
 
-Vi er i gang med at bygge **Library UI** og **Asset Engine** (værktøjet til at oprette øvelser).
+### ✅ Completed (Phase 1: Creation)
+- [x] **Create Drill Modal UI:** Complete redesign with 3-tab structure (Practical, Data, Media).
+- [x] **Smart Inputs:** "Smart Pitch" calculator (m² per player) and RPE sliders.
+- [x] **Media Handling:** Support for Image upload, Video upload (MP4/MOV) with hover-preview, and YouTube integration.
+- [x] **Data Structure:** Full implementation of 4-Corner Model tags, Categories, and Age Groups (U5-U18+).
+- [x] **Developer Tools:** Dual-language creation workflow (DA/EN toggle) without losing form data.
+- [x] **i18n:** Full translation support for static labels and dynamic tags.
 
-**Status pr. [Dags Dato]:**
-- [x] **Asset Engine (CreateDrillModal):**
-    - Fane 1: Praktisk Info (Færdig)
-    - Fane 2: Data & Analyse (Færdig) - Inkl. Tags, Kategorier og Visibility.
-- [x] **Smart Pitch Calculator:**
-    - Automatisk beregning af m² pr. spiller.
-    - Visuelt "Black Box" design med live feedback.
-    - Kun aktiv for 'Complete', 'Elite' og 'Enterprise'.
-- [x] **i18n Struktur (Refactoring):**
-    - `secure.ts` er ændret til at bruge **Engelsk** som base-nøgler.
-    - Dansk bruges nu som oversættelseslag.
-    - Dette sikrer korrekt visning af data i dropdowns og knapper.
-- [ ] **Fane 3: Medier:** (Næste skridt)
+### 🚧 In Progress (Phase 2: The Library)
+- [ ] **Grid View:** High-density 16:9 card layout (Netflix style).
+- [ ] **Search Engine:** Real-time filtering (Search, Age, Category, Tags).
+- [ ] **Interaction:** Mouse-over video playback on cards.
+- [ ] **Focus Mode:** Detail view (Drawer/Modal) for drills without leaving the list.
 
 ---
