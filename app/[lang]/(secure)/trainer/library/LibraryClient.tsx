@@ -10,6 +10,7 @@ import {
 import { DrillAsset, DRILL_TAGS, DRILL_CATEGORIES, FourCornerTag, MainCategory, PhysicalLoadType } from '@/lib/server/libraryData';
 import { DTLUser, UserRole } from '@/lib/server/data';
 import CreateDrillModal from '@/components/library/CreateDrillModal';
+import DrillDetailModal from '@/components/library/DrillDetailModal';
 import { getDrills, deleteDrill } from '@/lib/services/libraryService';
 import { useUser } from '@/components/UserContext';
 
@@ -55,7 +56,10 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
   const { user } = useUser(); 
   const currentUser = user || serverUser;
 
+  // --- STATES ---
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedDrill, setSelectedDrill] = useState<DrillAsset | null>(null);
+
   const [activeTab, setActiveTab] = useState<TabType>('Global');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState(''); 
@@ -80,6 +84,7 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
   const filterRef = useRef<HTMLDivElement>(null);
   const filterContentRef = useRef<HTMLDivElement>(null);
 
+  // --- EFFECTS ---
   useEffect(() => {
     const timer = setTimeout(() => {
         setDebouncedSearch(searchQuery);
@@ -123,6 +128,7 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // --- HANDLERS ---
   const handleDelete = async (e: React.MouseEvent, assetId: string) => {
     e.stopPropagation();
     if (!window.confirm(lang === 'da' ? "Slet øvelse? Det kan ikke fortrydes." : "Delete drill? Cannot be undone.")) return;
@@ -131,6 +137,7 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
     const result = await deleteDrill(assetId);
     if (result.success) {
         setAssets(prev => prev.filter(a => a.id !== assetId));
+        if (selectedDrill?.id === assetId) setSelectedDrill(null);
     } else {
         alert("Fejl ved sletning.");
     }
@@ -191,15 +198,10 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
       setExpandedIntensityColor(null);
   };
 
-  const getIntensityGroup = (load: string | undefined) => {
-      if (!load) return 'none';
-      if (load.includes('Low')) return 'green';
-      if (load.includes('Moderate')) return 'yellow';
-      return 'red'; 
-  };
-
+  // --- OPTIMERET FILTRERINGS LOGIK ---
   const filteredAssets = useMemo(() => {
     return assets.filter(asset => {
+        // 1. Level Check (Global, Club, etc.) - ignoreres hvis der søges
         if (debouncedSearch.length === 0) {
             if (asset.accessLevel !== activeTab) return false;
         }
@@ -207,27 +209,34 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
         const langMatch = asset.language ? asset.language === lang : true;
         if (!langMatch) return false;
 
+        // 2. SEARCH QUERY (Nu med Tags!)
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
             const matchTitle = asset.title.toLowerCase().includes(q);
             const matchSub = asset.subCategory?.toLowerCase().includes(q);
-            if (!matchTitle && !matchSub) return false;
+            const matchTags = asset.tags?.some(tag => tag.toLowerCase().includes(q)); // NYT: Tjek tags
+
+            if (!matchTitle && !matchSub && !matchTags) return false;
         }
         
+        // 3. Dropdown Filters
         if (filterCategory !== 'all' && asset.mainCategory !== filterCategory) return false;
         if (filterTopic !== 'all' && asset.subCategory !== filterTopic) return false;
 
+        // 4. Specific Tag Filter
         if (filterSpecificTags.length > 0) {
             if (!asset.tags || asset.tags.length === 0) return false;
             const hasTag = asset.tags.some(tag => filterSpecificTags.includes(tag));
             if (!hasTag) return false;
         }
         
+        // 5. Age Filter
         if (filterAge.length > 0) {
             const hasAge = asset.ageGroups?.some(age => filterAge.includes(age));
             if (!hasAge) return false;
         }
 
+        // 6. Player Count Filter
         if (filterPlayerCount !== 'all') {
             const interval = PLAYER_INTERVALS.find(i => i.value === filterPlayerCount);
             if (interval) {
@@ -239,12 +248,14 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
             }
         }
 
+        // 7. GK Filter
         if (filterGK !== 'any') {
             const requiresGK = asset.goalKeeper === true;
             if (filterGK === 'yes' && !requiresGK) return false;
             if (filterGK === 'no' && requiresGK) return false;
         }
 
+        // 8. Intensity Filter
         if (filterIntensity.length > 0) {
             if (!asset.physicalLoad) return false;
             if (!filterIntensity.includes(asset.physicalLoad)) return false;
@@ -286,25 +297,13 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
       return 'bg-red-600 shadow-red-600/50';
   };
 
-  const translateLoad = (val: string) => {
-      return t.val_load?.[val] || val;
-  }
-  
-  const translateMainCat = (cat: string) => {
-      return categoriesTrans.main?.[cat] || cat;
-  }
-  
-  const translateSubCat = (sub: string) => {
-      return t.val_sub?.[sub] || sub;
-  }
-  
-  const translateTag = (tag: string) => {
-      return t.val_tags?.[tag] || tag;
-  }
+  const translateLoad = (val: string) => t.val_load?.[val] || val;
+  const translateMainCat = (cat: string) => categoriesTrans.main?.[cat] || cat;
+  const translateSubCat = (sub: string) => t.val_sub?.[sub] || sub;
+  const translateTag = (tag: string) => t.val_tags?.[tag] || tag;
 
-  // --- STYLES (High Density & Responsive) ---
+  // --- STYLES (High Density) ---
   const labelStyle = "text-[9px] font-bold text-neutral-500 uppercase mb-1 block tracking-tight";
-  const inputStyle = "text-[9px] w-full bg-neutral-50 border border-neutral-200 rounded py-1 px-2 font-bold text-neutral-900 focus:border-orange-500 outline-none h-7 transition-colors";
   const selectStyle = "text-[9px] w-full bg-neutral-50 border border-neutral-200 rounded py-1 px-2 font-bold text-neutral-900 focus:border-orange-500 outline-none appearance-none h-7 transition-colors truncate";
   
   const getBtnStyle = (isActive: boolean) => 
@@ -314,7 +313,6 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
         : 'bg-white border-neutral-200 text-neutral-500 hover:border-orange-500 hover:text-orange-600'
     }`;
 
-  // Helper til at sætte både Kategori og Emne ved klik på "Tag" i bunden
   const handleSetTopicFromBottom = (corner: string, subCat: string) => {
       setFilterCategory(corner.toLowerCase());
       setFilterTopic(subCat);
@@ -323,28 +321,28 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
   return (
     <div className="h-full flex flex-col bg-[#F8FAFC] text-neutral-900 relative">
       
-      {/* --- STICKY TOOLBAR --- */}
-      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-neutral-200 px-4 md:px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-3 shrink-0 shadow-sm isolate overflow-visible">
+      {/* --- COMPACT STICKY TOOLBAR --- */}
+      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-neutral-200 px-3 py-2 flex flex-col md:flex-row items-center justify-between gap-2 shrink-0 shadow-sm isolate">
         
         {/* Left: Navigation Tabs */}
-        <div className={`flex items-center gap-4 w-full md:w-auto overflow-x-auto no-scrollbar transition-opacity ${searchQuery.length > 0 ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
-            <div className="flex bg-neutral-100 rounded-lg p-1 shrink-0">
+        <div className={`flex items-center gap-2 w-full md:w-auto overflow-x-auto no-scrollbar transition-opacity ${searchQuery.length > 0 ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+            <div className="flex bg-neutral-100 rounded-md p-0.5 shrink-0">
                 {[
                     { id: 'Global', label: t.lbl_vis_global || 'DTL Global', icon: Globe },
-                    { id: 'Club', label: t.lbl_vis_club || 'Club Library', icon: Shield },
-                    { id: 'Team', label: t.lbl_vis_team || 'Team Library', icon: Users },
-                    { id: 'Personal', label: t.lbl_vis_personal || 'Personal Library', icon: User },
+                    { id: 'Club', label: t.lbl_vis_club || 'Club', icon: Shield },
+                    { id: 'Team', label: t.lbl_vis_team || 'Team', icon: Users },
+                    { id: 'Personal', label: t.lbl_vis_personal || 'My Drills', icon: User },
                 ].map((tab) => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as TabType)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-all ${
                             activeTab === tab.id 
                             ? 'bg-white text-orange-600 shadow-sm ring-1 ring-neutral-200' 
                             : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/50'
                         }`}
                     >
-                        <tab.icon size={12} />
+                        <tab.icon size={10} />
                         <span className="hidden sm:inline">{tab.label}</span>
                     </button>
                 ))}
@@ -356,13 +354,13 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
             
             {/* Search */}
             <div className="relative flex-1 md:w-56 group">
-                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${searchQuery.length > 0 ? 'text-orange-500' : 'text-neutral-400'}`} size={14} />
+                <Search className={`absolute left-2 top-1/2 -translate-y-1/2 transition-colors ${searchQuery.length > 0 ? 'text-orange-500' : 'text-neutral-400'}`} size={12} />
                 <input 
                     type="text" 
-                    placeholder={t.searchPlaceholder ?? 'Søg efter øvelser...'}
+                    placeholder={t.searchPlaceholder ?? 'Search...'}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className={`w-full pl-9 pr-3 py-2 bg-neutral-50 border rounded-lg text-xs font-medium text-neutral-900 focus:outline-none focus:ring-1 transition-all placeholder:text-neutral-400 ${searchQuery.length > 0 ? 'border-orange-500 ring-orange-500' : 'border-neutral-200 focus:border-orange-500 focus:ring-orange-500'}`}
+                    className={`w-full pl-7 pr-2 py-1.5 bg-neutral-50 border rounded-md text-[10px] font-bold text-neutral-900 focus:outline-none focus:ring-1 transition-all placeholder:text-neutral-400 ${searchQuery.length > 0 ? 'border-orange-500 ring-orange-500' : 'border-neutral-200 focus:border-orange-500 focus:ring-orange-500'}`}
                 />
             </div>
 
@@ -370,25 +368,21 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
             <div className={`relative ${isFilterOpen ? 'z-40' : ''}`} ref={filterRef}>
                 <button 
                     onClick={() => setIsFilterOpen(!isFilterOpen)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-xs font-bold uppercase tracking-wide ${isFilterOpen || activeFiltersCount > 0 ? 'bg-black border-black text-white' : 'bg-white border-neutral-200 text-neutral-500 hover:border-orange-500 hover:text-orange-600'}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border transition-all text-[10px] font-bold uppercase tracking-wide ${isFilterOpen || activeFiltersCount > 0 ? 'bg-black border-black text-white' : 'bg-white border-neutral-200 text-neutral-500 hover:border-orange-500 hover:text-orange-600'}`}
                 >
-                    <SlidersHorizontal size={14} className={isFilterOpen || activeFiltersCount > 0 ? 'text-orange-500' : 'text-current'} />
+                    <SlidersHorizontal size={12} className={isFilterOpen || activeFiltersCount > 0 ? 'text-orange-500' : 'text-current'} />
                     <span className="hidden sm:inline">{t.mod_btn_filter || 'Filter'}</span>
                     {activeFiltersCount > 0 && (
-                        <span className="bg-orange-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full">{activeFiltersCount}</span>
+                        <span className="bg-orange-500 text-white text-[8px] w-3.5 h-3.5 flex items-center justify-center rounded-full">{activeFiltersCount}</span>
                     )}
                 </button>
 
-                {/* MEGA FILTER POPOVER (2 KOLONNER - COMPACT) */}
+                {/* MEGA FILTER POPOVER */}
                 {isFilterOpen && (
                     <div className="absolute top-full right-0 mt-2 w-[95vw] md:w-[620px] bg-white border border-neutral-200 rounded-xl shadow-2xl z-[100] animate-in fade-in slide-in-from-top-2 overflow-hidden flex flex-col max-h-[85vh]">
                         
                         <div className="p-4 flex flex-col md:flex-row gap-4 h-full overflow-hidden" ref={filterContentRef}>
-                            
-                            {/* --- KOLONNE 1: KONTROLPANEL --- */}
                             <div className="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-1 min-w-[280px]">
-                                
-                                {/* 1. KATEGORI & EMNE & SPILLERE */}
                                 <div className="grid grid-cols-2 gap-2">
                                     <div className="col-span-1">
                                         <label className={labelStyle}>{t.lbl_main_category || 'Kategori'}</label>
@@ -435,7 +429,6 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
 
                                 <div className="h-px bg-neutral-100"></div>
 
-                                {/* 2. ALDER & KEEPER & LOAD */}
                                 <div className="space-y-3">
                                     <div>
                                         <label className={labelStyle}>{t.lbl_age || 'Aldersgrupper'}</label>
@@ -458,18 +451,8 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                                     <div>
                                         <label className={labelStyle}>{t.lbl_goalkeeper || 'Keeper'}</label>
                                         <div className="flex gap-2">
-                                            <button 
-                                                onClick={() => toggleGK('yes')} 
-                                                className={getBtnStyle(filterGK === 'yes')}
-                                            >
-                                                {t.lbl_yes || 'JA'}
-                                            </button>
-                                            <button 
-                                                onClick={() => toggleGK('no')} 
-                                                className={getBtnStyle(filterGK === 'no')}
-                                            >
-                                                {t.lbl_no || 'NEJ'}
-                                            </button>
+                                            <button onClick={() => toggleGK('yes')} className={getBtnStyle(filterGK === 'yes')}>{t.lbl_yes || 'JA'}</button>
+                                            <button onClick={() => toggleGK('no')} className={getBtnStyle(filterGK === 'no')}>{t.lbl_no || 'NEJ'}</button>
                                         </div>
                                     </div>
 
@@ -487,20 +470,13 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                                             </button>
                                         </div>
                                         
-                                        {/* Sub-kategorier */}
                                         {expandedIntensityColor && (
                                             <div className="mt-1.5 p-1.5 bg-neutral-50 rounded border border-neutral-100 animate-in slide-in-from-top-1 w-full">
                                                 <div className="flex flex-wrap gap-1">
                                                     {INTENSITY_GROUPS[expandedIntensityColor].map(loadType => {
                                                         const isSelected = filterIntensity.includes(loadType);
                                                         return (
-                                                            <button
-                                                                key={loadType}
-                                                                onClick={() => toggleSpecificLoad(loadType)}
-                                                                className={getBtnStyle(isSelected)}
-                                                            >
-                                                                {translateLoad(loadType)}
-                                                            </button>
+                                                            <button key={loadType} onClick={() => toggleSpecificLoad(loadType)} className={getBtnStyle(isSelected)}>{translateLoad(loadType)}</button>
                                                         )
                                                     })}
                                                 </div>
@@ -510,10 +486,7 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                                 </div>
                             </div>
 
-                            {/* --- KOLONNE 2: EMNER (TOPICS) - RENSKET --- */}
                             <div className="flex-1 flex flex-col bg-neutral-50 rounded-lg border border-neutral-100 overflow-hidden min-w-[240px]">
-                                
-                                {/* 4 CORNER TABS */}
                                 <div className="flex border-b border-neutral-100 bg-white">
                                     {['Technical', 'Tactical', 'Physical', 'Mental'].map(corner => (
                                         <button
@@ -525,21 +498,13 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                                         </button>
                                     ))}
                                 </div>
-
-                                {/* TOPIC LIST (KUN EMNER) */}
                                 <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
                                     {DRILL_TAGS[activeFilterCorner] ? (
                                         <div className="flex flex-wrap gap-1.5">
                                             {Object.keys(DRILL_TAGS[activeFilterCorner]).map((subCat) => {
                                                 const isSelected = filterCategory === activeFilterCorner.toLowerCase() && filterTopic === subCat;
                                                 return (
-                                                    <button 
-                                                        key={subCat} 
-                                                        onClick={() => handleSetTopicFromBottom(activeFilterCorner, subCat)}
-                                                        className={getBtnStyle(isSelected)}
-                                                    >
-                                                        {translateSubCat(subCat)}
-                                                    </button>
+                                                    <button key={subCat} onClick={() => handleSetTopicFromBottom(activeFilterCorner, subCat)} className={getBtnStyle(isSelected)}>{translateSubCat(subCat)}</button>
                                                 )
                                             })}
                                         </div>
@@ -550,7 +515,6 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                             </div>
                         </div>
 
-                        {/* Footer */}
                         <div className="p-2 border-t border-neutral-100 flex justify-between items-center bg-white shrink-0">
                             <div className="flex gap-3 items-center">
                                 <button onClick={resetFilters} className="text-[9px] text-neutral-400 hover:text-orange-500 font-bold uppercase tracking-wide flex items-center gap-1 transition-colors">
@@ -569,37 +533,36 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
             {/* Create Button */}
             <button 
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-black hover:bg-neutral-900 text-white px-3 sm:px-4 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 group hover:-translate-y-1 relative z-10"
+                className="bg-black hover:bg-neutral-900 text-white px-3 sm:px-3 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 group relative z-10"
             >
-                <Plus size={16} strokeWidth={3} className="text-orange-500 group-hover:scale-110 transition-transform" />
-                <span className="hidden sm:inline text-xs font-black uppercase tracking-wider">{t.createBtn ?? 'Create'}</span>
+                <Plus size={14} strokeWidth={3} className="text-orange-500 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline text-[10px] font-black uppercase tracking-wider">{t.createBtn ?? 'Create'}</span>
             </button>
         </div>
       </div>
 
-      {/* --- GRID CONTENT --- */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 custom-scrollbar">
+      {/* --- GRID CONTENT (HIGH DENSITY) --- */}
+      <div className="flex-1 overflow-y-auto p-2 lg:p-2 custom-scrollbar">
         
-        {/* Global Search Indicator */}
         {debouncedSearch.length > 0 && !isLoading && (
-            <div className="mb-4 flex items-center gap-2 px-1 animate-in fade-in slide-in-from-top-2">
-                <span className="text-[10px] font-bold uppercase text-neutral-400">Resultater for:</span>
-                <span className="text-sm font-black text-neutral-900">"{debouncedSearch}"</span>
-                <span className="text-[10px] font-medium text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-full ml-auto">
-                    {filteredAssets.length} fundet i alle biblioteker
+            <div className="mb-2 flex items-center gap-2 px-1 animate-in fade-in slide-in-from-top-2">
+                <span className="text-[10px] font-bold uppercase text-neutral-400">Resultater:</span>
+                <span className="text-xs font-black text-neutral-900">"{debouncedSearch}"</span>
+                <span className="text-[9px] font-medium text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-full ml-auto">
+                    {filteredAssets.length} fundet
                 </span>
             </div>
         )}
 
         {isLoading ? (
-            <div className="flex h-full items-center justify-center flex-col gap-4">
-                <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
-                <p className="text-neutral-400 text-xs font-mono animate-pulse">
-                    {debouncedSearch.length > 0 ? 'SØGER I ALLE BIBLIOTEKER...' : 'HENTER ØVELSER...'}
+            <div className="flex h-full items-center justify-center flex-col gap-3">
+                <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+                <p className="text-neutral-400 text-[10px] font-mono animate-pulse uppercase tracking-wider">
+                    {debouncedSearch.length > 0 ? 'Searching...' : 'Loading Drills...'}
                 </p>
             </div>
         ) : filteredAssets.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pb-20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-3 pb-20">
             {filteredAssets.map(asset => {
               const isHovered = hoveredAssetId === asset.id;
               const hasVideo = asset.mediaType === 'video' && asset.videoUrl;
@@ -615,11 +578,12 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
               return (
                 <div 
                     key={asset.id} 
-                    className="group relative aspect-video bg-neutral-100 rounded-xl overflow-hidden cursor-pointer border border-neutral-200 hover:border-orange-400 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:z-10"
+                    className="group relative aspect-video bg-neutral-100 rounded-lg overflow-hidden cursor-pointer border border-neutral-200 hover:border-orange-400 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:z-10"
                     onMouseEnter={() => setHoveredAssetId(asset.id!)}
                     onMouseLeave={() => setHoveredAssetId(null)}
+                    onClick={() => setSelectedDrill(asset)}
                 >
-                   {/* 1. MEDIA */}
+                   {/* MEDIA */}
                    {hasVideo && isHovered ? (
                        <video src={asset.videoUrl} autoPlay muted loop className="absolute inset-0 w-full h-full object-cover animate-in fade-in duration-500" />
                    ) : hasYoutube && isHovered ? (
@@ -630,56 +594,51 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                        <img src={bgImage} alt={asset.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-100" onError={(e) => { e.currentTarget.src = '/images/grass-texture-seamless.jpg'; }} />
                    )}
 
-                   {/* 2. OVERLAY */}
+                   {/* OVERLAY */}
                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent opacity-80 group-hover:opacity-70 transition-opacity"></div>
 
-                   {/* SOURCE BADGE (Kun ved Global Search + Stacking med Tid) */}
-                   <div className="absolute top-3 left-3 z-20 flex flex-col items-start gap-1">
+                   {/* BADGES */}
+                   <div className="absolute top-2 left-2 z-20 flex flex-col items-start gap-1">
                         {searchQuery.length > 0 && sourceBadge && (
-                            <div className={`text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm ${sourceBadge.color}`}>
+                            <div className={`text-[8px] font-black px-1.5 py-0.5 rounded shadow-sm ${sourceBadge.color}`}>
                                 {sourceBadge.label}
                             </div>
                         )}
-                        {/* Tid - Kun ved hover */}
-                        <span className="text-[10px] font-bold text-white shadow-sm flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <span className="text-[9px] font-bold text-white shadow-sm flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                 <Clock size={10} /> {asset.durationMin}m
                         </span>
                    </div>
 
-                   {/* ACTIONS - Top Højre (Kun ved hover) */}
-                   <div className="absolute top-3 right-3 flex flex-col gap-2 z-30 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-[-5px] group-hover:translate-y-0">
-                       
-                       {/* Add Button */}
-                       <button className="w-6 h-6 bg-white rounded-full flex items-center justify-center text-neutral-900 hover:bg-orange-500 hover:text-white shadow-md transition-colors" title="Tilføj til session">
-                           <Plus size={14} strokeWidth={3} />
+                   {/* ACTIONS (Hover) */}
+                   <div className="absolute top-2 right-2 flex flex-col gap-1.5 z-30 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-[-5px] group-hover:translate-y-0">
+                       <button 
+                            onClick={(e) => { e.stopPropagation(); }} 
+                            className="w-5 h-5 bg-white rounded-full flex items-center justify-center text-neutral-900 hover:bg-orange-500 hover:text-white shadow-md transition-colors" 
+                            title="Add"
+                       >
+                           <Plus size={12} strokeWidth={3} />
                        </button>
-
-                       {/* Delete Button */}
                        {canDeleteDrill(asset) && (
                            <button 
                                onClick={(e) => handleDelete(e, asset.id!)} 
-                               className="w-6 h-6 bg-neutral-900/80 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-orange-500 transition-colors shadow-md"
-                               title="Slet"
+                               className="w-5 h-5 bg-neutral-900/80 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-orange-500 transition-colors shadow-md"
                            >
-                               {isDeleting === asset.id ? <Loader2 size={10} className="animate-spin"/> : <Trash2 size={12} />}
+                               {isDeleting === asset.id ? <Loader2 size={10} className="animate-spin"/> : <Trash2 size={10} />}
                            </button>
                        )}
                    </div>
 
-                   {/* VIDEO INDICATOR (Top Højre - Skjules ved hover for at give plads til Actions) */}
+                   {/* VIDEO INDICATOR */}
                    {(hasVideo || hasYoutube) && !isHovered && (
-                       <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded text-[9px] font-bold text-white flex items-center gap-1 border border-white/10 shadow-sm"><Play size={8} fill="currentColor" /> VIDEO</div>
+                       <div className="absolute top-2 right-2 bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded text-[8px] font-bold text-white flex items-center gap-1 border border-white/10 shadow-sm"><Play size={6} fill="currentColor" /></div>
                    )}
 
-                   {/* 5. BOTTOM CONTENT (Titel + Intensitet) */}
-                   <div className="absolute bottom-0 left-0 right-0 p-3 flex justify-between items-end gap-2">
-                        {/* Titel: UPPERCASE - Responsive Text */}
-                        <h3 className="text-xs sm:text-sm font-black text-white uppercase leading-tight line-clamp-2 text-shadow-lg">
+                   {/* BOTTOM INFO */}
+                   <div className="absolute bottom-0 left-0 right-0 p-2.5 flex justify-between items-end gap-2">
+                        <h3 className="text-[10px] sm:text-[11px] font-black text-white uppercase leading-tight line-clamp-2 text-shadow-lg">
                             {asset.title}
                         </h3>
-                        
-                        {/* Intensitet: Nederst til højre */}
-                        <div className={`w-3 h-3 shrink-0 rounded-full border border-white/20 shadow-lg ${intensityColor} mb-1`} title={asset.physicalLoad || 'Intensitet'}></div>
+                        <div className={`w-2.5 h-2.5 shrink-0 rounded-full border border-white/20 shadow-lg ${intensityColor} mb-0.5`} title={asset.physicalLoad || 'Intensitet'}></div>
                    </div>
                 </div>
               );
@@ -687,17 +646,16 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-[60vh] text-neutral-400">
-             <div className="w-24 h-24 bg-neutral-100 rounded-full flex items-center justify-center mb-6"><Search size={48} className="opacity-20 text-neutral-500" /></div>
-             <h3 className="text-xl font-bold text-neutral-900 mb-2">{t.emptyState?.title ?? 'Ingen øvelser fundet'}</h3>
-             <p className="text-sm max-w-xs text-center leading-relaxed opacity-80 text-neutral-500">{t.emptyState?.desc ?? 'Prøv at ændre dine filtre eller opret en ny øvelse for at komme i gang.'}</p>
+             <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mb-4"><Search size={32} className="opacity-20 text-neutral-500" /></div>
+             <p className="text-xs font-bold text-neutral-500 opacity-60">Ingen øvelser fundet.</p>
              {activeTab === 'Personal' && searchQuery.length === 0 && (
-                <button onClick={() => setIsCreateModalOpen(true)} className="mt-8 px-8 py-3 bg-orange-500 text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-orange-600 transition-all shadow-lg hover:shadow-orange-500/20 hover:-translate-y-1">{t.createBtn || 'Opret Øvelse'}</button>
+                <button onClick={() => setIsCreateModalOpen(true)} className="mt-4 px-6 py-2 bg-orange-500 text-white rounded-md text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-all shadow-lg hover:-translate-y-0.5">{t.createBtn || 'Opret'}</button>
              )}
           </div>
         )}
       </div>
 
-      {/* --- MODAL --- */}
+      {/* --- MODALS --- */}
       {isCreateModalOpen && (
         <CreateDrillModal 
           isOpen={isCreateModalOpen} 
@@ -707,6 +665,13 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
           onSuccess={fetchAssets} 
         />
       )}
+
+      <DrillDetailModal 
+          drill={selectedDrill} 
+          isOpen={!!selectedDrill} 
+          onClose={() => setSelectedDrill(null)} 
+          lang={lang}
+      />
     </div>
   );
 }
