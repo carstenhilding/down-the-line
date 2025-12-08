@@ -224,7 +224,7 @@ export default function SecureLayoutClient({
           if (!module.subModules) {
             const isActive = module.path && cleanCurrentRoute.startsWith(module.path);
             return (
-              <Link key={module.nameKey} href={`/${lang}${module.path}`} className={`relative flex items-center p-2 rounded-lg transition-colors group cursor-pointer ${!isSidebarOpen && 'justify-center'} ${isActive ? 'bg-black text-orange-500 font-bold text-sm' : 'text-black hover:text-orange-500 text-xs'}`}>
+              <Link key={module.nameKey} href={`/${lang}${module.path}`} className={`relative flex items-center p-2 rounded-lg transition-colors group cursor-pointer ${!isSidebarOpen && 'justify-center'} ${isActive ? 'bg-black text-white font-bold text-sm' : 'text-black hover:text-orange-500 text-xs'}`}>
                 <module.icon className={`h-5 w-5 shrink-0 ${isActive ? 'text-orange-500' : 'text-gray-600 group-hover:text-orange-500'}`} />
                 <span className={`ml-3 whitespace-nowrap transition-opacity text-xs 2xl:text-sm ${isSidebarOpen ? 'opacity-100' : 'opacity-0'} ${!isSidebarOpen && 'hidden'}`}>{sidebarDict[module.nameKey] ?? module.nameKey}</span>
               </Link>
@@ -233,7 +233,7 @@ export default function SecureLayoutClient({
           const isOpen = openMenu === module.nameKey;
           return (
             <div key={module.nameKey}>
-              <button onClick={() => { if (module.path) router.push(`/${lang}${module.path}`); if (isSidebarOpen) { setOpenMenu(isOpen ? null : module.nameKey); } }} className={`relative flex items-center w-full p-2 rounded-lg transition-colors group cursor-pointer ${!isSidebarOpen && 'justify-center'} ${isParentActive || isOpen ? 'bg-black text-orange-500 font-bold text-sm' : 'text-black hover:text-orange-500 text-xs'}`}>
+              <button onClick={() => { if (module.path) router.push(`/${lang}${module.path}`); if (isSidebarOpen) { setOpenMenu(isOpen ? null : module.nameKey); } }} className={`relative flex items-center w-full p-2 rounded-lg transition-colors group cursor-pointer ${!isSidebarOpen && 'justify-center'} ${isParentActive || isOpen ? 'bg-black text-white font-bold text-sm' : 'text-black hover:text-orange-500 text-xs'}`}>
                 <module.icon className={`h-5 w-5 shrink-0 ${isParentActive || isOpen ? 'text-orange-500' : 'text-gray-600 group-hover:text-orange-500'}`} />
                 <span className={`ml-3 whitespace-nowrap transition-opacity text-xs 2xl:text-sm ${isSidebarOpen ? 'opacity-100' : 'opacity-0'} ${!isSidebarOpen && 'hidden'}`}>{sidebarDict[module.nameKey] ?? module.nameKey}</span>
                 {isSidebarOpen && (<ChevronDown className={`ml-auto h-4 w-4 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />)}
@@ -243,7 +243,7 @@ export default function SecureLayoutClient({
                   {module.subModules!.map((subModule) => {
                     const isSubActive = cleanCurrentRoute.startsWith(subModule.path);
                     return (
-                      <Link key={subModule.nameKey} href={`/${lang}${subModule.path}`} className={`flex items-center w-full py-1.5 px-2 rounded-lg my-0.5 transition-colors cursor-pointer ${isSubActive ? 'bg-black text-orange-500 font-bold' : 'text-black hover:text-orange-500'} text-[11px] 2xl:text-xs`}>
+                      <Link key={subModule.nameKey} href={`/${lang}${subModule.path}`} className={`flex items-center w-full py-1.5 px-2 rounded-lg my-0.5 transition-colors cursor-pointer ${isSubActive ? 'bg-black text-white font-bold' : 'text-black hover:text-orange-500'} text-[11px] 2xl:text-xs`}>
                         {sidebarDict[subModule.nameKey] ?? subModule.nameKey}
                       </Link>
                     );

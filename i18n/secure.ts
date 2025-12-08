@@ -132,11 +132,13 @@ export const secureI18n = {
     // --- CATEGORIES (EN) ---
     categories: {
         main: {
+            general: "General",
             warmup: "Warm-up",
             technical: "Technical Training",
             tactical: "Tactical Training",
             game_forms: "Game Forms",
             physical: "Physical Training",
+            mental: "Mental Training",
             set_pieces: "Set Pieces",
             goalkeeper: "Goalkeeper Training"
         },
@@ -146,6 +148,28 @@ export const secureI18n = {
       title: "Library & Assets",
       subtitle: "Intelligent Asset Management",
       createBtn: "Create Drill",
+      searchPlaceholder: "Search drills...",
+      
+      // Filter UI
+      mod_btn_filter: "Filter",
+      filter_title: "Advanced Filters",
+      btn_reset: "Reset",
+      btn_show_results: "Show Results",
+      results_found: "results found",
+      lbl_all_categories: "All Categories",
+      lbl_all: "All",
+      search_results_for: "Results for:",
+      found_in_all: "found in all libraries",
+      searching_all: "SEARCHING ALL LIBRARIES...",
+      loading_assets: "LOADING ASSETS...",
+      empty_title: "No drills found",
+      empty_desc: "Try adjusting your filters or create a new drill to get started.",
+
+      // NEW INTENSITY KEYS (EN)
+      int_low: "Low",
+      int_medium: "Medium",
+      int_high: "High",
+      ph_amount: "Count",
 
       // HEADER TABS
       create_drill_title: "Create New Drill",
@@ -153,13 +177,13 @@ export const secureI18n = {
       tab_data: "2. Data & Analysis",
       tab_media: "3. Media",
 
-      // KNAPPER & TEXT FRA FANE 1 (Røde ringe)
+      // KNAPPER & TEXT FRA FANE 1
       btn_add_rule: "Add Rule",
       btn_add_point: "Add Point",
       btn_add_team: "Add Team",
       btn_add_material: "Add Equipment",
       
-      // NAVIGATION (Røde ringe bund)
+      // NAVIGATION
       step_indicator: "Step {{current}} of 3",
       btn_next: "Next",
       btn_back: "Back",
@@ -464,21 +488,45 @@ export const secureI18n = {
     // --- CATEGORIES (DK) ---
     categories: {
         main: {
+            general: "Generel",
             warmup: "Opvarmning",
             technical: "Teknisk Træning",
             tactical: "Taktisk Træning",
             game_forms: "Spilformer",
             physical: "Fysisk Træning",
+            mental: "Mental Træning",
             set_pieces: "Standardsituationer",
             goalkeeper: "Keepertræning"
         },
-        sub: {} // Mappes i library.val_sub
+        sub: {} 
     },
 
     library: {
       title: "Bibliotek & Assets",
       subtitle: "Intelligent Asset Management",
       createBtn: "Opret Øvelse",
+      searchPlaceholder: "Søg efter øvelser...",
+
+      // Filter UI (Nye Nøgler)
+      mod_btn_filter: "Filter",
+      filter_title: "Avancerede Filtre",
+      btn_reset: "Nulstil",
+      btn_show_results: "Vis Resultater",
+      results_found: "resultater fundet",
+      lbl_all_categories: "Alle Kategorier",
+      lbl_all: "Alle",
+      search_results_for: "Resultater for:",
+      found_in_all: "fundet i alle biblioteker",
+      searching_all: "SØGER I ALLE BIBLIOTEKER...",
+      loading_assets: "HENTER ØVELSER...",
+      empty_title: "Ingen øvelser fundet",
+      empty_desc: "Prøv at ændre dine filtre eller opret en ny øvelse for at komme i gang.",
+      
+      // NYE INTENSITET NØGLER (DK)
+      int_low: "Lav",
+      int_medium: "Middel",
+      int_high: "Høj",
+      ph_amount: "Antal",
 
       // HEADER TABS
       create_drill_title: "Opret Ny Øvelse",
@@ -603,7 +651,6 @@ export const secureI18n = {
       lbl_add_media: "TILFØJ MEDIER",
       lbl_media_source: "IMPORTER VISUELT INDHOLD (VIDEO, BILLEDE, 3D)",
       
-      // RETTET HER: Navneændring
       lbl_gallery: "ILLUSTRATIONER & ANIMATIONER",
       lbl_gallery_sub: "Stjerne indikerer forsidebillede",
       

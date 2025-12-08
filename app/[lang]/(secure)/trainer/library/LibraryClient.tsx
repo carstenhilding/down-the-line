@@ -3,12 +3,11 @@
 
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { 
-  Search, Plus, LayoutTemplate, 
-  Globe, Shield, Users, User, 
+  Search, Plus, Globe, Shield, Users, User, 
   Zap, Clock, Play, Loader2, Trash2, 
-  SlidersHorizontal, Check
+  SlidersHorizontal, Check, Filter, ChevronDown, X
 } from 'lucide-react';
-import { DrillAsset, DRILL_TAGS, DRILL_CATEGORIES, FourCornerTag } from '@/lib/server/libraryData';
+import { DrillAsset, DRILL_TAGS, DRILL_CATEGORIES, FourCornerTag, MainCategory, PhysicalLoadType } from '@/lib/server/libraryData';
 import { DTLUser, UserRole } from '@/lib/server/data';
 import CreateDrillModal from '@/components/library/CreateDrillModal';
 import { getDrills, deleteDrill } from '@/lib/services/libraryService';
@@ -22,30 +21,65 @@ interface LibraryClientProps {
 
 type TabType = 'Global' | 'Club' | 'Team' | 'Personal';
 
+const AGE_GROUPS = [
+    { label: 'U5-U8', values: ['U5+', 'U6+', 'U7+', 'U8+'] },
+    { label: 'U9-U12', values: ['U9+', 'U10+', 'U11+', 'U12+'] },
+    { label: 'U13-U16', values: ['U13+', 'U14+', 'U15+', 'U16+'] },
+    { label: 'U17+', values: ['U17+', 'U18+', 'Senior'] }
+];
+
+const PLAYER_INTERVALS = [
+    { label: '1-4', value: '1-4', min: 1, max: 4 },
+    { label: '5-9', value: '5-9', min: 5, max: 9 },
+    { label: '10-14', value: '10-14', min: 10, max: 14 },
+    { label: '15-20', value: '15-20', min: 15, max: 20 },
+    { label: '21+', value: '21+', min: 21, max: 99 }
+];
+
+const INTENSITY_GROUPS: Record<string, PhysicalLoadType[]> = {
+    green: ['Aerobic – Low Intensity'],
+    yellow: ['Aerobic – Moderate Intensity'],
+    red: [
+        'Aerobic – High Intensity',
+        'Anaerobic – Sprint',
+        'Anaerobic – Sprint Endurance',
+        'Anaerobic – Production',
+        'Anaerobic – Tolerance'
+    ]
+};
+
 export default function LibraryClient({ dict, lang, user: serverUser }: LibraryClientProps) {
   const t = useMemo(() => dict.library || {}, [dict]);
+  const categoriesTrans = useMemo(() => dict.categories || {}, [dict]);
+  
   const { user } = useUser(); 
   const currentUser = user || serverUser;
 
-  // State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('Global');
-  
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState(''); 
-  
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  
+  // Filters
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterTopic, setFilterTopic] = useState<string>('all');
+  const [filterAge, setFilterAge] = useState<string[]>([]);
+  const [filterPlayerCount, setFilterPlayerCount] = useState<string>('all'); 
+  const [filterGK, setFilterGK] = useState<'any' | 'yes' | 'no'>('any');
+  const [filterSpecificTags, setFilterSpecificTags] = useState<string[]>([]);
+  const [activeFilterCorner, setActiveFilterCorner] = useState<FourCornerTag>('Technical');
+  const [filterIntensity, setFilterIntensity] = useState<string[]>([]);
+  const [expandedIntensityColor, setExpandedIntensityColor] = useState<string | null>(null);
 
   const [assets, setAssets] = useState<DrillAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [hoveredAssetId, setHoveredAssetId] = useState<string | null>(null);
-
+  
   const filterRef = useRef<HTMLDivElement>(null);
+  const filterContentRef = useRef<HTMLDivElement>(null);
 
-  // Debounce logic
   useEffect(() => {
     const timer = setTimeout(() => {
         setDebouncedSearch(searchQuery);
@@ -53,7 +87,10 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Data fetching
+  useEffect(() => {
+      setFilterTopic('all');
+  }, [filterCategory]);
+
   const fetchAssets = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -71,16 +108,20 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
     fetchAssets();
   }, [fetchAssets]);
 
-  // Click outside filter
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
-        setIsFilterOpen(false);
-      }
+        if (
+            filterRef.current && 
+            !filterRef.current.contains(event.target as Node) &&
+            filterContentRef.current &&
+            !filterContentRef.current.contains(event.target as Node)
+        ) {
+            setIsFilterOpen(false);
+        }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [filterRef]);
+  }, []);
 
   const handleDelete = async (e: React.MouseEvent, assetId: string) => {
     e.stopPropagation();
@@ -106,8 +147,55 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
     return false;
   };
 
-  const toggleTag = (tag: string) => {
-      setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+  const toggleSpecificTag = (tag: string) => {
+      setFilterSpecificTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+  };
+  
+  const toggleAgeGroup = (ageValues: string[]) => {
+      const allSelected = ageValues.every(val => filterAge.includes(val));
+      if (allSelected) {
+          setFilterAge(prev => prev.filter(val => !ageValues.includes(val)));
+      } else {
+          setFilterAge(prev => [...Array.from(new Set([...prev, ...ageValues]))]);
+      }
+  };
+
+  const toggleGK = (value: 'yes' | 'no') => {
+      if (filterGK === value) {
+          setFilterGK('any');
+      } else {
+          setFilterGK(value);
+      }
+  };
+
+  const toggleIntensityColor = (color: string) => {
+      if (expandedIntensityColor === color) {
+          setExpandedIntensityColor(null);
+      } else {
+          setExpandedIntensityColor(color);
+      }
+  };
+
+  const toggleSpecificLoad = (load: string) => {
+      setFilterIntensity(prev => prev.includes(load) ? prev.filter(l => l !== load) : [...prev, load]);
+  };
+
+  const resetFilters = () => {
+      setFilterCategory('all');
+      setFilterTopic('all');
+      setFilterSpecificTags([]);
+      setFilterAge([]);
+      setFilterPlayerCount('all');
+      setFilterGK('any');
+      setFilterIntensity([]);
+      setExpandedIntensityColor(null);
+  };
+
+  const getIntensityGroup = (load: string | undefined) => {
+      if (!load) return 'none';
+      if (load.includes('Low')) return 'green';
+      if (load.includes('Moderate')) return 'yellow';
+      return 'red'; 
   };
 
   const filteredAssets = useMemo(() => {
@@ -117,25 +205,54 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
         }
 
         const langMatch = asset.language ? asset.language === lang : true;
-        const searchMatch = asset.title.toLowerCase().includes(searchQuery.toLowerCase());
+        if (!langMatch) return false;
+
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            const matchTitle = asset.title.toLowerCase().includes(q);
+            const matchSub = asset.subCategory?.toLowerCase().includes(q);
+            if (!matchTitle && !matchSub) return false;
+        }
         
-        let categoryMatch = selectedCategory === 'all';
-        if (selectedCategory !== 'all') {
-            categoryMatch = asset.mainCategory === selectedCategory;
+        if (filterCategory !== 'all' && asset.mainCategory !== filterCategory) return false;
+        if (filterTopic !== 'all' && asset.subCategory !== filterTopic) return false;
+
+        if (filterSpecificTags.length > 0) {
+            if (!asset.tags || asset.tags.length === 0) return false;
+            const hasTag = asset.tags.some(tag => filterSpecificTags.includes(tag));
+            if (!hasTag) return false;
+        }
+        
+        if (filterAge.length > 0) {
+            const hasAge = asset.ageGroups?.some(age => filterAge.includes(age));
+            if (!hasAge) return false;
         }
 
-        let tagsMatch = true;
-        if (selectedTags.length > 0) {
-            if (asset.tags) {
-                tagsMatch = selectedTags.some(tag => asset.tags?.includes(tag as FourCornerTag));
-            } else {
-                tagsMatch = false;
+        if (filterPlayerCount !== 'all') {
+            const interval = PLAYER_INTERVALS.find(i => i.value === filterPlayerCount);
+            if (interval) {
+                const assetMin = asset.minPlayers || 0;
+                const assetMax = asset.maxPlayers || 99;
+                if (!(assetMin <= interval.max && assetMax >= interval.min)) {
+                    return false;
+                }
             }
         }
 
-        return langMatch && searchMatch && categoryMatch && tagsMatch;
+        if (filterGK !== 'any') {
+            const requiresGK = asset.goalKeeper === true;
+            if (filterGK === 'yes' && !requiresGK) return false;
+            if (filterGK === 'no' && requiresGK) return false;
+        }
+
+        if (filterIntensity.length > 0) {
+            if (!asset.physicalLoad) return false;
+            if (!filterIntensity.includes(asset.physicalLoad)) return false;
+        }
+
+        return true;
     });
-  }, [assets, lang, searchQuery, debouncedSearch, selectedCategory, selectedTags, activeTab]);
+  }, [assets, lang, searchQuery, debouncedSearch, filterCategory, filterTopic, filterSpecificTags, filterAge, filterPlayerCount, filterGK, filterIntensity, activeTab]);
 
   const getYouTubeID = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -143,7 +260,14 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
     return (match && match[2].length === 11) ? match[2] : null;
   };
   
-  const activeFiltersCount = (selectedCategory !== 'all' ? 1 : 0) + selectedTags.length;
+  const activeFiltersCount = (filterCategory !== 'all' ? 1 : 0) + 
+                             (filterTopic !== 'all' ? 1 : 0) + 
+                             (filterSpecificTags.length > 0 ? 1 : 0) +
+                             (filterAge.length > 0 ? 1 : 0) +
+                             (filterPlayerCount !== 'all' ? 1 : 0) +
+                             (filterGK !== 'any' ? 1 : 0) + 
+                             (filterIntensity.length > 0 ? 1 : 0);
+
 
   const getSourceBadge = (level: string) => {
       switch(level) {
@@ -155,27 +279,61 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
       }
   };
 
-  const getIntensityColor = (load: string | undefined) => {
+  const getIntensityColorClass = (load: string | undefined) => {
       if (!load) return 'bg-neutral-400';
       if (load.includes('Low')) return 'bg-green-500 shadow-green-500/50';
       if (load.includes('Moderate')) return 'bg-yellow-400 shadow-yellow-400/50';
       return 'bg-red-600 shadow-red-600/50';
   };
 
+  const translateLoad = (val: string) => {
+      return t.val_load?.[val] || val;
+  }
+  
+  const translateMainCat = (cat: string) => {
+      return categoriesTrans.main?.[cat] || cat;
+  }
+  
+  const translateSubCat = (sub: string) => {
+      return t.val_sub?.[sub] || sub;
+  }
+  
+  const translateTag = (tag: string) => {
+      return t.val_tags?.[tag] || tag;
+  }
+
+  // --- STYLES (High Density & Responsive) ---
+  const labelStyle = "text-[9px] font-bold text-neutral-500 uppercase mb-1 block tracking-tight";
+  const inputStyle = "text-[9px] w-full bg-neutral-50 border border-neutral-200 rounded py-1 px-2 font-bold text-neutral-900 focus:border-orange-500 outline-none h-7 transition-colors";
+  const selectStyle = "text-[9px] w-full bg-neutral-50 border border-neutral-200 rounded py-1 px-2 font-bold text-neutral-900 focus:border-orange-500 outline-none appearance-none h-7 transition-colors truncate";
+  
+  const getBtnStyle = (isActive: boolean) => 
+    `px-2 py-1 rounded-md text-[9px] font-bold border transition-all flex items-center justify-center gap-1.5 min-h-[28px] ${
+        isActive 
+        ? 'bg-white border-orange-500 text-orange-500 shadow-sm' 
+        : 'bg-white border-neutral-200 text-neutral-500 hover:border-orange-500 hover:text-orange-600'
+    }`;
+
+  // Helper til at sætte både Kategori og Emne ved klik på "Tag" i bunden
+  const handleSetTopicFromBottom = (corner: string, subCat: string) => {
+      setFilterCategory(corner.toLowerCase());
+      setFilterTopic(subCat);
+  };
+
   return (
-    <div className="h-full flex flex-col bg-[#F8FAFC] text-neutral-900 overflow-hidden relative">
+    <div className="h-full flex flex-col bg-[#F8FAFC] text-neutral-900 relative">
       
       {/* --- STICKY TOOLBAR --- */}
-      <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-neutral-200 px-4 md:px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-3 shrink-0 shadow-sm">
+      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-neutral-200 px-4 md:px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-3 shrink-0 shadow-sm isolate overflow-visible">
         
         {/* Left: Navigation Tabs */}
         <div className={`flex items-center gap-4 w-full md:w-auto overflow-x-auto no-scrollbar transition-opacity ${searchQuery.length > 0 ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
             <div className="flex bg-neutral-100 rounded-lg p-1 shrink-0">
                 {[
-                    { id: 'Global', label: 'DTL Global', icon: Globe },
-                    { id: 'Club', label: 'Club Library', icon: Shield },
-                    { id: 'Team', label: 'Team Library', icon: Users },
-                    { id: 'Personal', label: 'Personal Library', icon: User },
+                    { id: 'Global', label: t.lbl_vis_global || 'DTL Global', icon: Globe },
+                    { id: 'Club', label: t.lbl_vis_club || 'Club Library', icon: Shield },
+                    { id: 'Team', label: t.lbl_vis_team || 'Team Library', icon: Users },
+                    { id: 'Personal', label: t.lbl_vis_personal || 'Personal Library', icon: User },
                 ].map((tab) => (
                     <button
                         key={tab.id}
@@ -194,7 +352,7 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex items-center gap-2 w-full md:w-auto relative z-50">
             
             {/* Search */}
             <div className="relative flex-1 md:w-56 group">
@@ -208,43 +366,200 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                 />
             </div>
 
-            {/* Filter Button */}
-            <div className="relative" ref={filterRef}>
+            {/* ADVANCED FILTER BUTTON */}
+            <div className={`relative ${isFilterOpen ? 'z-40' : ''}`} ref={filterRef}>
                 <button 
                     onClick={() => setIsFilterOpen(!isFilterOpen)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-xs font-bold uppercase tracking-wide ${isFilterOpen || activeFiltersCount > 0 ? 'bg-neutral-900 text-white border-neutral-900' : 'bg-white border-neutral-200 text-neutral-500 hover:border-orange-500 hover:text-orange-600'}`}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-xs font-bold uppercase tracking-wide ${isFilterOpen || activeFiltersCount > 0 ? 'bg-black border-black text-white' : 'bg-white border-neutral-200 text-neutral-500 hover:border-orange-500 hover:text-orange-600'}`}
                 >
-                    <SlidersHorizontal size={14} />
-                    <span className="hidden sm:inline">Filter</span>
+                    <SlidersHorizontal size={14} className={isFilterOpen || activeFiltersCount > 0 ? 'text-orange-500' : 'text-current'} />
+                    <span className="hidden sm:inline">{t.mod_btn_filter || 'Filter'}</span>
                     {activeFiltersCount > 0 && (
                         <span className="bg-orange-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full">{activeFiltersCount}</span>
                     )}
                 </button>
 
-                {/* Filter Popover */}
+                {/* MEGA FILTER POPOVER (2 KOLONNER - COMPACT) */}
                 {isFilterOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-neutral-200 rounded-xl shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2">
-                        <div className="flex justify-between items-center mb-4">
-                            <span className="text-xs font-bold text-neutral-900 uppercase tracking-wider">Filtre</span>
-                            {(activeFiltersCount > 0) && (
-                                <button onClick={() => { setSelectedCategory('all'); setSelectedTags([]); }} className="text-[10px] text-orange-500 hover:text-orange-600 font-medium">Nulstil</button>
-                            )}
+                    <div className="absolute top-full right-0 mt-2 w-[95vw] md:w-[620px] bg-white border border-neutral-200 rounded-xl shadow-2xl z-[100] animate-in fade-in slide-in-from-top-2 overflow-hidden flex flex-col max-h-[85vh]">
+                        
+                        <div className="p-4 flex flex-col md:flex-row gap-4 h-full overflow-hidden" ref={filterContentRef}>
+                            
+                            {/* --- KOLONNE 1: KONTROLPANEL --- */}
+                            <div className="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-1 min-w-[280px]">
+                                
+                                {/* 1. KATEGORI & EMNE & SPILLERE */}
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="col-span-1">
+                                        <label className={labelStyle}>{t.lbl_main_category || 'Kategori'}</label>
+                                        <div className="relative">
+                                            <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className={selectStyle}>
+                                                <option value="all">{t.lbl_all_categories || 'Alle'}</option>
+                                                {Object.keys(DRILL_CATEGORIES).map(cat => (
+                                                    <option key={cat} value={cat}>{translateMainCat(cat)}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+                                        </div>
+                                    </div>
+                                    <div className="col-span-1">
+                                        <label className={labelStyle}>{t.lbl_sub_category || 'Emne'}</label>
+                                        <div className="relative">
+                                            <select 
+                                                value={filterTopic} 
+                                                onChange={(e) => setFilterTopic(e.target.value)} 
+                                                disabled={filterCategory === 'all'}
+                                                className={`${selectStyle} ${filterCategory === 'all' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            >
+                                                <option value="all">{t.lbl_all || 'Alle'}</option>
+                                                {filterCategory !== 'all' && DRILL_CATEGORIES[filterCategory as MainCategory]?.map((sub: string) => (
+                                                    <option key={sub} value={sub}>{translateSubCat(sub)}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+                                        </div>
+                                    </div>
+                                    <div className="col-span-2 mt-1">
+                                        <label className={labelStyle}>{t.lbl_players || 'Spillere'}</label>
+                                        <div className="relative">
+                                            <select value={filterPlayerCount} onChange={(e) => setFilterPlayerCount(e.target.value)} className={selectStyle}>
+                                                <option value="all">{t.lbl_all || 'Alle'}</option>
+                                                {PLAYER_INTERVALS.map(interval => (
+                                                    <option key={interval.value} value={interval.value}>{interval.label}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="h-px bg-neutral-100"></div>
+
+                                {/* 2. ALDER & KEEPER & LOAD */}
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className={labelStyle}>{t.lbl_age || 'Aldersgrupper'}</label>
+                                        <div className="flex flex-wrap gap-1">
+                                            {AGE_GROUPS.map((group) => {
+                                                const isSelected = group.values.every(v => filterAge.includes(v));
+                                                return (
+                                                    <button 
+                                                        key={group.label}
+                                                        onClick={() => toggleAgeGroup(group.values)}
+                                                        className={getBtnStyle(isSelected)}
+                                                    >
+                                                        {group.label}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className={labelStyle}>{t.lbl_goalkeeper || 'Keeper'}</label>
+                                        <div className="flex gap-2">
+                                            <button 
+                                                onClick={() => toggleGK('yes')} 
+                                                className={getBtnStyle(filterGK === 'yes')}
+                                            >
+                                                {t.lbl_yes || 'JA'}
+                                            </button>
+                                            <button 
+                                                onClick={() => toggleGK('no')} 
+                                                className={getBtnStyle(filterGK === 'no')}
+                                            >
+                                                {t.lbl_no || 'NEJ'}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className={labelStyle}>{t.lbl_physical_load || 'Fysisk Belastning'}</label>
+                                        <div className="flex flex-wrap gap-1">
+                                            <button onClick={() => toggleIntensityColor('green')} className={getBtnStyle(expandedIntensityColor === 'green' || INTENSITY_GROUPS.green.some(l => filterIntensity.includes(l)))}>
+                                                <div className="w-2 h-2 rounded-full bg-green-500 mr-1.5"></div> {t.int_low || 'Lav'}
+                                            </button>
+                                            <button onClick={() => toggleIntensityColor('yellow')} className={getBtnStyle(expandedIntensityColor === 'yellow' || INTENSITY_GROUPS.yellow.some(l => filterIntensity.includes(l)))}>
+                                                <div className="w-2 h-2 rounded-full bg-yellow-400 mr-1.5"></div> {t.int_medium || 'Middel'}
+                                            </button>
+                                            <button onClick={() => toggleIntensityColor('red')} className={getBtnStyle(expandedIntensityColor === 'red' || INTENSITY_GROUPS.red.some(l => filterIntensity.includes(l)))}>
+                                                <div className="w-2 h-2 rounded-full bg-red-600 mr-1.5"></div> {t.int_high || 'Høj'}
+                                            </button>
+                                        </div>
+                                        
+                                        {/* Sub-kategorier */}
+                                        {expandedIntensityColor && (
+                                            <div className="mt-1.5 p-1.5 bg-neutral-50 rounded border border-neutral-100 animate-in slide-in-from-top-1 w-full">
+                                                <div className="flex flex-wrap gap-1">
+                                                    {INTENSITY_GROUPS[expandedIntensityColor].map(loadType => {
+                                                        const isSelected = filterIntensity.includes(loadType);
+                                                        return (
+                                                            <button
+                                                                key={loadType}
+                                                                onClick={() => toggleSpecificLoad(loadType)}
+                                                                className={getBtnStyle(isSelected)}
+                                                            >
+                                                                {translateLoad(loadType)}
+                                                            </button>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* --- KOLONNE 2: EMNER (TOPICS) - RENSKET --- */}
+                            <div className="flex-1 flex flex-col bg-neutral-50 rounded-lg border border-neutral-100 overflow-hidden min-w-[240px]">
+                                
+                                {/* 4 CORNER TABS */}
+                                <div className="flex border-b border-neutral-100 bg-white">
+                                    {['Technical', 'Tactical', 'Physical', 'Mental'].map(corner => (
+                                        <button
+                                            key={corner}
+                                            onClick={() => setActiveFilterCorner(corner as FourCornerTag)}
+                                            className={`flex-1 py-1.5 text-[8px] font-bold uppercase transition-all ${activeFilterCorner === corner ? 'text-orange-600 border-b-2 border-orange-500 bg-orange-50/50' : 'text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50'}`}
+                                        >
+                                            {translateTag(corner)}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* TOPIC LIST (KUN EMNER) */}
+                                <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
+                                    {DRILL_TAGS[activeFilterCorner] ? (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {Object.keys(DRILL_TAGS[activeFilterCorner]).map((subCat) => {
+                                                const isSelected = filterCategory === activeFilterCorner.toLowerCase() && filterTopic === subCat;
+                                                return (
+                                                    <button 
+                                                        key={subCat} 
+                                                        onClick={() => handleSetTopicFromBottom(activeFilterCorner, subCat)}
+                                                        className={getBtnStyle(isSelected)}
+                                                    >
+                                                        {translateSubCat(subCat)}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <p className="text-[9px] text-neutral-400 italic text-center mt-10">Ingen emner fundet.</p>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                        <div className="mb-4">
-                            <label className="text-[10px] font-bold text-neutral-500 uppercase mb-2 block">Kategori</label>
-                            <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1.5 text-xs text-neutral-900 focus:border-orange-500 outline-none">
-                                <option value="all">Alle Kategorier</option>
-                                {Object.keys(DRILL_CATEGORIES).map(cat => (
-                                    <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-neutral-500 uppercase mb-2 block">Tags</label>
-                            <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto custom-scrollbar">
-                                {['Teknisk', 'Taktisk', 'Fysisk', 'Mentalt'].map(corner => (
-                                    <button key={corner} onClick={() => toggleTag(corner)} className={`px-2 py-1 rounded text-[10px] font-medium border transition-colors flex items-center gap-1 ${selectedTags.includes(corner) ? 'bg-orange-500 border-orange-500 text-white' : 'bg-white border-neutral-200 text-neutral-500 hover:border-orange-300'}`}>{selectedTags.includes(corner) && <Check size={10} />}{corner}</button>
-                                ))}
+
+                        {/* Footer */}
+                        <div className="p-2 border-t border-neutral-100 flex justify-between items-center bg-white shrink-0">
+                            <div className="flex gap-3 items-center">
+                                <button onClick={resetFilters} className="text-[9px] text-neutral-400 hover:text-orange-500 font-bold uppercase tracking-wide flex items-center gap-1 transition-colors">
+                                    <X size={10} /> {t.mod_btn_cancel || 'Nulstil'}
+                                </button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-medium text-neutral-400">{filteredAssets.length} {t.results_found || 'resultater'}</span>
+                                <button onClick={() => setIsFilterOpen(false)} className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-[9px] font-bold uppercase tracking-wide transition-colors">{t.btn_show_results || 'Vis'}</button>
                             </div>
                         </div>
                     </div>
@@ -254,7 +569,7 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
             {/* Create Button */}
             <button 
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-black hover:bg-neutral-900 text-white px-3 sm:px-4 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 group hover:-translate-y-1"
+                className="bg-black hover:bg-neutral-900 text-white px-3 sm:px-4 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 group hover:-translate-y-1 relative z-10"
             >
                 <Plus size={16} strokeWidth={3} className="text-orange-500 group-hover:scale-110 transition-transform" />
                 <span className="hidden sm:inline text-xs font-black uppercase tracking-wider">{t.createBtn ?? 'Create'}</span>
@@ -295,7 +610,7 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                   : (asset.thumbnailUrl || '/images/grass-texture-seamless.jpg');
               
               const sourceBadge = getSourceBadge(asset.accessLevel);
-              const intensityColor = getIntensityColor(asset.physicalLoad);
+              const intensityColor = getIntensityColorClass(asset.physicalLoad);
 
               return (
                 <div 
@@ -318,19 +633,16 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                    {/* 2. OVERLAY */}
                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent opacity-80 group-hover:opacity-70 transition-opacity"></div>
 
-                   {/* SOURCE BADGE (Kun ved Global Search) */}
-                   {searchQuery.length > 0 && sourceBadge && (
-                       <div className={`absolute top-3 left-3 text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm z-20 ${sourceBadge.color}`}>
-                           {sourceBadge.label}
-                       </div>
-                   )}
-
-                   {/* 3. TOP CONTENT */}
-                   
-                   {/* Tid - Top Venstre (Kun ved hover) */}
-                   <div className="absolute top-3 left-3 z-20">
+                   {/* SOURCE BADGE (Kun ved Global Search + Stacking med Tid) */}
+                   <div className="absolute top-3 left-3 z-20 flex flex-col items-start gap-1">
+                        {searchQuery.length > 0 && sourceBadge && (
+                            <div className={`text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm ${sourceBadge.color}`}>
+                                {sourceBadge.label}
+                            </div>
+                        )}
+                        {/* Tid - Kun ved hover */}
                         <span className="text-[10px] font-bold text-white shadow-sm flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            <Clock size={10} /> {asset.durationMin}m
+                                <Clock size={10} /> {asset.durationMin}m
                         </span>
                    </div>
 
@@ -361,8 +673,8 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
 
                    {/* 5. BOTTOM CONTENT (Titel + Intensitet) */}
                    <div className="absolute bottom-0 left-0 right-0 p-3 flex justify-between items-end gap-2">
-                        {/* Titel: UPPERCASE */}
-                        <h3 className="text-sm font-black text-white uppercase leading-tight line-clamp-2 text-shadow-lg">
+                        {/* Titel: UPPERCASE - Responsive Text */}
+                        <h3 className="text-xs sm:text-sm font-black text-white uppercase leading-tight line-clamp-2 text-shadow-lg">
                             {asset.title}
                         </h3>
                         
