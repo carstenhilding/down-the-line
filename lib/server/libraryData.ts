@@ -165,6 +165,7 @@ export interface DrillAsset {
   
   // Media
   thumbnailUrl?: string;
+  imageUrls?: string[]; // <--- DETTE ER DEN ENESTE NYE LINJE JEG HAR TILFØJET
   videoUrl?: string;
   youtubeUrl?: string;
   mediaType: 'image' | 'video' | 'youtube';
@@ -185,10 +186,8 @@ export interface DrillAsset {
   goalsTactical?: string;
   goalsMental?: string;
   
-  // HER ER DET NYE FELT DU MANGLER FOR AT FJERNE DE RØDE STREGER I MODALEN:
   goalKeeper?: boolean;
   
-  // NYT FELT TIL SPROG:
   language?: 'da' | 'en';
 }
 

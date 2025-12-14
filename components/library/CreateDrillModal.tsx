@@ -146,7 +146,8 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
     mediaType: 'image', 
     gamification: '',
     goalKeeper: false,
-    language: lang 
+    language: lang,
+    imageUrls: [] // Forberedt til galleri
   });
 
   const isPremium = ['Complete', 'Elite', 'Enterprise'].includes(user?.subscriptionLevel || '');
@@ -340,40 +341,79 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
       setFormData({ ...formData, physicalLoad: newLoad, rpe: newRPE });
   };
 
+  // --- NYT: HÅNDTERING AF MULTIPLE FILER ---
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []); // Konverter FileList til array
+    if (files.length === 0) return;
     
-    if (file.type.startsWith('video/') || file.name.endsWith('.mp4') || file.name.endsWith('.mov')) {
-        if (file.size > 50 * 1024 * 1024) return alert("Videoen er for stor (Max 50MB)");
-        setIsUploading(true);
-        try {
+    setIsUploading(true);
+    const newUrls: string[] = [];
+    let newVideoUrl: string | undefined = undefined;
+
+    try {
+      for (const file of files) {
+        // Tjek om det er video
+        if (file.type.startsWith('video/') || file.name.endsWith('.mp4') || file.name.endsWith('.mov')) {
+            if (file.size > 50 * 1024 * 1024) {
+                alert(`Videoen ${file.name} er for stor (Max 50MB)`);
+                continue;
+            }
             const url = await uploadFile(file, 'drills/videos');
             if (url) {
-                setFormData(prev => ({ ...prev, videoUrl: url, mediaType: 'video' }));
-                setLocalGallery(prev => [...prev, url]); 
-                setActiveModal('none'); 
+                newVideoUrl = url;
+                newUrls.push(url); // Tilføj til galleri visning også
             }
-        } catch(e) { console.error(e); alert('Fejl ved upload af video'); }
-        finally { setIsUploading(false); }
-        return;
-    }
+        } 
+        // Billede upload logic
+        else {
+            if (file.size > 5 * 1024 * 1024) {
+                alert(`Billedet ${file.name} er for stort (Max 5MB)`);
+                continue;
+            }
+            const options = { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true };
+            const compressedFile = await imageCompression(file, options);
+            const url = await uploadFile(compressedFile, 'drills/images');
+            if (url) {
+                newUrls.push(url);
+            }
+        }
+      }
 
-    if (file.size > 5 * 1024 * 1024) return alert("Billedet er for stort (Max 5MB)");
-    setIsUploading(true);
-    try {
-      const options = { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true };
-      const compressedFile = await imageCompression(file, options);
-      const url = await uploadFile(compressedFile, 'drills/images');
-      if (url) {
-          setLocalGallery(prev => [...prev, url]);
-          if (!formData.thumbnailUrl && formData.mediaType !== 'video') {
-              setFormData(prev => ({ ...prev, thumbnailUrl: url, mediaType: 'image' }));
-          }
+      // Opdater State når alle filer er behandlet
+      if (newUrls.length > 0) {
+          setLocalGallery(prev => [...prev, ...newUrls]);
+          
+          setFormData(prev => {
+              let updates: any = {};
+              
+              // Hvis vi uploadede en video, sæt den som primær video
+              if (newVideoUrl) {
+                  updates.videoUrl = newVideoUrl;
+                  updates.mediaType = 'video';
+              }
+
+              // Hvis der ikke er et coverbillede endnu, og vi har uploadet billeder, sæt det første som cover
+              if (!prev.thumbnailUrl && !newVideoUrl) {
+                  const firstImage = newUrls.find(u => !isVideoUrl(u));
+                  if (firstImage) {
+                      updates.thumbnailUrl = firstImage;
+                      updates.mediaType = 'image';
+                  }
+              }
+              return { ...prev, ...updates };
+          });
+          
           setActiveModal('none'); 
       }
-    } catch (error) { console.error(error); alert("Fejl under upload."); } 
-    finally { setIsUploading(false); }
+
+    } catch (error) { 
+        console.error(error); 
+        alert("Fejl under upload."); 
+    } finally { 
+        setIsUploading(false); 
+        // Nulstil input så man kan uploade samme fil igen hvis nødvendigt
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleAddYoutube = () => {
@@ -480,6 +520,10 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
         createdAt: new Date(),
         thumbnailUrl: formData.thumbnailUrl || '/images/tactical-analysis.jpeg', 
         mediaType: formData.mediaType || 'image',
+        
+        // HER GEMMER VI GALLERIET (Minus videoer, hvis vi kun vil have billeder i slideren)
+        imageUrls: localGallery.filter(url => !isVideoUrl(url)),
+
         durationMin: formData.durationMin || 0,
         workDuration: formData.workDuration || 0,
         restDuration: formData.restDuration || 0,
@@ -892,7 +936,31 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                 <div className="flex items-center justify-between mb-2"><div className="flex items-center gap-2"><span className="text-[9px] font-black text-neutral-900 uppercase tracking-wider">{t.lbl_tags_header || 'ØVELSENS (TAGS)'}</span></div><span className="text-[9px] text-neutral-400 font-medium">{t.lbl_tags_select || 'Vælg for at definere'}</span></div>
                 <div className="flex gap-2 mb-3 bg-neutral-50 p-2 rounded-lg border border-neutral-100">{(['Technical', 'Tactical', 'Physical', 'Mental'] as FourCornerTag[]).map(corner => {const isActive = activeCorner === corner; return (<button key={corner} onClick={() => setActiveCorner(corner)} className={`relative flex-1 py-2 flex items-center justify-center rounded-lg border transition-all duration-200 group ${isActive ? 'bg-black border-black text-white shadow-md transform -translate-y-0.5' : 'bg-white border-neutral-200 text-neutral-500 hover:border-orange-500'}`}><div className="absolute left-3 top-1/2 -translate-y-1/2">{getCornerIcon(corner, isActive)}</div><span className={`text-[11px] font-black uppercase tracking-wider transition-colors duration-200 w-full text-center ${isActive ? 'text-white' : 'text-neutral-500 group-hover:text-orange-500'}`}>{translateVal(corner, 'tag')}</span></button>)})}</div>
                 <div className="mb-3 overflow-x-auto custom-scrollbar p-1"><div className="flex flex-wrap gap-2">{DRILL_TAGS && DRILL_TAGS[activeCorner] && Object.keys(DRILL_TAGS[activeCorner]).map(sub => (<button key={sub} onClick={() => setActiveSubCat(sub)} className={`px-3 py-1.5 text-[10px] font-bold rounded-full whitespace-nowrap transition-all duration-200 ${activeSubCat === sub ? 'bg-white border-2 border-orange-500 text-orange-600 shadow-sm' : 'bg-white border border-neutral-200 text-neutral-500 hover:border-orange-500 hover:text-orange-500 hover:-translate-y-0.5'}`}>{translateVal(sub, 'sub')}</button>))}</div></div>
-                <div className="grid grid-cols-4 gap-2 mb-4 max-h-[120px] overflow-y-auto custom-scrollbar p-1">{DRILL_TAGS && DRILL_TAGS[activeCorner] && activeSubCat && DRILL_TAGS[activeCorner][activeSubCat] ? (DRILL_TAGS[activeCorner][activeSubCat].map(tag => {const isSelected = formData.tags?.includes(tag); return (<button key={tag} onClick={() => toggleDetailedTag(tag)} className={`text-left px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center justify-center group ${isSelected ? 'bg-orange-500 text-white border-orange-500 shadow-sm' : 'bg-white border-neutral-100 text-neutral-600 hover:border-orange-300'}`}><span className="truncate pr-1">{translateVal(tag, 'tag')}</span>{isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white ml-1"></div>}</button>)})) : (<div className="col-span-4 text-center text-[10px] text-neutral-400 italic py-4">Indlæser tags...</div>)}</div>
+                <div className="grid grid-cols-4 gap-2 mb-4 max-h-[120px] overflow-y-auto custom-scrollbar p-1">
+                    {DRILL_TAGS && DRILL_TAGS[activeCorner] && activeSubCat && DRILL_TAGS[activeCorner][activeSubCat] ? (
+                        DRILL_TAGS[activeCorner][activeSubCat].map(tag => {
+                            const isSelected = formData.tags?.includes(tag);
+                            return (
+                                <button 
+                                    key={tag} 
+                                    onClick={() => toggleDetailedTag(tag)} 
+                                    className={`
+                                        text-left px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center justify-between group 
+                                        ${isSelected 
+                                            ? 'bg-white text-orange-500 border-orange-500 shadow-sm' 
+                                            : 'bg-white border-neutral-100 text-neutral-600 hover:border-orange-300'
+                                        }
+                                    `}
+                                >
+                                    <span className="truncate pr-1 flex-1">{translateVal(tag, 'tag')}</span>
+                                    {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-orange-500 ml-1 shrink-0"></div>}
+                                </button>
+                            )
+                        })
+                    ) : (
+                        <div className="col-span-4 text-center text-[10px] text-neutral-400 italic py-4">Indlæser tags...</div>
+                    )}
+                </div>
                 {formData.tags && formData.tags.length > 0 && (<div className="pt-2 border-t border-neutral-100"><label className={labelClass}>{t.lbl_selected_tags || 'VALGTE TAGS'}</label><div className="flex flex-wrap gap-1.5">{formData.tags.map(tag => (<span key={tag} className="bg-neutral-800 text-white text-[9px] font-bold px-2 py-0.5 rounded flex items-center gap-1">{translateVal(tag, 'tag')} <button onClick={() => toggleDetailedTag(tag)} className="hover:text-red-300"><X size={10} /></button></span>))}</div></div>)}
               </div>
             </div>
@@ -1290,33 +1358,33 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                       {/* CONTENT */}
                       <div className="p-4 bg-neutral-50/50">
                          <div 
-                              className={`
-                                  group w-full h-40 rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all duration-300 gap-3
-                                  ${isUploading ? 'bg-orange-50 border-orange-500 cursor-wait' : 'bg-white border-neutral-200 hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/5 cursor-pointer hover:-translate-y-0.5'}
-                              `}
-                              onClick={() => !isUploading && fileInputRef.current?.click()}
-                          >
-                              <input type="file" ref={fileInputRef} className="hidden" accept="image/*,video/*,.mp4,.mov" onChange={handleFileUpload} />
-                              
-                              {isUploading ? (
-                                  <div className="flex flex-col items-center animate-pulse">
-                                      <Loader2 className="w-8 h-8 text-orange-500 animate-spin mb-2" />
-                                      <p className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">{t.upload_status || 'Uploader fil...'}</p>
-                                  </div>
-                              ) : (
-                                  <>
-                                      <div className="w-10 h-10 rounded-full bg-neutral-50 flex items-center justify-center group-hover:bg-orange-500 transition-colors duration-300 border border-neutral-100 shadow-sm group-hover:shadow-orange-500/30">
-                                          <Upload className="w-5 h-5 text-neutral-400 group-hover:text-white transition-colors duration-300" />
-                                      </div>
-                                      <div className="text-center">
-                                          <p className="text-xs font-black text-neutral-900 group-hover:text-orange-600 uppercase tracking-wide transition-colors">
-                                              {t.upload_btn_click || 'Klik for at vælge fil'}
-                                          </p>
-                                          <p className="text-[9px] text-neutral-400 mt-1 group-hover:text-neutral-500 transition-colors">{t.upload_format_hint || 'JPG, PNG, MP4 (Max 50MB)'}</p>
-                                      </div>
-                                  </>
-                              )}
-                          </div>
+                             className={`
+                                 group w-full h-40 rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all duration-300 gap-3
+                                 ${isUploading ? 'bg-orange-50 border-orange-500 cursor-wait' : 'bg-white border-neutral-200 hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/5 cursor-pointer hover:-translate-y-0.5'}
+                             `}
+                             onClick={() => !isUploading && fileInputRef.current?.click()}
+                         >
+                             <input type="file" ref={fileInputRef} className="hidden" accept="image/*,video/*,.mp4,.mov" multiple onChange={handleFileUpload} />
+                             
+                             {isUploading ? (
+                                 <div className="flex flex-col items-center animate-pulse">
+                                     <Loader2 className="w-8 h-8 text-orange-500 animate-spin mb-2" />
+                                     <p className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">{t.upload_status || 'Uploader fil...'}</p>
+                                 </div>
+                             ) : (
+                                 <>
+                                     <div className="w-10 h-10 rounded-full bg-neutral-50 flex items-center justify-center group-hover:bg-orange-500 transition-colors duration-300 border border-neutral-100 shadow-sm group-hover:shadow-orange-500/30">
+                                         <Upload className="w-5 h-5 text-neutral-400 group-hover:text-white transition-colors duration-300" />
+                                     </div>
+                                     <div className="text-center">
+                                         <p className="text-xs font-black text-neutral-900 group-hover:text-orange-600 uppercase tracking-wide transition-colors">
+                                             {t.upload_btn_click || 'Klik for at vælge fil'}
+                                         </p>
+                                         <p className="text-[9px] text-neutral-400 mt-1 group-hover:text-neutral-500 transition-colors">{t.upload_format_hint || 'JPG, PNG, MP4 (Max 50MB)'}</p>
+                                     </div>
+                                 </>
+                             )}
+                         </div>
                       </div>
                 </div>
             </div>

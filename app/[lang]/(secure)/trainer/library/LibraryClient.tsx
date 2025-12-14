@@ -4,8 +4,8 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { 
   Search, Plus, Globe, Shield, Users, User, 
-  Zap, Clock, Play, Loader2, Trash2, 
-  SlidersHorizontal, Check, Filter, ChevronDown, X
+  Clock, Play, Loader2, Trash2, 
+  SlidersHorizontal, ChevronDown, X
 } from 'lucide-react';
 import { DrillAsset, DRILL_TAGS, DRILL_CATEGORIES, FourCornerTag, MainCategory, PhysicalLoadType } from '@/lib/server/libraryData';
 import { DTLUser, UserRole } from '@/lib/server/data';
@@ -65,14 +65,18 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
   const [debouncedSearch, setDebouncedSearch] = useState(''); 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   
-  // Filters
+  // --- TOP FILTERS (Single Select Hierarchy) ---
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterTopic, setFilterTopic] = useState<string>('all');
+  
+  // --- BOTTOM FILTERS (Multi Select Independent) ---
+  const [filterMultiTopics, setFilterMultiTopics] = useState<string[]>([]);
+  const [activeFilterCorner, setActiveFilterCorner] = useState<FourCornerTag>('Technical');
+
+  // --- OTHER FILTERS ---
   const [filterAge, setFilterAge] = useState<string[]>([]);
   const [filterPlayerCount, setFilterPlayerCount] = useState<string>('all'); 
   const [filterGK, setFilterGK] = useState<'any' | 'yes' | 'no'>('any');
-  const [filterSpecificTags, setFilterSpecificTags] = useState<string[]>([]);
-  const [activeFilterCorner, setActiveFilterCorner] = useState<FourCornerTag>('Technical');
   const [filterIntensity, setFilterIntensity] = useState<string[]>([]);
   const [expandedIntensityColor, setExpandedIntensityColor] = useState<string | null>(null);
 
@@ -93,7 +97,8 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
   }, [searchQuery]);
 
   useEffect(() => {
-      setFilterTopic('all');
+      // Når hovedkategori ændres i toppen, nulstilles top-emnet
+      setFilterTopic('all'); 
   }, [filterCategory]);
 
   const fetchAssets = useCallback(async () => {
@@ -154,10 +159,6 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
     return false;
   };
 
-  const toggleSpecificTag = (tag: string) => {
-      setFilterSpecificTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
-  };
-  
   const toggleAgeGroup = (ageValues: string[]) => {
       const allSelected = ageValues.every(val => filterAge.includes(val));
       if (allSelected) {
@@ -187,10 +188,19 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
       setFilterIntensity(prev => prev.includes(load) ? prev.filter(l => l !== load) : [...prev, load]);
   };
 
+  // Uafhængig toggle for bund-panelet (Multi-select)
+  const toggleMultiTopic = (subCat: string) => {
+      setFilterMultiTopics(prev => 
+          prev.includes(subCat) 
+              ? prev.filter(t => t !== subCat) 
+              : [...prev, subCat]
+      );
+  };
+
   const resetFilters = () => {
       setFilterCategory('all');
       setFilterTopic('all');
-      setFilterSpecificTags([]);
+      setFilterMultiTopics([]); // Nulstil multi-select
       setFilterAge([]);
       setFilterPlayerCount('all');
       setFilterGK('any');
@@ -198,10 +208,8 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
       setExpandedIntensityColor(null);
   };
 
-  // --- OPTIMERET FILTRERINGS LOGIK ---
   const filteredAssets = useMemo(() => {
     return assets.filter(asset => {
-        // 1. Level Check (Global, Club, etc.) - ignoreres hvis der søges
         if (debouncedSearch.length === 0) {
             if (asset.accessLevel !== activeTab) return false;
         }
@@ -209,34 +217,30 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
         const langMatch = asset.language ? asset.language === lang : true;
         if (!langMatch) return false;
 
-        // 2. SEARCH QUERY (Nu med Tags!)
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
             const matchTitle = asset.title.toLowerCase().includes(q);
             const matchSub = asset.subCategory?.toLowerCase().includes(q);
-            const matchTags = asset.tags?.some(tag => tag.toLowerCase().includes(q)); // NYT: Tjek tags
+            const matchTags = asset.tags?.some(tag => tag.toLowerCase().includes(q));
 
             if (!matchTitle && !matchSub && !matchTags) return false;
         }
         
-        // 3. Dropdown Filters
+        // Top Filter Logic
         if (filterCategory !== 'all' && asset.mainCategory !== filterCategory) return false;
         if (filterTopic !== 'all' && asset.subCategory !== filterTopic) return false;
 
-        // 4. Specific Tag Filter
-        if (filterSpecificTags.length > 0) {
-            if (!asset.tags || asset.tags.length === 0) return false;
-            const hasTag = asset.tags.some(tag => filterSpecificTags.includes(tag));
-            if (!hasTag) return false;
+        // Bottom Filter Logic (Multi-select)
+        if (filterMultiTopics.length > 0) {
+            // Hvis øvelsen ikke har et subCategory, eller subCategory ikke er i listen af valgte, så fjern den
+            if (!asset.subCategory || !filterMultiTopics.includes(asset.subCategory)) return false;
         }
-        
-        // 5. Age Filter
+
         if (filterAge.length > 0) {
             const hasAge = asset.ageGroups?.some(age => filterAge.includes(age));
             if (!hasAge) return false;
         }
 
-        // 6. Player Count Filter
         if (filterPlayerCount !== 'all') {
             const interval = PLAYER_INTERVALS.find(i => i.value === filterPlayerCount);
             if (interval) {
@@ -248,14 +252,12 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
             }
         }
 
-        // 7. GK Filter
         if (filterGK !== 'any') {
             const requiresGK = asset.goalKeeper === true;
             if (filterGK === 'yes' && !requiresGK) return false;
             if (filterGK === 'no' && requiresGK) return false;
         }
 
-        // 8. Intensity Filter
         if (filterIntensity.length > 0) {
             if (!asset.physicalLoad) return false;
             if (!filterIntensity.includes(asset.physicalLoad)) return false;
@@ -263,7 +265,7 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
 
         return true;
     });
-  }, [assets, lang, searchQuery, debouncedSearch, filterCategory, filterTopic, filterSpecificTags, filterAge, filterPlayerCount, filterGK, filterIntensity, activeTab]);
+  }, [assets, lang, searchQuery, debouncedSearch, filterCategory, filterTopic, filterMultiTopics, filterAge, filterPlayerCount, filterGK, filterIntensity, activeTab]);
 
   const getYouTubeID = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -273,7 +275,7 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
   
   const activeFiltersCount = (filterCategory !== 'all' ? 1 : 0) + 
                              (filterTopic !== 'all' ? 1 : 0) + 
-                             (filterSpecificTags.length > 0 ? 1 : 0) +
+                             (filterMultiTopics.length > 0 ? 1 : 0) + // Tæller som 1 aktivt filter uanset antal valg
                              (filterAge.length > 0 ? 1 : 0) +
                              (filterPlayerCount !== 'all' ? 1 : 0) +
                              (filterGK !== 'any' ? 1 : 0) + 
@@ -313,22 +315,17 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
         : 'bg-white border-neutral-200 text-neutral-500 hover:border-orange-500 hover:text-orange-600'
     }`;
 
-  const handleSetTopicFromBottom = (corner: string, subCat: string) => {
-      setFilterCategory(corner.toLowerCase());
-      setFilterTopic(subCat);
-  };
-
   return (
     <div className="h-full flex flex-col bg-[#F8FAFC] text-neutral-900 relative">
       
-      {/* --- COMPACT STICKY TOOLBAR --- */}
-      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-neutral-200 px-3 py-2 flex flex-col md:flex-row items-center justify-between gap-2 shrink-0 shadow-sm isolate">
+      {/* --- HEADER / TOOLBAR (RESPONSIVE: COMPACT LAPTOP / SPACIOUS DESKTOP) --- */}
+      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-neutral-200 px-2 py-1.5 2xl:px-3 2xl:py-2 flex flex-col md:flex-row items-center justify-between gap-2 2xl:gap-3 shrink-0 shadow-sm isolate overflow-visible transition-all duration-300">
         
         {/* Left: Navigation Tabs */}
-        <div className={`flex items-center gap-2 w-full md:w-auto overflow-x-auto no-scrollbar transition-opacity ${searchQuery.length > 0 ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
-            <div className="flex bg-neutral-100 rounded-md p-0.5 shrink-0">
+        <div className={`flex items-center w-full md:w-auto overflow-x-auto no-scrollbar transition-opacity duration-200 ${searchQuery.length > 0 && window.innerWidth < 768 ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+            <div className="flex bg-neutral-100 rounded-md 2xl:rounded-lg p-0.5 2xl:p-1 shrink-0 w-full md:w-auto justify-between md:justify-start gap-0.5 2xl:gap-1">
                 {[
-                    { id: 'Global', label: t.lbl_vis_global || 'DTL Global', icon: Globe },
+                    { id: 'Global', label: t.lbl_vis_global || 'Global', icon: Globe },
                     { id: 'Club', label: t.lbl_vis_club || 'Club', icon: Shield },
                     { id: 'Team', label: t.lbl_vis_team || 'Team', icon: Users },
                     { id: 'Personal', label: t.lbl_vis_personal || 'My Drills', icon: User },
@@ -336,31 +333,44 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as TabType)}
-                        className={`flex items-center gap-1.5 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-all ${
-                            activeTab === tab.id 
-                            ? 'bg-white text-orange-600 shadow-sm ring-1 ring-neutral-200' 
-                            : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/50'
-                        }`}
+                        className={`
+                            flex-1 md:flex-none flex items-center justify-center gap-1.5 2xl:gap-2 
+                            px-2.5 py-1 2xl:px-3 2xl:py-1.5 
+                            rounded 2xl:rounded-md 
+                            text-[10px] 2xl:text-xs font-bold uppercase tracking-wider 
+                            transition-all whitespace-nowrap
+                            ${activeTab === tab.id 
+                                ? 'bg-white text-orange-600 shadow-sm ring-1 ring-neutral-200' 
+                                : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/50'
+                            }
+                        `}
                     >
-                        <tab.icon size={10} />
+                        <tab.icon className="w-3 h-3 2xl:w-3.5 2xl:h-3.5" />
                         <span className="hidden sm:inline">{tab.label}</span>
                     </button>
                 ))}
             </div>
         </div>
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2 w-full md:w-auto relative z-50">
+        {/* Right: Actions (Search + Filter + Create) */}
+        <div className="flex items-center gap-1.5 2xl:gap-2 w-full md:w-auto relative z-50 justify-end">
             
-            {/* Search */}
-            <div className="relative flex-1 md:w-56 group">
-                <Search className={`absolute left-2 top-1/2 -translate-y-1/2 transition-colors ${searchQuery.length > 0 ? 'text-orange-500' : 'text-neutral-400'}`} size={12} />
+            {/* Search Input (Responsive Width) */}
+            <div className="relative flex-1 md:flex-none md:w-36 lg:w-48 2xl:w-64 group transition-all duration-300">
+                <Search className={`absolute left-2.5 2xl:left-3 top-1/2 -translate-y-1/2 transition-colors w-3 h-3 2xl:w-3.5 2xl:h-3.5 ${searchQuery.length > 0 ? 'text-orange-500' : 'text-neutral-400'}`} />
                 <input 
                     type="text" 
                     placeholder={t.searchPlaceholder ?? 'Search...'}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className={`w-full pl-7 pr-2 py-1.5 bg-neutral-50 border rounded-md text-[10px] font-bold text-neutral-900 focus:outline-none focus:ring-1 transition-all placeholder:text-neutral-400 ${searchQuery.length > 0 ? 'border-orange-500 ring-orange-500' : 'border-neutral-200 focus:border-orange-500 focus:ring-orange-500'}`}
+                    className={`
+                        w-full 
+                        pl-7 pr-2 py-1 2xl:pl-9 2xl:pr-3 2xl:py-1.5 
+                        bg-neutral-50 border rounded-md 2xl:rounded-lg 
+                        text-[10px] 2xl:text-xs font-bold text-neutral-900 
+                        focus:outline-none focus:ring-1 transition-all placeholder:text-neutral-400 
+                        ${searchQuery.length > 0 ? 'border-orange-500 ring-orange-500' : 'border-neutral-200 focus:border-orange-500 focus:ring-orange-500'}
+                    `}
                 />
             </div>
 
@@ -368,21 +378,27 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
             <div className={`relative ${isFilterOpen ? 'z-40' : ''}`} ref={filterRef}>
                 <button 
                     onClick={() => setIsFilterOpen(!isFilterOpen)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border transition-all text-[10px] font-bold uppercase tracking-wide ${isFilterOpen || activeFiltersCount > 0 ? 'bg-black border-black text-white' : 'bg-white border-neutral-200 text-neutral-500 hover:border-orange-500 hover:text-orange-600'}`}
+                    className={`
+                        flex items-center gap-1.5 2xl:gap-2 
+                        px-2.5 py-1 2xl:px-3 2xl:py-1.5 
+                        rounded-md 2xl:rounded-lg border transition-all 
+                        text-[10px] 2xl:text-xs font-bold uppercase tracking-wide whitespace-nowrap 
+                        ${isFilterOpen || activeFiltersCount > 0 ? 'bg-black border-black text-white' : 'bg-white border-neutral-200 text-neutral-500 hover:border-orange-500 hover:text-orange-600'}
+                    `}
                 >
-                    <SlidersHorizontal size={12} className={isFilterOpen || activeFiltersCount > 0 ? 'text-orange-500' : 'text-current'} />
+                    <SlidersHorizontal className="w-3 h-3 2xl:w-3.5 2xl:h-3.5" color={isFilterOpen || activeFiltersCount > 0 ? '#f97316' : 'currentColor'} />
                     <span className="hidden sm:inline">{t.mod_btn_filter || 'Filter'}</span>
                     {activeFiltersCount > 0 && (
-                        <span className="bg-orange-500 text-white text-[8px] w-3.5 h-3.5 flex items-center justify-center rounded-full">{activeFiltersCount}</span>
+                        <span className="bg-orange-500 text-white text-[9px] w-3.5 h-3.5 2xl:w-4 2xl:h-4 flex items-center justify-center rounded-full ml-0.5">{activeFiltersCount}</span>
                     )}
                 </button>
 
                 {/* MEGA FILTER POPOVER */}
                 {isFilterOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-[95vw] md:w-[620px] bg-white border border-neutral-200 rounded-xl shadow-2xl z-[100] animate-in fade-in slide-in-from-top-2 overflow-hidden flex flex-col max-h-[85vh]">
+                    <div className="absolute top-full right-0 mt-2 w-[90vw] sm:w-[400px] md:w-[620px] bg-white border border-neutral-200 rounded-xl shadow-2xl z-[100] animate-in fade-in slide-in-from-top-2 overflow-hidden flex flex-col max-h-[85vh]">
                         
                         <div className="p-4 flex flex-col md:flex-row gap-4 h-full overflow-hidden" ref={filterContentRef}>
-                            <div className="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-1 min-w-[280px]">
+                            <div className="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-1 min-w-[200px]">
                                 <div className="grid grid-cols-2 gap-2">
                                     <div className="col-span-1">
                                         <label className={labelStyle}>{t.lbl_main_category || 'Kategori'}</label>
@@ -486,7 +502,7 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                                 </div>
                             </div>
 
-                            <div className="flex-1 flex flex-col bg-neutral-50 rounded-lg border border-neutral-100 overflow-hidden min-w-[240px]">
+                            <div className="hidden md:flex flex-1 flex-col bg-neutral-50 rounded-lg border border-neutral-100 overflow-hidden min-w-[240px]">
                                 <div className="flex border-b border-neutral-100 bg-white">
                                     {['Technical', 'Tactical', 'Physical', 'Mental'].map(corner => (
                                         <button
@@ -502,9 +518,10 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                                     {DRILL_TAGS[activeFilterCorner] ? (
                                         <div className="flex flex-wrap gap-1.5">
                                             {Object.keys(DRILL_TAGS[activeFilterCorner]).map((subCat) => {
-                                                const isSelected = filterCategory === activeFilterCorner.toLowerCase() && filterTopic === subCat;
+                                                // Nu bruger vi multi-select arrayet
+                                                const isSelected = filterMultiTopics.includes(subCat);
                                                 return (
-                                                    <button key={subCat} onClick={() => handleSetTopicFromBottom(activeFilterCorner, subCat)} className={getBtnStyle(isSelected)}>{translateSubCat(subCat)}</button>
+                                                    <button key={subCat} onClick={() => toggleMultiTopic(subCat)} className={getBtnStyle(isSelected)}>{translateSubCat(subCat)}</button>
                                                 )
                                             })}
                                         </div>
@@ -533,10 +550,10 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
             {/* Create Button */}
             <button 
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-black hover:bg-neutral-900 text-white px-3 sm:px-3 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 group relative z-10"
+                className="bg-black hover:bg-neutral-900 text-white px-2.5 py-1 2xl:px-4 2xl:py-1.5 rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-1.5 2xl:gap-2 group relative z-10 whitespace-nowrap"
             >
-                <Plus size={14} strokeWidth={3} className="text-orange-500 group-hover:scale-110 transition-transform" />
-                <span className="hidden sm:inline text-[10px] font-black uppercase tracking-wider">{t.createBtn ?? 'Create'}</span>
+                <Plus className="w-3 h-3 2xl:w-4 2xl:h-4 text-orange-500 group-hover:scale-110 transition-transform" strokeWidth={3} />
+                <span className="hidden sm:inline text-[10px] 2xl:text-xs font-black uppercase tracking-wider">{t.createBtn ?? 'Create'}</span>
             </button>
         </div>
       </div>
@@ -612,9 +629,9 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                    {/* ACTIONS (Hover) */}
                    <div className="absolute top-2 right-2 flex flex-col gap-1.5 z-30 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-[-5px] group-hover:translate-y-0">
                        <button 
-                            onClick={(e) => { e.stopPropagation(); }} 
-                            className="w-5 h-5 bg-white rounded-full flex items-center justify-center text-neutral-900 hover:bg-orange-500 hover:text-white shadow-md transition-colors" 
-                            title="Add"
+                           onClick={(e) => { e.stopPropagation(); }} 
+                           className="w-5 h-5 bg-white rounded-full flex items-center justify-center text-neutral-900 hover:bg-orange-500 hover:text-white shadow-md transition-colors" 
+                           title="Add"
                        >
                            <Plus size={12} strokeWidth={3} />
                        </button>
