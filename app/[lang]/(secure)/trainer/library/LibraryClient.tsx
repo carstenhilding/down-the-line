@@ -59,6 +59,9 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
   // --- STATES ---
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedDrill, setSelectedDrill] = useState<DrillAsset | null>(null);
+  
+  // NYT: State til at holde den øvelse vi skal redigere
+  const [drillToEdit, setDrillToEdit] = useState<DrillAsset | null>(null);
 
   const [activeTab, setActiveTab] = useState<TabType>('Global');
   const [searchQuery, setSearchQuery] = useState('');
@@ -149,6 +152,13 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
     setIsDeleting(null);
   };
 
+  // NYT: Håndterer redigering - åbner CreateDrillModal med data
+  const handleEditDrill = (drill: DrillAsset) => {
+      setSelectedDrill(null); // Luk detaljevisning
+      setDrillToEdit(drill);  // Sæt data til redigering
+      setIsCreateModalOpen(true); // Åbn create modal (nu i edit mode)
+  };
+
   const canDeleteDrill = (asset: DrillAsset) => {
     if (currentUser.role === UserRole.Developer) return true;
     if (asset.accessLevel === 'Global') return false;
@@ -188,7 +198,6 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
       setFilterIntensity(prev => prev.includes(load) ? prev.filter(l => l !== load) : [...prev, load]);
   };
 
-  // Uafhængig toggle for bund-panelet (Multi-select)
   const toggleMultiTopic = (subCat: string) => {
       setFilterMultiTopics(prev => 
           prev.includes(subCat) 
@@ -200,7 +209,7 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
   const resetFilters = () => {
       setFilterCategory('all');
       setFilterTopic('all');
-      setFilterMultiTopics([]); // Nulstil multi-select
+      setFilterMultiTopics([]); 
       setFilterAge([]);
       setFilterPlayerCount('all');
       setFilterGK('any');
@@ -232,7 +241,6 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
 
         // Bottom Filter Logic (Multi-select)
         if (filterMultiTopics.length > 0) {
-            // Hvis øvelsen ikke har et subCategory, eller subCategory ikke er i listen af valgte, så fjern den
             if (!asset.subCategory || !filterMultiTopics.includes(asset.subCategory)) return false;
         }
 
@@ -275,7 +283,7 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
   
   const activeFiltersCount = (filterCategory !== 'all' ? 1 : 0) + 
                              (filterTopic !== 'all' ? 1 : 0) + 
-                             (filterMultiTopics.length > 0 ? 1 : 0) + // Tæller som 1 aktivt filter uanset antal valg
+                             (filterMultiTopics.length > 0 ? 1 : 0) +
                              (filterAge.length > 0 ? 1 : 0) +
                              (filterPlayerCount !== 'all' ? 1 : 0) +
                              (filterGK !== 'any' ? 1 : 0) + 
@@ -304,7 +312,6 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
   const translateSubCat = (sub: string) => t.val_sub?.[sub] || sub;
   const translateTag = (tag: string) => t.val_tags?.[tag] || tag;
 
-  // --- STYLES (High Density) ---
   const labelStyle = "text-[9px] font-bold text-neutral-500 uppercase mb-1 block tracking-tight";
   const selectStyle = "text-[9px] w-full bg-neutral-50 border border-neutral-200 rounded py-1 px-2 font-bold text-neutral-900 focus:border-orange-500 outline-none appearance-none h-7 transition-colors truncate";
   
@@ -318,10 +325,10 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
   return (
     <div className="h-full flex flex-col bg-[#F8FAFC] text-neutral-900 relative">
       
-      {/* --- HEADER / TOOLBAR (RESPONSIVE: COMPACT LAPTOP / SPACIOUS DESKTOP) --- */}
+      {/* --- HEADER --- */}
       <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-neutral-200 px-2 py-1.5 2xl:px-3 2xl:py-2 flex flex-col md:flex-row items-center justify-between gap-2 2xl:gap-3 shrink-0 shadow-sm isolate overflow-visible transition-all duration-300">
         
-        {/* Left: Navigation Tabs */}
+        {/* Navigation Tabs */}
         <div className={`flex items-center w-full md:w-auto overflow-x-auto no-scrollbar transition-opacity duration-200 ${searchQuery.length > 0 && window.innerWidth < 768 ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
             <div className="flex bg-neutral-100 rounded-md 2xl:rounded-lg p-0.5 2xl:p-1 shrink-0 w-full md:w-auto justify-between md:justify-start gap-0.5 2xl:gap-1">
                 {[
@@ -352,10 +359,8 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
             </div>
         </div>
 
-        {/* Right: Actions (Search + Filter + Create) */}
+        {/* Right: Actions */}
         <div className="flex items-center gap-1.5 2xl:gap-2 w-full md:w-auto relative z-50 justify-end">
-            
-            {/* Search Input (Responsive Width) */}
             <div className="relative flex-1 md:flex-none md:w-36 lg:w-48 2xl:w-64 group transition-all duration-300">
                 <Search className={`absolute left-2.5 2xl:left-3 top-1/2 -translate-y-1/2 transition-colors w-3 h-3 2xl:w-3.5 2xl:h-3.5 ${searchQuery.length > 0 ? 'text-orange-500' : 'text-neutral-400'}`} />
                 <input 
@@ -364,8 +369,7 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className={`
-                        w-full 
-                        pl-7 pr-2 py-1 2xl:pl-9 2xl:pr-3 2xl:py-1.5 
+                        w-full pl-7 pr-2 py-1 2xl:pl-9 2xl:pr-3 2xl:py-1.5 
                         bg-neutral-50 border rounded-md 2xl:rounded-lg 
                         text-[10px] 2xl:text-xs font-bold text-neutral-900 
                         focus:outline-none focus:ring-1 transition-all placeholder:text-neutral-400 
@@ -374,7 +378,7 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                 />
             </div>
 
-            {/* ADVANCED FILTER BUTTON */}
+            {/* FILTER BUTTON */}
             <div className={`relative ${isFilterOpen ? 'z-40' : ''}`} ref={filterRef}>
                 <button 
                     onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -393,10 +397,9 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                     )}
                 </button>
 
-                {/* MEGA FILTER POPOVER */}
+                {/* FILTER POPOVER */}
                 {isFilterOpen && (
                     <div className="absolute top-full right-0 mt-2 w-[90vw] sm:w-[400px] md:w-[620px] bg-white border border-neutral-200 rounded-xl shadow-2xl z-[100] animate-in fade-in slide-in-from-top-2 overflow-hidden flex flex-col max-h-[85vh]">
-                        
                         <div className="p-4 flex flex-col md:flex-row gap-4 h-full overflow-hidden" ref={filterContentRef}>
                             <div className="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-1 min-w-[200px]">
                                 <div className="grid grid-cols-2 gap-2">
@@ -442,9 +445,7 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                                         </div>
                                     </div>
                                 </div>
-
                                 <div className="h-px bg-neutral-100"></div>
-
                                 <div className="space-y-3">
                                     <div>
                                         <label className={labelStyle}>{t.lbl_age || 'Aldersgrupper'}</label>
@@ -452,18 +453,13 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                                             {AGE_GROUPS.map((group) => {
                                                 const isSelected = group.values.every(v => filterAge.includes(v));
                                                 return (
-                                                    <button 
-                                                        key={group.label}
-                                                        onClick={() => toggleAgeGroup(group.values)}
-                                                        className={getBtnStyle(isSelected)}
-                                                    >
+                                                    <button key={group.label} onClick={() => toggleAgeGroup(group.values)} className={getBtnStyle(isSelected)}>
                                                         {group.label}
                                                     </button>
                                                 )
                                             })}
                                         </div>
                                     </div>
-
                                     <div>
                                         <label className={labelStyle}>{t.lbl_goalkeeper || 'Keeper'}</label>
                                         <div className="flex gap-2">
@@ -471,7 +467,6 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                                             <button onClick={() => toggleGK('no')} className={getBtnStyle(filterGK === 'no')}>{t.lbl_no || 'NEJ'}</button>
                                         </div>
                                     </div>
-
                                     <div>
                                         <label className={labelStyle}>{t.lbl_physical_load || 'Fysisk Belastning'}</label>
                                         <div className="flex flex-wrap gap-1">
@@ -485,7 +480,6 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                                                 <div className="w-2 h-2 rounded-full bg-red-600 mr-1.5"></div> {t.int_high || 'Høj'}
                                             </button>
                                         </div>
-                                        
                                         {expandedIntensityColor && (
                                             <div className="mt-1.5 p-1.5 bg-neutral-50 rounded border border-neutral-100 animate-in slide-in-from-top-1 w-full">
                                                 <div className="flex flex-wrap gap-1">
@@ -501,7 +495,6 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                                     </div>
                                 </div>
                             </div>
-
                             <div className="hidden md:flex flex-1 flex-col bg-neutral-50 rounded-lg border border-neutral-100 overflow-hidden min-w-[240px]">
                                 <div className="flex border-b border-neutral-100 bg-white">
                                     {['Technical', 'Tactical', 'Physical', 'Mental'].map(corner => (
@@ -518,7 +511,6 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                                     {DRILL_TAGS[activeFilterCorner] ? (
                                         <div className="flex flex-wrap gap-1.5">
                                             {Object.keys(DRILL_TAGS[activeFilterCorner]).map((subCat) => {
-                                                // Nu bruger vi multi-select arrayet
                                                 const isSelected = filterMultiTopics.includes(subCat);
                                                 return (
                                                     <button key={subCat} onClick={() => toggleMultiTopic(subCat)} className={getBtnStyle(isSelected)}>{translateSubCat(subCat)}</button>
@@ -531,7 +523,6 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
                                 </div>
                             </div>
                         </div>
-
                         <div className="p-2 border-t border-neutral-100 flex justify-between items-center bg-white shrink-0">
                             <div className="flex gap-3 items-center">
                                 <button onClick={resetFilters} className="text-[9px] text-neutral-400 hover:text-orange-500 font-bold uppercase tracking-wide flex items-center gap-1 transition-colors">
@@ -549,7 +540,10 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
 
             {/* Create Button */}
             <button 
-                onClick={() => setIsCreateModalOpen(true)}
+                onClick={() => {
+                    setDrillToEdit(null); // Sikre at vi starter frisk
+                    setIsCreateModalOpen(true);
+                }}
                 className="bg-black hover:bg-neutral-900 text-white px-2.5 py-1 2xl:px-4 2xl:py-1.5 rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-1.5 2xl:gap-2 group relative z-10 whitespace-nowrap"
             >
                 <Plus className="w-3 h-3 2xl:w-4 2xl:h-4 text-orange-500 group-hover:scale-110 transition-transform" strokeWidth={3} />
@@ -558,9 +552,8 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
         </div>
       </div>
 
-      {/* --- GRID CONTENT (HIGH DENSITY) --- */}
+      {/* --- GRID CONTENT --- */}
       <div className="flex-1 overflow-y-auto p-2 lg:p-2 custom-scrollbar">
-        
         {debouncedSearch.length > 0 && !isLoading && (
             <div className="mb-2 flex items-center gap-2 px-1 animate-in fade-in slide-in-from-top-2">
                 <span className="text-[10px] font-bold uppercase text-neutral-400">Resultater:</span>
@@ -666,7 +659,12 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
              <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mb-4"><Search size={32} className="opacity-20 text-neutral-500" /></div>
              <p className="text-xs font-bold text-neutral-500 opacity-60">Ingen øvelser fundet.</p>
              {activeTab === 'Personal' && searchQuery.length === 0 && (
-                <button onClick={() => setIsCreateModalOpen(true)} className="mt-4 px-6 py-2 bg-orange-500 text-white rounded-md text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-all shadow-lg hover:-translate-y-0.5">{t.createBtn || 'Opret'}</button>
+                <button 
+                    onClick={() => { setDrillToEdit(null); setIsCreateModalOpen(true); }}
+                    className="mt-4 px-6 py-2 bg-orange-500 text-white rounded-md text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-all shadow-lg hover:-translate-y-0.5"
+                >
+                    {t.createBtn || 'Opret'}
+                </button>
              )}
           </div>
         )}
@@ -676,17 +674,23 @@ export default function LibraryClient({ dict, lang, user: serverUser }: LibraryC
       {isCreateModalOpen && (
         <CreateDrillModal 
           isOpen={isCreateModalOpen} 
-          onClose={() => setIsCreateModalOpen(false)} 
+          onClose={() => {
+              setIsCreateModalOpen(false);
+              setDrillToEdit(null); // Nulstil edit state når modal lukkes
+          }} 
           lang={lang}
           dict={dict}
+          initialData={drillToEdit} // NYT: Send data med til redigering
           onSuccess={fetchAssets} 
         />
       )}
 
+      {/* Detalje Visning - Nu med onEdit handler */}
       <DrillDetailModal 
           drill={selectedDrill} 
           isOpen={!!selectedDrill} 
           onClose={() => setSelectedDrill(null)} 
+          onEdit={handleEditDrill} // NYT: Binder knappen i modalen sammen med logikken her
           lang={lang}
       />
     </div>

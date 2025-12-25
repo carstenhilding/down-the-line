@@ -8,7 +8,8 @@ import {
   getDocs, 
   query, 
   where, 
-  serverTimestamp
+  serverTimestamp,
+  updateDoc // NYT: Vi skal bruge denne til at opdatere
 } from "firebase/firestore";
 import { DrillAsset } from "../server/libraryData";
 
@@ -38,15 +39,38 @@ export async function createDrill(drillData: DrillAsset) {
 }
 
 /**
+ * NYT: Opdaterer en eksisterende øvelse.
+ */
+export async function updateDrill(drillId: string, drillData: Partial<DrillAsset>) {
+  try {
+    const drillRef = doc(db, COLLECTION_NAME, drillId);
+    
+    // Vi fjerner ID fra dataen, så vi ikke overskriver dokumentets ID-felt (redundant)
+    const cleanData = JSON.parse(JSON.stringify(drillData));
+    delete cleanData.id;
+
+    await updateDoc(drillRef, {
+      ...cleanData,
+      updatedAt: serverTimestamp(), // Opdater altid tidsstempel
+    });
+
+    console.log("Øvelse opdateret:", drillId);
+    return { success: true };
+  } catch (error) {
+    console.error("Fejl ved opdatering af øvelse:", error);
+    return { success: false, error };
+  }
+}
+
+/**
  * Henter øvelser baseret på adgangsniveau.
- * OPDATERET: Eksplicit returtype tilføjet for at fixe rekursions-fejl
  */
 export async function getDrills(
     accessLevel: 'Global' | 'Club' | 'Team' | 'Personal' | 'All', 
     userId?: string, 
     clubId?: string,
     teamId?: string
-): Promise<DrillAsset[]> { // <--- HER VAR FEJLEN: Manglende returtype
+): Promise<DrillAsset[]> {
   try {
     // HVIS 'ALL': Hent fra alle kilder parallelt (Global Search)
     if (accessLevel === 'All') {
@@ -61,7 +85,6 @@ export async function getDrills(
         const allDrills = [...globalDrills, ...clubDrills, ...teamDrills, ...personalDrills];
         
         // Fjern dubletter baseret på ID og returner
-        // Vi typer 'item' eksplicit for at være sikre
         const uniqueDrills = Array.from(new Map(allDrills.map((item: DrillAsset) => [item.id, item])).values());
         
         return uniqueDrills;
@@ -91,7 +114,6 @@ export async function getDrills(
       drills.push({
         id: doc.id,
         ...data,
-        // Sikrer at datoer er korrekte JS Date objekter
         createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(), 
       } as unknown as DrillAsset);
     });

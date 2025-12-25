@@ -24,7 +24,8 @@ import {
     GamePhase,
     DRILL_TAGS 
 } from '@/lib/server/libraryData';
-import { createDrill } from '@/lib/services/libraryService';
+// NYT: Importer updateDrill
+import { createDrill, updateDrill } from '@/lib/services/libraryService';
 import { uploadFile } from '@/lib/services/storageService';
 import { useUser } from '@/components/UserContext';
 import imageCompression from 'browser-image-compression';
@@ -37,6 +38,7 @@ interface CreateDrillModalProps {
   lang: 'da' | 'en';
   dict: any; 
   onSuccess?: () => void;
+  initialData?: DrillAsset | null;
 }
 
 const AGE_OPTIONS = [
@@ -87,7 +89,7 @@ const emptyLocalizedData: LocalizedDrillData = {
     gamification: ''
 };
 
-export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSuccess }: CreateDrillModalProps) {
+export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSuccess, initialData }: CreateDrillModalProps) {
   if (!isOpen) return null;
   const { user } = useUser();
   const router = useRouter();
@@ -140,31 +142,70 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
     ageGroups: [],
     physicalLoad: 'Aerobic – Moderate Intensity',
     rpe: 5, 
-    accessLevel: 'Personal', // Standard fallback, opdateres af useEffect
+    accessLevel: 'Personal', 
     tags: [],
     materials: [],
     mediaType: 'image', 
     gamification: '',
     goalKeeper: false,
     language: lang,
-    imageUrls: [] // Forberedt til galleri
+    imageUrls: [] 
   });
 
   const isPremium = ['Complete', 'Elite', 'Enterprise'].includes(user?.subscriptionLevel || '');
   const isDtlEmployee = user?.role === UserRole.Developer; 
 
-  // NYT: Hent sidst valgte bibliotek fra LocalStorage når modalen åbner
+  // --- HYDRATE DATA VED EDIT ---
   useEffect(() => {
-    const lastUsedLibrary = localStorage.getItem('DTL_LAST_LIBRARY_CHOICE');
-    if (lastUsedLibrary && ['Global', 'Club', 'Team', 'Personal'].includes(lastUsedLibrary)) {
-        // Hvis brugeren ikke har adgang til Global (kun developers), skal vi ikke sætte den, selvom den er gemt
-        if (lastUsedLibrary === 'Global' && !isDtlEmployee) {
-            setFormData(prev => ({ ...prev, accessLevel: 'Personal' }));
-        } else {
-            setFormData(prev => ({ ...prev, accessLevel: lastUsedLibrary as any }));
+    if (initialData) {
+      console.log("Editing drill:", initialData);
+
+      setFormData(prev => ({
+        ...prev,
+        ...initialData,
+        pitchSize: initialData.pitchSize ? { ...initialData.pitchSize } : { width: undefined as any, length: undefined as any },
+        accessLevel: initialData.accessLevel || 'Personal',
+      }));
+
+      if (initialData.setup && initialData.setup.length > 0) {
+        setTeams(initialData.setup);
+      }
+
+      if (initialData.imageUrls && initialData.imageUrls.length > 0) {
+        setLocalGallery(initialData.imageUrls);
+      } else if (initialData.thumbnailUrl) {
+         setLocalGallery([initialData.thumbnailUrl]);
+      }
+
+      const savedLang = (initialData.language as 'da' | 'en') || 'da';
+      setCurrentLang(savedLang);
+
+      setTextData(prev => ({
+        ...prev,
+        [savedLang]: {
+            title: initialData.title || '',
+            description: initialData.description || '',
+            rules: initialData.rules || ['', '', ''],
+            coachingPoints: initialData.coachingPoints || { instruction: '', keyPoints: ['', '', ''] },
+            stopFreeze: initialData.stopFreeze || '',
+            progression: initialData.progression || [''],
+            regression: initialData.regression || [''],
+            gamification: initialData.gamification || ''
+        }
+      }));
+
+    } else {
+        const lastUsedLibrary = localStorage.getItem('DTL_LAST_LIBRARY_CHOICE');
+        if (lastUsedLibrary && ['Global', 'Club', 'Team', 'Personal'].includes(lastUsedLibrary)) {
+            if (lastUsedLibrary === 'Global' && !isDtlEmployee) {
+                setFormData(prev => ({ ...prev, accessLevel: 'Personal' }));
+            } else {
+                setFormData(prev => ({ ...prev, accessLevel: lastUsedLibrary as any }));
+            }
         }
     }
-  }, [isDtlEmployee]);
+  }, [initialData, isDtlEmployee]);
+
 
   useEffect(() => {
       if (formData.thumbnailUrl && !localGallery.includes(formData.thumbnailUrl)) {
@@ -341,9 +382,8 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
       setFormData({ ...formData, physicalLoad: newLoad, rpe: newRPE });
   };
 
-  // --- NYT: HÅNDTERING AF MULTIPLE FILER ---
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []); // Konverter FileList til array
+    const files = Array.from(e.target.files || []); 
     if (files.length === 0) return;
     
     setIsUploading(true);
@@ -352,7 +392,6 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
 
     try {
       for (const file of files) {
-        // Tjek om det er video
         if (file.type.startsWith('video/') || file.name.endsWith('.mp4') || file.name.endsWith('.mov')) {
             if (file.size > 50 * 1024 * 1024) {
                 alert(`Videoen ${file.name} er for stor (Max 50MB)`);
@@ -361,10 +400,9 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
             const url = await uploadFile(file, 'drills/videos');
             if (url) {
                 newVideoUrl = url;
-                newUrls.push(url); // Tilføj til galleri visning også
+                newUrls.push(url); 
             }
         } 
-        // Billede upload logic
         else {
             if (file.size > 5 * 1024 * 1024) {
                 alert(`Billedet ${file.name} er for stort (Max 5MB)`);
@@ -379,20 +417,15 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
         }
       }
 
-      // Opdater State når alle filer er behandlet
       if (newUrls.length > 0) {
           setLocalGallery(prev => [...prev, ...newUrls]);
           
           setFormData(prev => {
               let updates: any = {};
-              
-              // Hvis vi uploadede en video, sæt den som primær video
               if (newVideoUrl) {
                   updates.videoUrl = newVideoUrl;
                   updates.mediaType = 'video';
               }
-
-              // Hvis der ikke er et coverbillede endnu, og vi har uploadet billeder, sæt det første som cover
               if (!prev.thumbnailUrl && !newVideoUrl) {
                   const firstImage = newUrls.find(u => !isVideoUrl(u));
                   if (firstImage) {
@@ -411,7 +444,6 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
         alert("Fejl under upload."); 
     } finally { 
         setIsUploading(false); 
-        // Nulstil input så man kan uploade samme fil igen hvis nødvendigt
         if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -487,6 +519,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
 
   const pitchData = calculatePitchData();
 
+  // --- NYT: HANDLE SAVE MED UPDATE LOGIK ---
   const handleSave = async () => {
     const currentTitle = textData[currentLang].title;
     if (!currentTitle) return alert(t.ph_title || "Titel mangler!");
@@ -513,15 +546,16 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
         regression: cleanRegression,
         gamification: currentText.gamification,
 
-        authorId: user?.id || 'unknown',
-        authorName: user?.name || 'Ukendt Træner',
-        clubId: user?.clubId,
-        teamId: user?.teamId,
-        createdAt: new Date(),
+        // Bevar eksisterende meta-data hvis edit (ellers defaults)
+        authorId: formData.authorId || user?.id || 'unknown',
+        authorName: formData.authorName || user?.name || 'Ukendt Træner',
+        clubId: formData.clubId || user?.clubId,
+        teamId: formData.teamId || user?.teamId,
+        createdAt: formData.createdAt || new Date(),
+
         thumbnailUrl: formData.thumbnailUrl || '/images/tactical-analysis.jpeg', 
         mediaType: formData.mediaType || 'image',
         
-        // HER GEMMER VI GALLERIET (Minus videoer, hvis vi kun vil have billeder i slideren)
         imageUrls: localGallery.filter(url => !isVideoUrl(url)),
 
         durationMin: formData.durationMin || 0,
@@ -535,16 +569,23 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
         language: currentLang 
       };
       
-      const result = await createDrill(newDrill);
+      // LOGIK FOR CREATE VS UPDATE
+      let result;
+      if (initialData?.id) {
+          // Hvis vi har et ID, opdater eksisterende
+          result = await updateDrill(initialData.id, newDrill);
+      } else {
+          // Ellers opret ny
+          result = await createDrill(newDrill);
+      }
       
       if (result.success) { 
-          // NYT: Gem det valgte bibliotek i localStorage
           if (formData.accessLevel) {
               localStorage.setItem('DTL_LAST_LIBRARY_CHOICE', formData.accessLevel);
           }
 
           if (onSuccess) onSuccess(); 
-          if (isDtlEmployee) {
+          if (isDtlEmployee && !initialData) { 
               const savedLang = currentLang === 'da' ? 'Dansk' : 'Engelsk';
               alert(`Øvelse gemt som ${savedLang}!\n\nDu kan nu skifte sprog i toppen, rette titlen/teksten og gemme igen for at oprette den anden version.`);
               setFormData(prev => ({ ...prev, id: undefined }));
@@ -598,7 +639,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
               <span className="bg-orange-500 w-1 h-4 rounded-sm"></span>
               <div>
                  <h2 className="text-sm font-black text-neutral-900 uppercase tracking-tight leading-none">
-                   {t.create_drill_title || 'Opret Ny Øvelse'}
+                   {initialData ? (t.edit_drill_title || 'Rediger Øvelse') : (t.create_drill_title || 'Opret Ny Øvelse')}
                  </h2>
                  <p className="text-[9px] text-neutral-400 font-medium">{t.subtitle || 'DTL Asset Management'}</p>
               </div>
@@ -1193,7 +1234,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
             </div>
         )}
 
-        {/* MATERIAL MODAL (PUNKT 4: RETTET INPUT) */}
+        {/* MATERIAL MODAL */}
         {isMaterialModalOpen && (
             <div className="absolute inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
                 <div className="bg-white rounded-xl shadow-2xl border border-neutral-200 w-[300px] p-4 space-y-3 animate-in zoom-in-95 duration-200">
@@ -1206,7 +1247,6 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                         {newMaterial.name === 'eq_other' && (<div><label className={labelClass}>{t.mod_mat_name || 'NAVN'}</label><input type="text" className={inputClass} placeholder="Fx Rebounder..." value={customMaterialName} onChange={(e) => setCustomMaterialName(e.target.value)} autoFocus /></div>)}
                         <div>
                             <label className={labelClass}>{COLOR_ITEMS.includes(newMaterial.name) ? (t.mod_mat_colors || 'ANTAL FARVER') : (t.mod_mat_count || 'ANTAL')}</label>
-                            {/* RETTET HER: onFocus={e => e.target.select()} tilføjet */}
                             <input type="number" className={inputClass} value={newMaterial.count} onChange={(e) => setNewMaterial({ ...newMaterial, count: parseInt(e.target.value) || 1 })} min="1" onFocus={(e) => e.target.select()} />
                         </div>
                         <div><label className={labelClass}>{t.mod_mat_details || 'DETALJER (VALGFRI)'}</label><input type="text" className={inputClass} placeholder={t.ph_mat_details || "Fx 3 farver, Str. 5, Store..."} value={newMaterial.details} onChange={(e) => setNewMaterial({ ...newMaterial, details: e.target.value })} /></div>
