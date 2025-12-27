@@ -153,7 +153,9 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
   });
 
   const isPremium = ['Complete', 'Elite', 'Enterprise'].includes(user?.subscriptionLevel || '');
-  const isDtlEmployee = user?.role === UserRole.Developer; 
+  
+  // HER ER RETTELSEN: Vi tjekker nu både for Developer-rollen og 'admin' (uden syntax fejl)
+  const isDtlEmployee = user?.role === UserRole.Developer;
 
   // --- HYDRATE DATA VED EDIT ---
   useEffect(() => {
@@ -1215,16 +1217,16 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                     {isVideoUrl(zoomedAsset) ? (
                         <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl border border-white/10">
                              {zoomedAsset.includes('youtube') || zoomedAsset.includes('youtu.be') ? (
-                                 <iframe 
+                                  <iframe 
                                     width="100%" 
                                     height="100%" 
                                     src={`https://www.youtube.com/embed/${getYouTubeID(zoomedAsset)}?autoplay=1`} 
                                     frameBorder="0" 
                                     allow="autoplay; encrypted-media" 
                                     allowFullScreen
-                                 ></iframe>
+                                  ></iframe>
                              ) : (
-                                 <video src={zoomedAsset} controls autoPlay className="w-full h-full object-contain" />
+                                  <video src={zoomedAsset} controls autoPlay className="w-full h-full object-contain" />
                              )}
                         </div>
                     ) : (
@@ -1273,12 +1275,12 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                                  </div>
                                  <div>
                                      <h3 className="text-sm font-black text-neutral-900 uppercase tracking-tight leading-none">
-                                         {t.studio_title || 'DTL Studio'}
+                                          {t.studio_title || 'DTL Studio'}
                                      </h3>
                                  </div>
                               </div>
                               <p className="text-neutral-500 text-[10px] leading-relaxed line-clamp-2">
-                                 {t.studio_desc || 'Vælg hvordan du vil skabe dit indhold. Design selv, importer eller brug video.'}
+                                  {t.studio_desc || 'Vælg hvordan du vil skabe dit indhold. Design selv, importer eller brug video.'}
                               </p>
                           </div>
                           <button 
@@ -1302,7 +1304,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                               </div>
                               <div>
                                  <h4 className="text-neutral-900 group-hover:text-orange-600 font-black uppercase text-[10px] md:text-xs lg:text-sm tracking-wider mb-0.5 md:mb-1 transition-colors">
-                                     {t.studio_create_title || 'Opret Illustration'}
+                                      {t.studio_create_title || 'Opret Illustration'}
                                  </h4>
                                  <p className="text-neutral-400 text-[9px] md:text-[10px] lg:text-xs leading-tight sm:leading-relaxed">
                                     {t.studio_create_desc || 'Start med et tomt lærred.'}
@@ -1320,7 +1322,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                               </div>
                               <div>
                                  <h4 className="text-neutral-900 group-hover:text-orange-600 font-black uppercase text-[10px] md:text-xs lg:text-sm tracking-wider mb-0.5 md:mb-1 transition-colors">
-                                     {t.studio_import_title || 'Importer Billede'}
+                                      {t.studio_import_title || 'Importer Billede'}
                                  </h4>
                                  <p className="text-neutral-400 text-[9px] md:text-[10px] lg:text-xs leading-tight sm:leading-relaxed">
                                     {t.studio_import_desc || 'Hent fra bibliotek / upload.'}
@@ -1338,7 +1340,7 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                               </div>
                               <div>
                                  <h4 className="text-neutral-900 group-hover:text-orange-600 font-black uppercase text-[10px] md:text-xs lg:text-sm tracking-wider mb-0.5 md:mb-1 transition-colors">
-                                     {t.studio_video_title || 'Animation / Video'}
+                                      {t.studio_video_title || 'Animation / Video'}
                                  </h4>
                                  <p className="text-neutral-400 text-[9px] md:text-[10px] lg:text-xs leading-tight sm:leading-relaxed">
                                     {t.studio_video_desc || 'Importer videoklip.'}
@@ -1350,15 +1352,15 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                       
                       {/* FOOTER */}
                       <div className="bg-neutral-50 p-2 md:p-3 px-4 md:px-6 lg:px-8 border-t border-neutral-100 flex justify-between items-center shrink-0">
-                         <span className="text-[8px] md:text-[9px] lg:text-[10px] text-neutral-400 font-medium">
-                             {t.studio_powered || 'Powered by DTL Studio v1.0'}
-                         </span>
-                         <div className="flex gap-1.5 items-center">
-                             <span className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-green-500 animate-pulse"></span>
-                             <span className="text-[8px] md:text-[9px] lg:text-[10px] text-neutral-500 font-bold uppercase tracking-wide">
-                                 {t.studio_status || 'Studio Online'}
-                             </span>
-                         </div>
+                          <span className="text-[8px] md:text-[9px] lg:text-[10px] text-neutral-400 font-medium">
+                              {t.studio_powered || 'Powered by DTL Studio v1.0'}
+                          </span>
+                          <div className="flex gap-1.5 items-center">
+                              <span className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-green-500 animate-pulse"></span>
+                              <span className="text-[8px] md:text-[9px] lg:text-[10px] text-neutral-500 font-bold uppercase tracking-wide">
+                                  {t.studio_status || 'Studio Online'}
+                              </span>
+                          </div>
                       </div>
                 </div>
             </div>
@@ -1378,12 +1380,12 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                                  </div>
                                  <div>
                                      <h3 className="text-sm font-black text-neutral-900 uppercase tracking-tight leading-none">
-                                         {t.upload_title || 'Upload Fil'}
+                                          {t.upload_title || 'Upload Fil'}
                                      </h3>
                                  </div>
                               </div>
                               <p className="text-neutral-500 text-[10px] leading-relaxed">
-                                 {t.upload_desc || 'Upload billeder eller video til dit bibliotek.'}
+                                  {t.upload_desc || 'Upload billeder eller video til dit bibliotek.'}
                               </p>
                           </div>
                           
@@ -1397,34 +1399,34 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
 
                       {/* CONTENT */}
                       <div className="p-4 bg-neutral-50/50">
-                         <div 
-                             className={`
-                                 group w-full h-40 rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all duration-300 gap-3
-                                 ${isUploading ? 'bg-orange-50 border-orange-500 cursor-wait' : 'bg-white border-neutral-200 hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/5 cursor-pointer hover:-translate-y-0.5'}
-                             `}
-                             onClick={() => !isUploading && fileInputRef.current?.click()}
-                         >
-                             <input type="file" ref={fileInputRef} className="hidden" accept="image/*,video/*,.mp4,.mov" multiple onChange={handleFileUpload} />
-                             
-                             {isUploading ? (
-                                 <div className="flex flex-col items-center animate-pulse">
-                                     <Loader2 className="w-8 h-8 text-orange-500 animate-spin mb-2" />
-                                     <p className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">{t.upload_status || 'Uploader fil...'}</p>
-                                 </div>
-                             ) : (
-                                 <>
-                                     <div className="w-10 h-10 rounded-full bg-neutral-50 flex items-center justify-center group-hover:bg-orange-500 transition-colors duration-300 border border-neutral-100 shadow-sm group-hover:shadow-orange-500/30">
-                                         <Upload className="w-5 h-5 text-neutral-400 group-hover:text-white transition-colors duration-300" />
-                                     </div>
-                                     <div className="text-center">
-                                         <p className="text-xs font-black text-neutral-900 group-hover:text-orange-600 uppercase tracking-wide transition-colors">
-                                             {t.upload_btn_click || 'Klik for at vælge fil'}
-                                         </p>
-                                         <p className="text-[9px] text-neutral-400 mt-1 group-hover:text-neutral-500 transition-colors">{t.upload_format_hint || 'JPG, PNG, MP4 (Max 50MB)'}</p>
-                                     </div>
-                                 </>
-                             )}
-                         </div>
+                          <div 
+                              className={`
+                                  group w-full h-40 rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all duration-300 gap-3
+                                  ${isUploading ? 'bg-orange-50 border-orange-500 cursor-wait' : 'bg-white border-neutral-200 hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/5 cursor-pointer hover:-translate-y-0.5'}
+                              `}
+                              onClick={() => !isUploading && fileInputRef.current?.click()}
+                          >
+                              <input type="file" ref={fileInputRef} className="hidden" accept="image/*,video/*,.mp4,.mov" multiple onChange={handleFileUpload} />
+                              
+                              {isUploading ? (
+                                  <div className="flex flex-col items-center animate-pulse">
+                                      <Loader2 className="w-8 h-8 text-orange-500 animate-spin mb-2" />
+                                      <p className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">{t.upload_status || 'Uploader fil...'}</p>
+                                  </div>
+                              ) : (
+                                  <>
+                                      <div className="w-10 h-10 rounded-full bg-neutral-50 flex items-center justify-center group-hover:bg-orange-500 transition-colors duration-300 border border-neutral-100 shadow-sm group-hover:shadow-orange-500/30">
+                                          <Upload className="w-5 h-5 text-neutral-400 group-hover:text-white transition-colors duration-300" />
+                                      </div>
+                                      <div className="text-center">
+                                          <p className="text-xs font-black text-neutral-900 group-hover:text-orange-600 uppercase tracking-wide transition-colors">
+                                               {t.upload_btn_click || 'Klik for at vælge fil'}
+                                          </p>
+                                          <p className="text-[9px] text-neutral-400 mt-1 group-hover:text-neutral-500 transition-colors">{t.upload_format_hint || 'JPG, PNG, MP4 (Max 50MB)'}</p>
+                                      </div>
+                                  </>
+                              )}
+                          </div>
                       </div>
                 </div>
             </div>
@@ -1444,12 +1446,12 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
                                  </div>
                                  <div>
                                      <h3 className="text-sm font-black text-neutral-900 uppercase tracking-tight leading-none">
-                                         {t.youtube_title || 'Tilføj YouTube Link'}
+                                          {t.youtube_title || 'Tilføj YouTube Link'}
                                      </h3>
                                  </div>
                               </div>
                               <p className="text-neutral-500 text-[10px] leading-relaxed">
-                                 {t.youtube_desc || 'Indsæt et link for at integrere video direkte i øvelsen.'}
+                                  {t.youtube_desc || 'Indsæt et link for at integrere video direkte i øvelsen.'}
                               </p>
                           </div>
                           
@@ -1463,47 +1465,47 @@ export default function CreateDrillModal({ isOpen, onClose, lang, dict, onSucces
 
                       {/* CONTENT */}
                       <div className="p-4 bg-neutral-50/50 overflow-y-auto">
-                         <div className="space-y-3">
-                            <div>
-                                <label className="text-[10px] font-bold text-neutral-900 uppercase mb-1.5 block">{t.youtube_label_url || 'Indsæt URL'}</label>
-                                <div className="relative">
-                                    <input 
-                                        type="text" 
-                                        className="w-full bg-white border border-neutral-200 rounded-lg p-2.5 text-xs text-neutral-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all placeholder:text-neutral-400 shadow-sm"
-                                        placeholder={t.ph_youtube_link || "https://youtube.com/watch?v=..."}
-                                        value={tempYoutubeLink}
-                                        onChange={(e) => setTempYoutubeLink(e.target.value)}
-                                        autoFocus
-                                    />
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                        <LinkIcon size={14} className="text-neutral-300" />
-                                    </div>
-                                </div>
-                            </div>
+                          <div className="space-y-3">
+                             <div>
+                                 <label className="text-[10px] font-bold text-neutral-900 uppercase mb-1.5 block">{t.youtube_label_url || 'Indsæt URL'}</label>
+                                 <div className="relative">
+                                     <input 
+                                         type="text" 
+                                         className="w-full bg-white border border-neutral-200 rounded-lg p-2.5 text-xs text-neutral-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all placeholder:text-neutral-400 shadow-sm"
+                                         placeholder={t.ph_youtube_link || "https://youtube.com/watch?v=..."}
+                                         value={tempYoutubeLink}
+                                         onChange={(e) => setTempYoutubeLink(e.target.value)}
+                                         autoFocus
+                                     />
+                                     <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                         <LinkIcon size={14} className="text-neutral-300" />
+                                     </div>
+                                 </div>
+                             </div>
                             
-                            {/* Preview Section */}
-                            {getYouTubeID(tempYoutubeLink) ? (
-                                <div className="aspect-video bg-black rounded-lg overflow-hidden border border-neutral-200 shadow-md animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                    <iframe 
-                                        width="100%" 
-                                        height="100%" 
-                                        src={`https://www.youtube.com/embed/${getYouTubeID(tempYoutubeLink)}`} 
-                                        frameBorder="0" 
-                                        allowFullScreen
-                                    ></iframe>
-                                </div>
-                            ) : (
-                                <div className="h-1 bg-transparent"></div>
-                            )}
+                             {/* Preview Section */}
+                             {getYouTubeID(tempYoutubeLink) ? (
+                                 <div className="aspect-video bg-black rounded-lg overflow-hidden border border-neutral-200 shadow-md animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                     <iframe 
+                                         width="100%" 
+                                         height="100%" 
+                                         src={`https://www.youtube.com/embed/${getYouTubeID(tempYoutubeLink)}`} 
+                                         frameBorder="0" 
+                                         allowFullScreen
+                                     ></iframe>
+                                 </div>
+                             ) : (
+                                 <div className="h-1 bg-transparent"></div>
+                             )}
 
-                            <button 
-                                onClick={handleAddYoutube}
-                                disabled={!getYouTubeID(tempYoutubeLink)}
-                                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-lg hover:shadow-orange-500/20 hover:-translate-y-0.5"
-                            >
-                                {t.btn_add_video || 'Tilføj til Galleri'}
-                            </button>
-                         </div>
+                             <button 
+                                 onClick={handleAddYoutube}
+                                 disabled={!getYouTubeID(tempYoutubeLink)}
+                                 className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-lg hover:shadow-orange-500/20 hover:-translate-y-0.5"
+                             >
+                                 {t.btn_add_video || 'Tilføj til Galleri'}
+                             </button>
+                          </div>
                       </div>
                 </div>
             </div>

@@ -8,17 +8,18 @@ import {
   Edit3, User, Shield, Box, Copy,
   ChevronLeft, ChevronRight, Globe,
   AlertCircle, TrendingUp, TrendingDown,
-  Shirt, Goal, GraduationCap, LayoutTemplate, ShieldCheck
+  Shirt, Goal, LayoutTemplate, ShieldCheck,
+  Activity, CalendarPlus
 } from 'lucide-react';
 import { DrillAsset } from '@/lib/server/libraryData';
 import { useUser } from '@/components/UserContext';
-import { UserRole } from '@/lib/server/data';
 
 interface DrillDetailModalProps {
   drill: DrillAsset | null;
   isOpen: boolean;
   onClose: () => void;
   onEdit?: (drill: DrillAsset) => void;
+  onAddToSession?: (drill: DrillAsset) => void;
   lang: 'da' | 'en';
 }
 
@@ -29,31 +30,24 @@ const getYoutubeId = (url: string) => {
     return (match && match[2].length === 11) ? match[2] : null;
 };
 
-// Helper til farveklasser (Team Colors)
+// Helper til farveklasser
 const getTeamBadgeStyle = (color: string) => {
-    switch(color) {
-        case 'orange': return 'bg-orange-100 text-orange-700 border-orange-200'; 
-        case 'red': return 'bg-red-100 text-red-700 border-red-200'; 
-        case 'blue': return 'bg-blue-100 text-blue-700 border-blue-200'; 
-        case 'green': return 'bg-green-100 text-green-700 border-green-200'; 
-        case 'yellow': return 'bg-yellow-100 text-yellow-800 border-yellow-200'; 
-        case 'white': return 'bg-white text-neutral-900 border-neutral-200'; 
-        case 'black': return 'bg-neutral-900 text-white border-neutral-900'; 
-        default: return 'bg-gray-100 text-gray-700 border-gray-200';
-    }
+    return 'bg-white border-neutral-200 text-neutral-900';
 };
 
-export default function DrillDetailModal({ drill, isOpen, onClose, onEdit, lang }: DrillDetailModalProps) {
+export default function DrillDetailModal({ drill, isOpen, onClose, onEdit, onAddToSession, lang }: DrillDetailModalProps) {
   const { user } = useUser();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   if (!isOpen || !drill) return null;
 
   // --- RETTIGHEDS LOGIK ---
-  // Tjekker om brugeren er Developer eller Ejer af øvelsen
-  const isDeveloper = user?.role === UserRole.Developer || user?.role === 'developer';
+  const userRole = user?.role?.toLowerCase();
+  const isDeveloper = userRole === 'developer' || userRole === 'admin'; 
   const isAuthor = user?.id === drill.authorId;
-  const canEdit = isDeveloper || isAuthor;
+  const isGlobal = drill.accessLevel === 'Global';
+
+  const canEdit = isDeveloper || (isAuthor && !isGlobal);
 
   // Medie Logik
   const hasYoutube = drill.mediaType === 'youtube' && drill.youtubeUrl;
@@ -69,10 +63,21 @@ export default function DrillDetailModal({ drill, isOpen, onClose, onEdit, lang 
   const nextImage = (e: React.MouseEvent) => { e.stopPropagation(); setCurrentImageIndex((prev) => (prev + 1) % images.length); };
   const prevImage = (e: React.MouseEvent) => { e.stopPropagation(); setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length); };
   
-  // Styling Helpers
+  // --- STYLING ---
   const cardBaseClass = "bg-white border border-neutral-200 rounded-lg p-5 shadow-sm mb-4";
   const sectionHeaderClass = "text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 flex items-center gap-1.5";
   const subLabelClass = "text-[9px] font-black text-neutral-500 uppercase tracking-wider block mb-1.5";
+
+  // NYT "CREATE DRILL" STYLE (White Box / Orange Border)
+  // Containeren er nu bare en wrapper uden baggrund/border
+  const paramBoxClass = "flex flex-col items-center justify-end h-full";
+  
+  // Label: Sort, fed, uppercase, placeret over boksen
+  const boxLabelClass = "text-[9px] font-black text-black uppercase tracking-wider mb-1 text-center w-full truncate";
+  
+  // Værdi: Hvid baggrund, tynd orange kant, centreret tekst
+  const boxValueContainerClass = "w-full bg-white border border-orange-500 rounded-lg h-8 flex items-center justify-center shadow-sm";
+  const boxValueClass = "text-xs font-bold text-neutral-900 text-center leading-none truncate";
 
   // Intensitet Cirkel
   const getIntensityCircleClass = (load: string | undefined) => {
@@ -102,36 +107,35 @@ export default function DrillDetailModal({ drill, isOpen, onClose, onEdit, lang 
         {/* --- VENSTRE KOLONNE: MEDIA --- */}
         <div className="w-full md:w-1/2 bg-black flex flex-col relative group overflow-hidden border-r border-neutral-800">
             <div className="flex-1 flex flex-col h-full">
-                {/* BILLEDE GALLERI */}
                 <div className={`relative w-full bg-black flex items-center justify-center ${showVideoSection ? 'h-1/2 border-b border-neutral-800' : 'h-full'}`}>
-                     <div className="absolute inset-0 overflow-hidden opacity-20 blur-3xl pointer-events-none">
-                        <img src={images[currentImageIndex]} className="w-full h-full object-cover" />
-                     </div>
-                     <img 
+                      <div className="absolute inset-0 overflow-hidden opacity-20 blur-3xl pointer-events-none">
+                         <img src={images[currentImageIndex]} className="w-full h-full object-cover" />
+                      </div>
+                      <img 
                         src={images[currentImageIndex]} 
                         alt={drill.title} 
-                        className="relative z-10 w-full h-full object-contain"
-                     />
-                     {showSlider && (
-                         <>
-                            <button onClick={prevImage} className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/40 text-white rounded-full hover:bg-orange-500 transition-colors opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/10 shadow-lg z-20"><ChevronLeft size={20} /></button>
-                            <button onClick={nextImage} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black/40 text-white rounded-full hover:bg-orange-500 transition-colors opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/10 shadow-lg z-20"><ChevronRight size={20} /></button>
-                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 p-1.5 bg-black/40 rounded-full backdrop-blur-md border border-white/10 z-20">
-                                {images.map((_: any, idx: number) => (
-                                    <div key={idx} className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${idx === currentImageIndex ? 'bg-orange-500 w-4' : 'bg-white/50'}`} />
-                                ))}
-                            </div>
-                         </>
-                     )}
+                        className="relative z-10 w-full h-full object-contain p-4"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      />
+                      {showSlider && (
+                          <>
+                             <button onClick={prevImage} className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/40 text-white rounded-full hover:bg-orange-500 transition-colors opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/10 shadow-lg z-20"><ChevronLeft size={20} /></button>
+                             <button onClick={nextImage} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black/40 text-white rounded-full hover:bg-orange-500 transition-colors opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/10 shadow-lg z-20"><ChevronRight size={20} /></button>
+                             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 p-1.5 bg-black/40 rounded-full backdrop-blur-md border border-white/10 z-20">
+                                 {images.map((_: any, idx: number) => (
+                                     <div key={idx} className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${idx === currentImageIndex ? 'bg-orange-500 w-4' : 'bg-white/50'}`} />
+                                 ))}
+                             </div>
+                          </>
+                      )}
                 </div>
-                {/* VIDEO */}
                 {showVideoSection && (
                     <div className="relative w-full h-1/2 bg-black flex items-center justify-center">
                         <div className="w-full h-full">
                             {hasYoutube ? (
-                                <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${getYoutubeId(drill.youtubeUrl!)}?autoplay=1&mute=0&controls=1&showinfo=0&rel=0&modestbranding=1`} allow="autoplay; encrypted-media; fullscreen"></iframe>
+                                <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${getYoutubeId(drill.youtubeUrl!)}?autoplay=0&mute=0&controls=1&showinfo=0&rel=0&modestbranding=1`} allow="autoplay; encrypted-media; fullscreen"></iframe>
                             ) : (
-                                <video src={drill.videoUrl!} className="w-full h-full object-contain" controls autoPlay loop muted playsInline />
+                                <video src={drill.videoUrl!} className="w-full h-full object-contain" controls loop muted playsInline />
                             )}
                         </div>
                     </div>
@@ -142,7 +146,7 @@ export default function DrillDetailModal({ drill, isOpen, onClose, onEdit, lang 
         {/* --- HØJRE KOLONNE: DATA & INFO --- */}
         <div className="w-full md:w-1/2 bg-[#F8FAFC] flex flex-col h-full overflow-hidden border-l border-white/50">
             
-            {/* HEADER AREA (BEVARET 100%) */}
+            {/* HEADER AREA */}
             <div className="px-6 pt-6 pb-2 bg-white/80 backdrop-blur-sm border-b border-neutral-200 shrink-0 z-10 sticky top-0">
                 <div className="flex items-center gap-2.5 mb-4">
                     <div className={`w-3 h-3 rounded-full border ${getIntensityCircleClass(drill.physicalLoad)}`} />
@@ -156,12 +160,13 @@ export default function DrillDetailModal({ drill, isOpen, onClose, onEdit, lang 
                     </div>
                 </div>
 
+                {/* KATEGORI */}
                 <div className="flex flex-wrap items-center gap-2 mb-3">
-                    <span className="text-orange-600 text-[10px] font-black uppercase tracking-widest bg-orange-50 px-2 py-0.5 rounded border border-orange-100">
+                    <span className="text-neutral-900 text-[10px] font-black uppercase tracking-widest bg-white px-3 py-1 rounded border-[3px] border-orange-500">
                         {drill.mainCategory}
                     </span>
                     {drill.subCategory && (
-                        <span className="text-neutral-500 text-[10px] font-bold uppercase tracking-widest border border-neutral-200 px-2 py-0.5 rounded">
+                        <span className="text-neutral-400 text-[10px] font-black uppercase tracking-widest bg-white px-3 py-1 rounded border-[3px] border-orange-500">
                             {drill.subCategory}
                         </span>
                     )}
@@ -171,27 +176,61 @@ export default function DrillDetailModal({ drill, isOpen, onClose, onEdit, lang 
                     {drill.title}
                 </h2>
 
-                <div className="flex flex-wrap gap-2 mb-4">
-                    <div className="flex items-center gap-1.5 bg-white border border-neutral-200 px-3 py-1.5 rounded-lg shadow-sm">
-                        <Clock size={12} className="text-orange-500" />
-                        <span className="text-[10px] font-bold text-neutral-900">{drill.durationMin} min</span>
+                {/* --- 6 DATA BOKSE --- */}
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-4">
+                    
+                    {/* 1. Age Group */}
+                    <div className={paramBoxClass}>
+                        <label className={boxLabelClass}>AGE GROUP</label>
+                        <div className={boxValueContainerClass}>
+                            <span className={boxValueClass}>{drill.ageGroups && drill.ageGroups.length > 0 ? drill.ageGroups[0] : '-'}</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-1.5 bg-white border border-neutral-200 px-3 py-1.5 rounded-lg shadow-sm">
-                        <Users size={12} className="text-orange-500" />
-                        <span className="text-[10px] font-bold text-neutral-900">{drill.minPlayers}-{drill.maxPlayers} spillere</span>
+
+                    {/* 2. Players */}
+                    <div className={paramBoxClass}>
+                        <label className={boxLabelClass}>PLAYERS</label>
+                        <div className={boxValueContainerClass}>
+                            <span className={boxValueClass}>{drill.minPlayers || 0} - {drill.maxPlayers || 0}</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-1.5 bg-white border border-neutral-200 px-3 py-1.5 rounded-lg shadow-sm">
-                        <Ruler size={12} className="text-orange-500" />
-                        <span className="text-[10px] font-bold text-neutral-900">{drill.pitchSize?.width}x{drill.pitchSize?.length}m</span>
+
+                    {/* 3. Pitch */}
+                    <div className={paramBoxClass}>
+                        <label className={boxLabelClass}>PITCH (M)</label>
+                        <div className={boxValueContainerClass}>
+                            <span className={boxValueClass}>{drill.pitchSize ? `${drill.pitchSize.width} x ${drill.pitchSize.length}` : '-'}</span>
+                        </div>
                     </div>
-                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg shadow-sm border ${drill.goalKeeper ? 'bg-green-50 border-green-200 text-green-800' : 'bg-neutral-50 border-neutral-200 text-neutral-500'}`}>
-                        <Goal size={12} />
-                        <span className="text-[10px] font-bold">{drill.goalKeeper ? 'Målmand' : 'Ingen GK'}</span>
+
+                    {/* 4. Time */}
+                    <div className={paramBoxClass}>
+                        <label className={boxLabelClass}>TIME (MIN)</label>
+                        <div className={boxValueContainerClass}>
+                            <span className={boxValueClass}>{drill.durationMin || 0}</span>
+                        </div>
                     </div>
+
+                    {/* 5. Work/Rest */}
+                    <div className={paramBoxClass}>
+                        <label className={boxLabelClass}>WORK/REST</label>
+                        <div className={boxValueContainerClass}>
+                            <span className={boxValueClass}>{drill.workDuration || 0}' / {drill.restDuration || 0}'</span>
+                        </div>
+                    </div>
+
+                    {/* 6. GK */}
+                    <div className={paramBoxClass}>
+                        <label className={boxLabelClass}>GOAL KEEPER</label>
+                        <div className={boxValueContainerClass}>
+                            <span className={boxValueClass}>{drill.goalKeeper ? 'YES' : 'NO'}</span>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
-            {/* SCROLLABLE CONTENT (ÉN LANG VISNING) */}
+            {/* SCROLLABLE CONTENT */}
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-neutral-50/50">
                 
                 {/* 1. BESKRIVELSE */}
@@ -200,7 +239,7 @@ export default function DrillDetailModal({ drill, isOpen, onClose, onEdit, lang 
                     <p className="text-sm text-neutral-700 leading-relaxed font-medium whitespace-pre-wrap">
                         {drill.description || "Ingen beskrivelse tilgængelig."}
                     </p>
-                    {/* TEMAER */}
+                    
                     {(drill.primaryTheme || drill.secondaryTheme) && (
                         <div className="mt-4 pt-3 border-t border-neutral-100">
                              <span className={subLabelClass}>Fokusområder</span>
@@ -220,7 +259,7 @@ export default function DrillDetailModal({ drill, isOpen, onClose, onEdit, lang 
                     )}
                 </div>
 
-                {/* 2. PROGRESSION & REGRESSION GRID */}
+                {/* 2. PROGRESSION & REGRESSION */}
                 {( (drill.progression && drill.progression[0]) || (drill.regression && drill.regression[0]) ) && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         {drill.progression && drill.progression[0] && (
@@ -256,11 +295,10 @@ export default function DrillDetailModal({ drill, isOpen, onClose, onEdit, lang 
                     </div>
                 )}
 
-                {/* 3. COACHING POINTS SEKTION */}
+                {/* 3. COACHING POINTS */}
                 <div className={`${cardBaseClass} border-l-4 border-l-orange-500`}>
                     <span className={sectionHeaderClass}><Target size={12} className="text-orange-500"/> Trænerens Fokus</span>
                     
-                    {/* Instruktion */}
                     {drill.coachingPoints?.instruction && (
                         <div className="mb-4 bg-orange-50 p-3 rounded-lg border border-orange-100">
                             <span className={subLabelClass}>Instruktion</span>
@@ -268,7 +306,6 @@ export default function DrillDetailModal({ drill, isOpen, onClose, onEdit, lang 
                         </div>
                     )}
 
-                    {/* Key Points */}
                     {drill.coachingPoints?.keyPoints && drill.coachingPoints.keyPoints.length > 0 && (
                         <div>
                              <span className={subLabelClass}>Nøglepunkter</span>
@@ -310,7 +347,6 @@ export default function DrillDetailModal({ drill, isOpen, onClose, onEdit, lang 
 
                 {/* 5. OPSÆTNING & MATERIALER */}
                 <div className="grid grid-cols-1 gap-4 mb-12">
-                    {/* Holdopstilling */}
                     {drill.setup && drill.setup.length > 0 && (
                         <div className={cardBaseClass}>
                              <span className={sectionHeaderClass}><Shirt size={12} className="text-orange-500"/> Holdopstilling</span>
@@ -331,7 +367,6 @@ export default function DrillDetailModal({ drill, isOpen, onClose, onEdit, lang 
                         </div>
                     )}
 
-                    {/* Materialer */}
                     {drill.materials && drill.materials.length > 0 && (
                         <div className={cardBaseClass}>
                             <span className={sectionHeaderClass}><Box size={12} className="text-orange-500"/> Materialer</span>
@@ -353,6 +388,8 @@ export default function DrillDetailModal({ drill, isOpen, onClose, onEdit, lang 
 
             {/* FOOTER ACTIONS */}
             <div className="p-4 border-t border-neutral-200 bg-white flex justify-between items-center shrink-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]">
+                
+                {/* VENSTRE: Tools (Del, Print, Kopier) */}
                 <div className="flex items-center gap-2">
                     <button className="p-2.5 text-neutral-400 hover:text-orange-500 hover:bg-orange-50 rounded-xl transition-all border border-transparent hover:border-orange-100" title="Del">
                         <Share2 size={18} />
@@ -370,18 +407,17 @@ export default function DrillDetailModal({ drill, isOpen, onClose, onEdit, lang 
                 </div>
 
                 <div className="flex items-center gap-4">
-                    {/* REDIGER KNAP - Vises nu hvis canEdit er sand (Developer/Author), selv hvis onEdit prop mangler (giver alert) */}
+                    {/* REDIGER KNAP */}
                     {canEdit && (
                         <button 
                             onClick={() => { 
                                 if (onEdit) { onClose(); onEdit(drill); } 
-                                else { alert("Fejl: 'onEdit' funktionen er ikke sendt med fra biblioteket. Kontakt support eller tjek LibraryClient.tsx"); } 
+                                else { alert("Fejl: 'onEdit' funktionen er ikke sendt med fra biblioteket."); } 
                             }}
-                            className="flex items-center gap-2 px-6 py-3 bg-neutral-900 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-black transition-all shadow-lg hover:-translate-y-0.5 hover:shadow-orange-500/20"
+                            className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-black transition-all shadow-lg hover:-translate-y-0.5 hover:shadow-orange-500/20"
                         >
                             <Edit3 size={14} /> 
-                            <span className="hidden md:inline">Rediger Øvelse</span>
-                            <span className="md:hidden">Rediger</span>
+                            <span className="hidden md:inline">Rediger</span>
                         </button>
                     )}
 
@@ -392,6 +428,23 @@ export default function DrillDetailModal({ drill, isOpen, onClose, onEdit, lang 
                         {drill.accessLevel === 'Personal' && <User size={12} />}
                         <span className="text-[9px] font-bold uppercase tracking-wider">{drill.accessLevel}</span>
                     </div>
+
+                    {/* NY KNAP: + SESSION PLANNER */}
+                    <button 
+                        onClick={() => {
+                            if(onAddToSession) {
+                                onAddToSession(drill);
+                                onClose();
+                            } else {
+                                alert("Tilføj til session: Kommer snart!");
+                            }
+                        }}
+                        className="flex items-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-orange-600 transition-all shadow-lg hover:-translate-y-0.5 hover:shadow-orange-500/30"
+                    >
+                        <CalendarPlus size={14} /> 
+                        <span className="hidden md:inline">+ Session Planner</span>
+                        <span className="md:hidden">+ Session</span>
+                    </button>
                 </div>
             </div>
 
